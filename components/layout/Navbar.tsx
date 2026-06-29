@@ -11,6 +11,7 @@ export default function Navbar() {
     { href: "/upcoming", label: "Kommende Events" },
     { href: "/gallery", label: "Galleri" },
     { href: "/team", label: "Team" },
+    { href: "/contact", label: "Kontakt" },
   ];
 
   return (
