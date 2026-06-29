@@ -1,4 +1,5 @@
 import Image from "next/image";
+import ScrollIndicator from "./ScrollIndicator";
 
 export default function Hero() {
   return (
@@ -9,8 +10,8 @@ export default function Hero() {
         <Image
           src="/logo.png"
           alt="DarkLight Events"
-          width={430}
-          height={430}
+          width={730}
+          height={730}
           priority
           className="mx-auto drop-shadow-[0_0_45px_rgba(255,255,255,0.45)]"
         />
