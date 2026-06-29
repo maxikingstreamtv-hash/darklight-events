@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 const events = [
   "Bryllupper",
   "Beach Party",
@@ -35,7 +37,13 @@ export default function EventsPage() {
               key={event}
               className="group overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.03] shadow-[0_0_40px_rgba(255,255,255,0.04)] transition duration-300 hover:-translate-y-2 hover:border-white/40 hover:shadow-[0_0_70px_rgba(255,255,255,0.12)]"
             >
-              <div className="h-52 bg-gradient-to-br from-white/30 via-white/10 to-transparent transition duration-500 group-hover:scale-105" />
+              <Image
+  src="/images/events/drag-race.png"
+  alt="Drag Race"
+  width={800}
+  height={500}
+  className="h-52 w-full object-cover transition duration-500 group-hover:scale-105"
+/>
 
               <div className="p-6">
                 <h2 className="text-2xl font-black">{event}</h2>
