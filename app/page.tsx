@@ -4,6 +4,8 @@ import FeaturedEvents from "@/components/events/FeaturedEvents";
 import WhyChoose from "@/components/sections/WhyChoose";
 import Stats from "@/components/sections/Stats";
 import Footer from "@/components/layout/Footer";
+import CTA from "@/components/sections/CTA";
+import GalleryPreview from "@/components/sections/GalleryPreview";
 
 export default function Home() {
   return (
@@ -13,6 +15,8 @@ export default function Home() {
 <FeaturedEvents />
 <WhyChoose />
 <Stats />
+<CTA />
+<GalleryPreview />
 <Footer />
     </main>
   );
