@@ -14,25 +14,25 @@ export const events = [
   {
     title: "Bryllupper",
     category: "Livsbegivenheder",
-    image: "/images/events/Brylluper.png",
+    image: "/images/events/brylluper.png",
     description: "Elegante bryllupper planlagt fra første velkomst til sidste dans.",
   },
   {
     title: "Begravelser",
     category: "Livsbegivenheder",
-    image: "/images/events/Begravelser.png",
+    image: "/images/events/begravelser.png",
     description: "Værdige og respektfulde ceremonier med ro, struktur og omtanke.",
   },
   {
     title: "Firmafester",
     category: "Sociale Events",
-    image: "/images/events/Firmafester.png",
+    image: "/images/events/firmafester.png",
     description: "Professionelle firmaarrangementer med planlægning, lyd og stemning.",
   },
   {
     title: "Privatfester",
     category: "Sociale Events",
-    image: "/images/events/privatrfester.png",
+    image: "/images/events/privatfester.png",
     description: "Private fester med eksklusivt setup, koordinering og underholdning.",
   },
   {
@@ -44,49 +44,49 @@ export const events = [
   {
     title: "Races",
     category: "Motorsport",
-    image: "/images/events/Races.png",
+    image: "/images/events/races.png",
     description: "Intense race-events med fart, spænding og professionel afvikling.",
   },
   {
     title: "Drift Events",
     category: "Motorsport",
-    image: "/images/events/Drift-events.png",
+    image: "/images/events/drift-events.png",
     description: "Drift-events med røg, præcision, publikum og motorsportstemning.",
   },
   {
     title: "Havefester",
     category: "Sociale Events",
-    image: "/images/events/Havefester.png",
+    image: "/images/events/havefester.png",
     description: "Hyggelige havefester med musik, lys og personlig planlægning.",
   },
   {
     title: "DJ Events",
     category: "Underholdning",
-    image: "/images/events/Dj-events.png",
+    image: "/images/events/dj-events.png",
     description: "Musikevents med DJ, lysshow og energi fra start til slut.",
   },
   {
     title: "Debat Events",
     category: "Shows & Konkurrencer",
-    image: "/images/events/Debat-events.png",
+    image: "/images/events/debat-events.png",
     description: "Strukturerede debatarrangementer med scene, værter og publikum.",
   },
   {
     title: "Miss Dreamlight",
     category: "Shows & Konkurrencer",
-    image: "/images/events/Miss-Dreamlight.png",
+    image: "/images/events/miss-Dreamlight.png",
     description: "Elegant konkurrenceevent med scene, dommere og showproduktion.",
   },
   {
     title: "Awardshow",
     category: "Shows & Konkurrencer",
-    image: "/images/events/Awardshow.png",
+    image: "/images/events/awardshow.png",
     description: "Eksklusivt awardshow med rød løber, scene og prisuddelinger.",
   },
   {
     title: "Mr Dreamlight",
     category: "Shows & Konkurrencer",
-    image: "/images/events/Mr-Dreamlight.png",
+    image: "/images/events/mr-Dreamlight.png",
     description: "Showevent med konkurrence, underholdning og DarkLight-produktion.",
   },
   {
@@ -98,13 +98,13 @@ export const events = [
   {
     title: "Polterabend",
     category: "Livsbegivenheder",
-    image: "/images/events/Polterabend.png",
+    image: "/images/events/polterabend.png",
     description: "Mindeværdig polterabend med aktiviteter, fest og personlig planlægning.",
   },
   {
     title: "Rooftop Party",
     category: "Sociale Events",
-    image: "/images/events/Rooftop-party.png",
+    image: "/images/events/rooftop-party.png",
     description: "Eksklusiv rooftop-fest med udsigt, musik, lys og VIP-stemning.",
   },
   {
@@ -152,7 +152,7 @@ export const events = [
   {
     title: "Bike Meetup",
     category: "Automotive",
-    image: "/images/events/Bike-meetup.png",
+    image: "/images/events/bike-meetup.png",
     description: "Motorcykeltræf med fællesskab, ruter, show og stemning.",
   },
   {
@@ -164,7 +164,7 @@ export const events = [
   {
     title: "Fight Night",
     category: "Shows & Konkurrencer",
-    image: "/images/events/Fight-night.png",
+    image: "/images/events/fight-night.png",
     description: "Kamp-event med ring, spotlight, publikum og dramatisk produktion.",
   },
   {

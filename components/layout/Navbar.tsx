@@ -9,7 +9,7 @@ export default function Navbar() {
         <div className="hidden gap-8 text-sm text-gray-300 md:flex">
           <a href="/events">Events</a>
           <a href="/booking">Booking</a>
-          <a href="/dragrace">Drag Race</a>
+          <a href="/upcoming">Kommende Events</a>
           <a href="/gallery">Galleri</a>
           <a href="/team">Team</a>
         </div>
