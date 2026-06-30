@@ -27,7 +27,7 @@ export const competitions: CompetitionType[] = [
       "Resultatliste til racerløb med tider, køretøjer, positioner og point.",
     icon: "🏁",
     href: "/competition/race",
-    status: "Kommer snart",
+    status: "Klar",
   },
   {
     id: "drag",
@@ -37,7 +37,7 @@ export const competitions: CompetitionType[] = [
       "Drag ladder til heats, semifinaler og finaler med reaktionstid og sluttid.",
     icon: "🚀",
     href: "/competition/drag",
-    status: "Kommer snart",
+    status: "Klar",
   },
   {
     id: "carshow",
@@ -47,6 +47,6 @@ export const competitions: CompetitionType[] = [
       "Bedømmelsessystem til carshows med design, originalitet, detaljer og total score.",
     icon: "🚗",
     href: "/competition/carshow",
-    status: "Kommer snart",
+    status: "Klar",
   },
 ];
