@@ -1,23 +1,5 @@
-const upcomingEvents = [
-  {
-    title: "DarkLight Opening Night",
-    date: "Dato kommer snart",
-    location: "Dreamlight",
-    status: "Planlægges",
-  },
-  {
-    title: "Friday Night Drags",
-    date: "Dato kommer snart",
-    location: "Race Track",
-    status: "Åben",
-  },
-  {
-    title: "Summer Beach Party",
-    date: "Dato kommer snart",
-    location: "Beach",
-    status: "Åben",
-  },
-];
+import Image from "next/image";
+import { upcomingEvents } from "@/data/upcoming-events";
 
 export default function UpcomingPage() {
   return (
@@ -32,30 +14,40 @@ export default function UpcomingPage() {
         </h1>
 
         <p className="mt-6 max-w-3xl text-gray-400">
-          Her kan du se kommende events arrangeret af DarkLight Events.
+          Se kommende events arrangeret af DarkLight Events.
         </p>
 
-        <div className="mt-12 grid gap-6 md:grid-cols-3">
+        <div className="mt-12 grid gap-8">
           {upcomingEvents.map((event) => (
             <div
               key={event.title}
-              className="rounded-[2rem] border border-white/10 bg-white/[0.03] p-6 transition hover:-translate-y-2 hover:border-white/40"
+              className="group grid overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.03] shadow-[0_0_50px_rgba(255,255,255,0.05)] transition hover:-translate-y-1 hover:border-white/40 md:grid-cols-2"
             >
-              <p className="text-sm uppercase tracking-[0.3em] text-gray-500">
-                {event.status}
-              </p>
+              <Image
+                src={event.image}
+                alt={event.title}
+                width={1000}
+                height={600}
+                className="h-80 w-full object-cover transition duration-500 group-hover:scale-105"
+              />
 
-              <h2 className="mt-4 text-2xl font-black">{event.title}</h2>
+              <div className="flex flex-col justify-center p-8 md:p-10">
+                <p className="text-sm uppercase tracking-[0.35em] text-gray-500">
+                  {event.status}
+                </p>
 
-              <p className="mt-4 text-gray-400">📅 {event.date}</p>
-              <p className="mt-2 text-gray-400">📍 {event.location}</p>
+                <h2 className="mt-4 text-4xl font-black">{event.title}</h2>
 
-              <a
-                href="/booking"
-                className="mt-6 inline-block text-sm font-bold text-white/80 hover:text-white"
-              >
-                Book plads →
-              </a>
+                <p className="mt-6 text-gray-400">📅 {event.date}</p>
+                <p className="mt-2 text-gray-400">📍 {event.location}</p>
+
+                <a
+                  href="/booking"
+                  className="mt-8 inline-block w-fit rounded-full bg-white px-8 py-4 font-bold text-black transition hover:scale-105"
+                >
+                  Book plads
+                </a>
+              </div>
             </div>
           ))}
         </div>
