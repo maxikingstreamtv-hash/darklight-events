@@ -1,12 +1,12 @@
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import EventControlTabs from "@/components/competition/EventControlTabs";
+import DriversOverview from "@/components/competition/DriversOverview";
 
-export default function CompetitionPage() {
+export default function DriversPage() {
   return (
     <main className="min-h-screen bg-black text-white">
       <Navbar />
-      <EventControlTabs />
+      <DriversOverview />
       <Footer />
     </main>
   );

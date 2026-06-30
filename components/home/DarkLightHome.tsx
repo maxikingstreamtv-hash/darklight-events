@@ -31,10 +31,10 @@ export default function DarkLightHome() {
             transition={{ duration: 0.9 }}
             className="max-w-5xl text-5xl font-black leading-tight tracking-tight md:text-7xl lg:text-8xl"
           >
-            Vi skaber serverens
+            Vi Skaber Dreamlights
             <br />
             <span className="bg-gradient-to-r from-white via-zinc-300 to-zinc-500 bg-clip-text text-transparent">
-              mest unikke events.
+              Mest Unikke Events.
             </span>
           </motion.h1>
 
@@ -44,7 +44,7 @@ export default function DarkLightHome() {
             transition={{ delay: 0.25, duration: 0.8 }}
             className="mt-8 max-w-2xl text-lg leading-8 text-zinc-400"
           >
-            DarkLight Events er en FiveM Roleplay-virksomhed, der planlægger
+            DarkLight Events er en RP-virksomhed, der planlægger
             eksklusive events med fokus på stemning, struktur og høj RP-kvalitet.
           </motion.p>
 

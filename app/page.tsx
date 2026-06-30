@@ -1,14 +1,18 @@
 import Navbar from "@/components/layout/Navbar";
-import DarkLightHome from "@/components/home/DarkLightHome";
+import Hero from "@/components/hero/Hero";
+import FeaturedEvents from "@/components/events/FeaturedEvents";
+import WhyChoose from "@/components/sections/WhyChoose";
+import Stats from "@/components/sections/Stats";
 import Footer from "@/components/layout/Footer";
-import BackgroundGlow from "@/components/shared/BackgroundGlow";
 
 export default function Home() {
   return (
-    <main className="relative min-h-screen bg-black text-white">
-      <BackgroundGlow />
+    <main className="min-h-screen bg-black text-white">
       <Navbar />
-      <DarkLightHome />
+      <Hero />
+      <FeaturedEvents />
+      <WhyChoose />
+      <Stats />
       <Footer />
     </main>
   );

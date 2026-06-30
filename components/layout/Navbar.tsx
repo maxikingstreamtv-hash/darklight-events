@@ -11,7 +11,7 @@ export default function Navbar() {
     { href: "/events", label: "Events" },
     { href: "/booking", label: "Booking" },
     { href: "/upcoming", label: "Kommende Events" },
-    { href: "/competition", label: "Competition" }, // 🆕 Ny menu
+    { href: "/competition", label: "Event Control" },
     { href: "/gallery", label: "Galleri" },
     { href: "/team", label: "Team" },
     { href: "/contact", label: "Kontakt" },
@@ -20,26 +20,17 @@ export default function Navbar() {
   return (
     <nav className="fixed left-0 top-0 z-50 w-full border-b border-white/10 bg-black/70 backdrop-blur-xl">
       <div className="mx-auto flex h-24 max-w-7xl items-center justify-between px-6">
+
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-4">
+        <Link href="/" className="flex items-center">
           <Image
             src="/logo.png"
             alt="DarkLight Events"
-            width={260}
-            height={260}
+            width={270}
+            height={270}
             priority
-            className="object-contain drop-shadow-[0_0_20px_rgba(255,255,255,0.35)]"
+            className="object-contain transition duration-300 hover:scale-105 drop-shadow-[0_0_20px_rgba(255,255,255,0.35)]"
           />
-
-          <div>
-            <h1 className="text-xl font-black uppercase tracking-[0.35em]">
-              DARKLIGHT
-            </h1>
-
-            <p className="text-xs uppercase tracking-[0.35em] text-zinc-500">
-              EVENTS
-            </p>
-          </div>
         </Link>
 
         {/* Desktop Navigation */}
@@ -55,7 +46,7 @@ export default function Navbar() {
           ))}
         </div>
 
-        {/* CTA */}
+        {/* Book Event */}
         <Link
           href="/booking"
           className="hidden rounded-full bg-white px-6 py-3 font-bold text-black transition hover:scale-105 hover:bg-zinc-300 md:block"
@@ -63,7 +54,7 @@ export default function Navbar() {
           Book Event
         </Link>
 
-        {/* Mobile Menu Button */}
+        {/* Mobile Menu */}
         <button
           onClick={() => setOpen(!open)}
           className="text-3xl text-white md:hidden"
@@ -72,7 +63,6 @@ export default function Navbar() {
         </button>
       </div>
 
-      {/* Mobile Menu */}
       {open && (
         <div className="border-t border-white/10 bg-black px-6 py-6 md:hidden">
           <div className="flex flex-col gap-5">

@@ -32,9 +32,9 @@ export default function Footer() {
             </p>
 
             <p className="mt-8 max-w-md leading-8 text-zinc-400">
-              DarkLight Events er en FiveM Roleplay-virksomhed med fokus på
+              DarkLight Events er en RP-virksomhed med fokus på
               eksklusive events, høj kvalitet og oplevelser, der samler
-              serverens spillere.
+              Dreamlights Borgere.
             </p>
           </div>
 

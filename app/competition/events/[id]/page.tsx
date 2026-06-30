@@ -1,12 +1,16 @@
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import EventControlTabs from "@/components/competition/EventControlTabs";
+import EventDetails from "@/components/competition/EventDetails";
 
-export default function CompetitionPage() {
+export default function EventDetailsPage({
+  params,
+}: {
+  params: { id: string };
+}) {
   return (
     <main className="min-h-screen bg-black text-white">
       <Navbar />
-      <EventControlTabs />
+      <EventDetails eventId={params.id} />
       <Footer />
     </main>
   );
