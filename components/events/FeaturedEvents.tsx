@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import { motion } from "framer-motion";
+import Image from "next/image";
 import Link from "next/link";
 
 const featuredEvents = [
@@ -65,12 +66,15 @@ export default function FeaturedEvents() {
               whileHover={{ y: -10 }}
               className="group relative min-h-[520px] overflow-hidden rounded-[2rem] border border-white/10 bg-zinc-950 shadow-[0_24px_80px_rgba(0,0,0,0.45)] ring-1 ring-white/[0.02] transition duration-300 hover:border-white/30"
             >
-              <div
-                className="absolute inset-0 bg-cover bg-center transition duration-700 group-hover:scale-110"
-                style={{ backgroundImage: `url(${event.image})` }}
+              <Image
+                src={event.image}
+                alt={event.title}
+                fill
+                className="object-cover opacity-80 transition duration-700 group-hover:scale-110"
+                sizes="(min-width: 1024px) 33vw, 100vw"
               />
 
-              <div className="absolute inset-0 bg-gradient-to-t from-black via-black/75 to-black/10" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black via-black/45 to-black/5" />
 
               <div className="absolute left-6 top-6 rounded-full border border-white/20 bg-black/55 px-4 py-2 text-xs font-bold uppercase tracking-[0.25em] backdrop-blur-xl">
                 {event.category}
