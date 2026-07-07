@@ -1,59 +1,78 @@
-const items = [
+﻿"use client";
+
+import { motion } from "framer-motion";
+
+const reasons = [
   {
-    icon: "🏆",
-    title: "Professionelle Events",
-    text: "Vi planlægger events med fokus på kvalitet og detaljer.",
+    number: "01",
+    title: "Planlagt fra start",
+    text: "Vi hjælper med at gøre idéen konkret, så eventet får struktur, flow og et klart formål.",
   },
   {
-    icon: "⚡",
-    title: "Hurtig Planlægning",
-    text: "Vi sørger for, at dit event bliver planlagt effektivt.",
+    number: "02",
+    title: "Bygget til FiveM",
+    text: "Alt er lavet til serverens eventmiljø og den måde spillere samles omkring oplevelser på.",
   },
   {
-    icon: "🎭",
-    title: "Unikke Oplevelser",
-    text: "Hvert event er skræddersyet til dine ønsker.",
+    number: "03",
+    title: "Stemning og detaljer",
+    text: "Vi fokuserer på lokation, timing, roller, præsentation og den oplevelse deltagerne husker.",
   },
   {
-    icon: "🤝",
-    title: "Erfarent Team",
-    text: "Et dedikeret team står klar fra start til slut.",
+    number: "04",
+    title: "Klar til vækst",
+    text: "DarkLight Events er bygget til at kunne vokse med serveren og udvikle større events over tid.",
   },
 ];
 
 export default function WhyChoose() {
   return (
-    <section className="bg-black py-24 px-6 text-white">
-      <div className="mx-auto max-w-7xl">
-        <h2 className="text-center text-5xl font-black">
-          Why Choose DarkLight
-        </h2>
+    <section className="relative overflow-hidden bg-black px-6 py-28 text-white">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_left,rgba(255,255,255,0.12),transparent_35%)]" />
 
-        <p className="mt-4 text-center text-gray-400">
-          Derfor vælger kunder DarkLight Events.
-        </p>
+      <div className="relative mx-auto max-w-7xl">
+        <div className="mb-16 grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-end">
+          <div>
+            <p className="mb-4 text-sm uppercase tracking-[0.45em] text-zinc-500">
+              Hvorfor DarkLight?
+            </p>
 
-        <div className="mt-16 grid gap-8 md:grid-cols-2 lg:grid-cols-4">
-          {items.map((item) => (
-            <div
-              key={item.title}
-              className="rounded-3xl border border-white/10 bg-white/5 p-8 text-center hover:border-white/40 transition"
+            <h2 className="text-4xl font-black md:text-6xl">
+              Mere end bare et event.
+            </h2>
+          </div>
+
+          <p className="max-w-2xl text-zinc-400">
+            DarkLight Events handler ikke kun om at samle folk. Det handler om
+            at skabe scener, øjeblikke og oplevelser, som giver byen mere liv
+            og bedre samspil.
+          </p>
+        </div>
+
+        <div className="grid gap-5 md:grid-cols-2">
+          {reasons.map((reason, index) => (
+            <motion.div
+              key={reason.number}
+              initial={{ opacity: 0, y: 32 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-80px" }}
+              transition={{ delay: index * 0.08, duration: 0.5 }}
+              whileHover={{ y: -8 }}
+              className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.04] p-8 shadow-[0_24px_80px_rgba(0,0,0,0.35)] ring-1 ring-white/[0.02] backdrop-blur-xl transition duration-300 hover:border-white/25 hover:bg-white/[0.06]"
             >
-              <div className="text-5xl">
-                {item.icon}
-              </div>
+              <div className="absolute -right-10 -top-10 h-36 w-36 rounded-full bg-white/10 blur-3xl" />
 
-              <h3 className="mt-6 text-2xl font-bold">
-                {item.title}
-              </h3>
-
-              <p className="mt-4 text-gray-400">
-                {item.text}
+              <p className="mb-8 text-sm font-black tracking-[0.35em] text-zinc-500">
+                {reason.number}
               </p>
-            </div>
+
+              <h3 className="text-2xl font-black">{reason.title}</h3>
+              <p className="mt-4 max-w-xl text-sm leading-7 text-zinc-400">{reason.text}</p>
+            </motion.div>
           ))}
         </div>
       </div>
     </section>
   );
 }
+

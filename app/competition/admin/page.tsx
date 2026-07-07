@@ -1,0 +1,243 @@
+﻿import Navbar from "@/components/layout/Navbar";
+import Footer from "@/components/layout/Footer";
+import CompetitionLayout from "@/components/competition/CompetitionLayout";
+import AdminDataControl from "@/components/competition/AdminDataControl";
+import AdminLiveDataPanel from "@/components/competition/AdminLiveDataPanel";
+import CompetitionPageShell from "@/components/competition/layout/CompetitionPageShell";
+import ManualManagerPanel, { type ManualManagerItem } from "@/components/competition/ManualManagerPanel";
+import Badge from "@/components/competition/ui/Badge";
+import Button from "@/components/competition/ui/Button";
+import Card from "@/components/competition/ui/Card";
+import StatCard from "@/components/competition/ui/StatCard";
+import { staffAccounts } from "@/components/auth/mock-auth";
+import { documents } from "@/data/documents";
+import { permissions } from "@/data/permissions";
+import { sponsors } from "@/data/sponsors";
+import { news } from "@/data/news";
+import { galleryItems } from "@/data/gallery";
+import { staffMembers } from "@/data/staff";
+import { faqItems } from "@/data/faq";
+import { ruleSections } from "@/data/rules";
+import { dataModeCopy, eventOSDataMode } from "@/data/eventos-mode";
+
+const modules = [
+  ["Eventkontrol", "Online", "/competition/control-center"],
+  ["Opret event", "Klar", "/competition/events/create"],
+  ["Løbskontrol", "Online", "/competition/race-control"],
+  ["Heat Manager", "Klar", "/competition/heat-manager"],
+  ["Resultater", "Klar", "/competition/results"],
+  ["Check-in", "Klar", "/competition/check-in"],
+  ["Rangliste", "Online", "/competition/leaderboard"],
+  ["Sæson", "Online", "/competition/seasons"],
+  ["Hall of Fame", "Online", "/competition/hall-of-fame"],
+  ["Dokumenter", "Klar", "/dokumenter"],
+  ["Tilladelser", "Klar", "/tilladelser"],
+  ["Sponsorer", "Klar", "/sponsorer"],
+];
+
+const managerPanels = [
+  {
+    title: "Sponsor Manager",
+    description: "Opret, rediger og arkiver RP-sponsorer til DarkLight Events.",
+    storageKey: "darklight-manager-sponsors",
+    items: sponsors.map((item) => ({
+      id: item.id,
+      title: item.name,
+      status: item.status,
+      meta: `${item.level} · ${item.eventsSupported.join(", ")}`,
+      description: item.description,
+    })),
+  },
+  {
+    title: "Tilladelses Manager",
+    description: "Hold styr på lokationer, eventtilladelser og koordinering i DreamLight.",
+    storageKey: "darklight-manager-permissions",
+    items: permissions.map((item) => ({
+      id: item.id,
+      title: item.event,
+      status: item.status,
+      meta: `${item.location} · ${item.applicant}`,
+      description: item.comment,
+    })),
+  },
+  {
+    title: "Dokument Manager",
+    description: "Administrer manualer, regelsæt og sponsoroversigter.",
+    storageKey: "darklight-manager-documents",
+    items: documents.map((item) => ({
+      id: item.id,
+      title: item.title,
+      status: item.status,
+      meta: `${item.category} · ${item.owner}`,
+      description: item.summary,
+    })),
+  },
+  {
+    title: "Nyheds Manager",
+    description: "Planlæg og arkiver nyheder til den offentlige platform.",
+    storageKey: "darklight-manager-news",
+    items: news.map((item) => ({
+      id: item.id,
+      title: item.title,
+      status: item.featured ? "Fremhævet" : "Aktiv",
+      meta: `${item.category} · ${item.author}`,
+      description: item.excerpt,
+    })),
+  },
+  {
+    title: "Galleri Manager",
+    description: "Hold styr på billeder, eventreferencer og kategorier.",
+    storageKey: "darklight-manager-gallery",
+    items: galleryItems.map((item) => ({
+      id: item.id,
+      title: item.title,
+      status: "Aktiv",
+      meta: `${item.category} · ${item.eventRef}`,
+      description: item.description,
+    })),
+  },
+  {
+    title: "Staff Manager",
+    description: "Oversigt over DarkLight staff, roller og ansvarsområder.",
+    storageKey: "darklight-manager-staff",
+    items: staffMembers.map((item) => ({
+      id: item.id,
+      title: item.characterName,
+      status: item.status,
+      meta: `${item.role} · ${item.department}`,
+      description: item.responsibilities.join(", "),
+    })),
+  },
+  {
+    title: "FAQ Manager",
+    description: "Rediger spørgsmål og svar til spillere og bookere.",
+    storageKey: "darklight-manager-faq",
+    items: faqItems.map((item) => ({
+      id: item.id,
+      title: item.question,
+      status: "Aktiv",
+      meta: item.answer,
+    })),
+  },
+  {
+    title: "Regelsæt Manager",
+    description: "Hold eventregler opdateret for kørere, crew, dommere og publikum.",
+    storageKey: "darklight-manager-rules",
+    items: ruleSections.map((item) => ({
+      id: item.id,
+      title: item.title,
+      status: "Aktiv",
+      meta: item.summary,
+      description: `${item.rules.length} regler`,
+    })),
+  },
+] satisfies Array<{ title: string; description: string; storageKey: string; items: ManualManagerItem[] }>;
+
+export default function CompetitionAdminPage() {
+  const modeCopy = dataModeCopy[eventOSDataMode];
+
+  return (
+    <>
+      <Navbar />
+      <CompetitionLayout>
+        <CompetitionPageShell
+          eyebrow="DarkLight EventOS"
+          title="Administration"
+          subtitle="Systemstatus, staff-adgang, reset og manuel platformstyring for DarkLight Events."
+          actions={<Badge tone="success">Manuelle eventdata</Badge>}
+        >
+          <div className="grid gap-5 md:grid-cols-3">
+            <StatCard title="Systemstatus" value="Online" text="Klar til eventdrift" />
+            <StatCard title="Datatilstand" value={modeCopy.title} text="Ren officiel historik" />
+            <StatCard title="Styring" value="Manuel" text="Styres af DarkLight staff" />
+          </div>
+
+          <Card padded="lg" className="mt-8">
+            <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-start">
+              <div>
+                <p className="text-sm uppercase tracking-[0.35em] text-zinc-500">Datatilstand</p>
+                <h2 className="mt-3 text-3xl font-black">{modeCopy.title}</h2>
+                <p className="mt-4 max-w-3xl leading-7 text-zinc-400">{modeCopy.description}</p>
+              </div>
+              <div className="grid w-full gap-3 rounded-2xl border border-white/10 bg-black p-4 sm:w-[320px]">
+                <div className="flex items-center justify-between gap-4 rounded-xl bg-white/[0.04] px-4 py-3">
+                  <span className="font-black">Ren start</span>
+                  <span className="rounded-full bg-green-500/10 px-3 py-1 text-xs font-black text-green-400">Aktiv</span>
+                </div>
+                <div className="rounded-xl bg-white/[0.04] px-4 py-3 text-sm text-zinc-500">
+                  Permanent database kan tilføjes senere.
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          <div className="mt-8">
+            <AdminDataControl />
+          </div>
+
+          <div className="mt-8">
+            <AdminLiveDataPanel />
+          </div>
+
+          <div className="mt-8 grid gap-8 xl:grid-cols-[0.9fr_1.1fr]">
+            <Card padded="lg">
+              <h2 className="mb-7 text-3xl font-black">Manuel eventstyring</h2>
+              <div className="rounded-2xl border border-white/10 bg-black p-5">
+                <p className="font-black">Klar til første officielle event</p>
+                <p className="mt-2 text-sm leading-6 text-zinc-500">
+                  Ren start starter uden officielle sejre, podier, champions, afsluttede events eller godkendte resultater.
+                  Staff opretter og godkender eventdata under live drift.
+                </p>
+              </div>
+              <div className="mt-5 grid gap-3">
+                <Button href="/competition/control-center" variant="primary">Åbn Eventkontrol</Button>
+                <Button href="/competition/events/create" variant="secondary">Opret event</Button>
+                <Button href="/competition/results" variant="secondary">Åbn Resultater</Button>
+              </div>
+            </Card>
+
+            <Card padded="lg">
+              <h2 className="mb-7 text-3xl font-black">Staff-konti</h2>
+              <div className="grid gap-4">
+                {staffAccounts.map((account) => (
+                  <div key={account.darklightId} className="rounded-2xl border border-white/10 bg-black p-5">
+                    <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">{account.rpRole}</p>
+                    <h3 className="mt-3 text-xl font-black">{account.characterName}</h3>
+                    <p className="mt-2 text-sm text-zinc-500">{account.description}</p>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {account.permissions.map((permission) => (
+                        <span key={permission} className="rounded-full border border-white/10 px-3 py-2 text-xs text-zinc-300">
+                          {permission}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </div>
+
+          <Card padded="lg" className="mt-8">
+            <h2 className="mb-7 text-3xl font-black">Hurtiglinks</h2>
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {modules.map(([title, status, href]) => (
+                <Button key={title} href={href} variant="secondary" className="justify-between rounded-2xl px-5 py-4">
+                  <span>{title}</span>
+                  <span className="text-xs text-green-400">{status}</span>
+                </Button>
+              ))}
+            </div>
+          </Card>
+
+          <div className="mt-8 grid gap-6 xl:grid-cols-2">
+            {managerPanels.map((panel) => (
+              <ManualManagerPanel key={panel.storageKey} {...panel} />
+            ))}
+          </div>
+        </CompetitionPageShell>
+      </CompetitionLayout>
+      <Footer />
+    </>
+  );
+}
+
