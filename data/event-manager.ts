@@ -5,7 +5,7 @@ export type ManagedEvent = {
   date: string;
   time: string;
   location: string;
-  status: "Kladde" | "Klar" | "Live" | "Afsluttet";
+  status: "Ready" | "Live" | "Paused" | "Finished" | "Archived";
   participants: number;
   maxParticipants: number;
   href: string;
@@ -19,8 +19,8 @@ export const managedEvents: ManagedEvent[] = [
     date: "2026-07-12",
     time: "20:00",
     location: "Los Santos Car Meet",
-    status: "Klar",
-    participants: 24,
+    status: "Ready",
+    participants: 0,
     maxParticipants: 32,
     href: "/competition/events/drift-championship-01",
   },
@@ -31,8 +31,8 @@ export const managedEvents: ManagedEvent[] = [
     date: "2026-07-19",
     time: "21:00",
     location: "Vinewood Parking",
-    status: "Kladde",
-    participants: 12,
+    status: "Ready",
+    participants: 0,
     maxParticipants: 40,
     href: "/competition/events/car-show-night-01",
   },

@@ -1,12 +1,13 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { managedEvents } from "@/data/event-manager";
+import { useEventOSStore } from "@/components/competition/eventos-store";
 import ParticipantList from "@/components/competition/ParticipantList";
 
 export default function EventDetails({ eventId }: { eventId: string }) {
-  const event = managedEvents.find((event) => event.id === eventId);
+  const { events } = useEventOSStore();
+  const event = events.find((item) => item.id === eventId);
 
   if (!event) {
     return (
@@ -14,7 +15,7 @@ export default function EventDetails({ eventId }: { eventId: string }) {
         <div className="mx-auto max-w-7xl">
           <h1 className="text-4xl font-black">Event ikke fundet</h1>
           <Link href="/competition/events" className="mt-6 inline-flex underline">
-            Tilbage til Event Manager
+            Tilbage til eventoversigt
           </Link>
         </div>
       </section>
@@ -29,12 +30,10 @@ export default function EventDetails({ eventId }: { eventId: string }) {
         <div className="mb-14 flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
           <div>
             <p className="mb-4 text-sm uppercase tracking-[0.45em] text-zinc-500">
-              Event Control Center
+              Eventkontrol
             </p>
 
-            <h1 className="text-4xl font-black md:text-6xl">
-              {event.title}
-            </h1>
+            <h1 className="text-4xl font-black md:text-6xl">{event.title}</h1>
 
             <p className="mt-5 max-w-2xl text-zinc-400">
               Detaljeside til styring af eventinformation, deltagere, status og
@@ -79,9 +78,7 @@ export default function EventDetails({ eventId }: { eventId: string }) {
             transition={{ delay: 0.1 }}
             className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-8 text-center backdrop-blur-xl"
           >
-            <p className="text-sm uppercase tracking-[0.3em] text-zinc-500">
-              Deltagere
-            </p>
+            <p className="text-sm uppercase tracking-[0.3em] text-zinc-500">Deltagere</p>
 
             <p className="mt-3 text-5xl font-black">
               {event.participants}/{event.maxParticipants}
@@ -90,19 +87,17 @@ export default function EventDetails({ eventId }: { eventId: string }) {
             <div className="mt-5 h-3 overflow-hidden rounded-full bg-white/10">
               <div
                 className="h-full rounded-full bg-white"
-                style={{
-                  width: `${(event.participants / event.maxParticipants) * 100}%`,
-                }}
+                style={{ width: `${(event.participants / event.maxParticipants) * 100}%` }}
               />
             </div>
           </motion.div>
         </div>
 
         <div className="mt-8 grid gap-4 md:grid-cols-4">
-          <ActionButton label="Tilføj deltager" />
-          <ActionButton label="Start event" />
-          <ActionButton label="Åbn Live TV" />
-          <ActionButton label="Afslut event" danger />
+          <ActionButton label="Tilføj deltager" href="/competition/control-center" />
+          <ActionButton label="Start event" href="/competition/control-center" />
+          <ActionButton label="Åbn livecenter" href="/competition/live-center" />
+          <ActionButton label="Afslut event" href="/competition/control-center" danger />
         </div>
 
         <div className="mt-10">
@@ -116,23 +111,16 @@ export default function EventDetails({ eventId }: { eventId: string }) {
 function Info({ title, value }: { title: string; value: string }) {
   return (
     <div className="rounded-2xl border border-white/10 bg-black p-5">
-      <p className="text-xs uppercase tracking-[0.3em] text-zinc-600">
-        {title}
-      </p>
+      <p className="text-xs uppercase tracking-[0.3em] text-zinc-600">{title}</p>
       <p className="mt-3 text-xl font-black">{value}</p>
     </div>
   );
 }
 
-function ActionButton({
-  label,
-  danger = false,
-}: {
-  label: string;
-  danger?: boolean;
-}) {
+function ActionButton({ label, href, danger = false }: { label: string; href: string; danger?: boolean }) {
   return (
-    <button
+    <Link
+      href={href}
       className={`rounded-2xl border px-5 py-4 font-black transition ${
         danger
           ? "border-red-500/30 text-red-400 hover:bg-red-500 hover:text-white"
@@ -140,6 +128,6 @@ function ActionButton({
       }`}
     >
       {label}
-    </button>
+    </Link>
   );
 }

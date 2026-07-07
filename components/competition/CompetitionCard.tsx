@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -55,16 +55,17 @@ export default function CompetitionCard({
           href={competition.href}
           className="mt-8 inline-flex rounded-full bg-white px-6 py-3 font-black text-black transition hover:scale-105 hover:bg-zinc-300"
         >
-          Åbn turnering →
+          Åbn turnering
         </Link>
       ) : (
         <button
           disabled
           className="mt-8 inline-flex cursor-not-allowed rounded-full border border-white/10 px-6 py-3 font-black text-zinc-600"
         >
-          Kommer snart
+          Ikke aktiv endnu
         </button>
       )}
     </motion.article>
   );
 }
+

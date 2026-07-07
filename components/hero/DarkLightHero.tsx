@@ -1,6 +1,7 @@
-"use client";
+﻿"use client";
 
 import { motion } from "framer-motion";
+import Link from "next/link";
 
 export default function DarkLightHero() {
   return (
@@ -17,7 +18,7 @@ export default function DarkLightHero() {
           transition={{ duration: 0.7 }}
           className="mb-5 text-sm uppercase tracking-[0.55em] text-zinc-500"
         >
-          FiveM Roleplay Event Company
+          DreamLight FiveM RP events
         </motion.p>
 
         {/* Hovedtitel */}
@@ -27,11 +28,11 @@ export default function DarkLightHero() {
           transition={{ duration: 0.9 }}
           className="max-w-4xl text-4xl font-black leading-tight tracking-tight md:text-6xl lg:text-7xl"
         >
-          Creating unforgettable
+          DarkLight skaber
           <br />
 
           <span className="bg-gradient-to-r from-white via-zinc-300 to-zinc-500 bg-clip-text text-transparent">
-            Roleplay Experiences
+            stærke RP-oplevelser
           </span>
         </motion.h1>
 
@@ -43,7 +44,7 @@ export default function DarkLightHero() {
           className="mt-8 max-w-2xl text-lg leading-8 text-zinc-400"
         >
           DarkLight Events planlægger eksklusive FiveM-events med fokus på
-          stemning, struktur og høj RP-kvalitet — fra biltræf og racerløb til
+          stemning, struktur og høj RP-kvalitet - fra biltræf og racerløb til
           bryllupper, koncerter og private arrangementer.
         </motion.p>
 
@@ -54,19 +55,19 @@ export default function DarkLightHero() {
           transition={{ delay: 0.45, duration: 0.8 }}
           className="mt-10 flex flex-col gap-4 sm:flex-row"
         >
-          <a
+          <Link
             href="/booking"
             className="rounded-full bg-white px-8 py-4 font-black text-black transition duration-300 hover:scale-105 hover:bg-zinc-300"
           >
             Book dit event
-          </a>
+          </Link>
 
-          <a
+          <Link
             href="/events"
             className="rounded-full border border-white/20 px-8 py-4 font-bold text-white transition duration-300 hover:border-white hover:bg-white/10"
           >
             Udforsk events
-          </a>
+          </Link>
         </motion.div>
 
         {/* Info-kort */}
@@ -100,3 +101,4 @@ export default function DarkLightHero() {
     </section>
   );
 }
+

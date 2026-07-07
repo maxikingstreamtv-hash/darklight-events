@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -105,7 +105,7 @@ export default function DarkLightHome() {
             href="/booking"
             className="mt-8 inline-flex rounded-full bg-white px-8 py-4 font-black text-black transition hover:scale-105 hover:bg-zinc-300"
           >
-            Start booking →
+            Start booking
           </Link>
         </div>
       </section>

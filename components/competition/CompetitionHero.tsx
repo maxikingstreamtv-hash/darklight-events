@@ -1,11 +1,10 @@
-"use client";
+﻿"use client";
 
 import { motion } from "framer-motion";
 
 export default function CompetitionHero() {
   return (
     <section className="relative overflow-hidden border-b border-white/10 bg-black px-6 py-28 text-white">
-      {/* Baggrundsglow */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.12),transparent_40%)]" />
 
       <div className="relative mx-auto max-w-7xl text-center">
@@ -24,7 +23,7 @@ export default function CompetitionHero() {
           transition={{ duration: 0.8 }}
           className="text-5xl font-black md:text-7xl"
         >
-          Competition Center
+          Konkurrencecenter
         </motion.h1>
 
         <motion.p
@@ -44,23 +43,14 @@ export default function CompetitionHero() {
           transition={{ delay: 0.5 }}
           className="mt-12 flex flex-wrap justify-center gap-4"
         >
-          <span className="rounded-full border border-white/10 bg-white/5 px-5 py-2 text-sm">
-            💨 Drift
-          </span>
-
-          <span className="rounded-full border border-white/10 bg-white/5 px-5 py-2 text-sm">
-            🏁 Race
-          </span>
-
-          <span className="rounded-full border border-white/10 bg-white/5 px-5 py-2 text-sm">
-            🚀 Drag
-          </span>
-
-          <span className="rounded-full border border-white/10 bg-white/5 px-5 py-2 text-sm">
-            🚗 Car Show
-          </span>
+          {["Drift", "Race", "Drag", "Car Show"].map((label) => (
+            <span key={label} className="rounded-full border border-white/10 bg-white/5 px-5 py-2 text-sm">
+              {label}
+            </span>
+          ))}
         </motion.div>
       </div>
     </section>
   );
 }
+

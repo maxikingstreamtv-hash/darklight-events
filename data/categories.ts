@@ -1,4 +1,4 @@
-export type EventCategory = {
+﻿export type EventCategory = {
   id: string;
   title: string;
   icon: string;
@@ -10,42 +10,42 @@ export const eventCategories: EventCategory[] = [
   {
     id: "car-meets",
     title: "Biltræf",
-    icon: "🚗",
+    icon: "BT",
     description: "Stilrene biltræf med struktur, præmier og stærk serverstemning.",
     features: ["Show cars", "Præmier", "Eventpersonale", "Fotografering"],
   },
   {
     id: "concerts",
     title: "Koncerter",
-    icon: "🎤",
+    icon: "KO",
     description: "Sceneevents med musik, crowd control og cinematic DarkLight-stemning.",
     features: ["Scene", "Lys", "Vært", "Publikumsflow"],
   },
   {
     id: "weddings",
     title: "Bryllupper",
-    icon: "💍",
+    icon: "BR",
     description: "Elegante RP-bryllupper med ceremoni, lokation og afterparty.",
     features: ["Ceremoni", "Lokation", "VIP", "Afterparty"],
   },
   {
     id: "races",
     title: "Racerløb",
-    icon: "🏁",
+    icon: "RL",
     description: "Kontrollerede racerløb med rute, startområde og præmier.",
     features: ["Rute", "Startområde", "Dommere", "Præmier"],
   },
   {
     id: "drift",
     title: "Drift Events",
-    icon: "💨",
+    icon: "DR",
     description: "Actionfyldte drift-events med pointsystem og publikumsoplevelse.",
     features: ["Pointsystem", "Dommere", "Publikum", "Showområde"],
   },
   {
     id: "private",
     title: "Private Events",
-    icon: "🥂",
+    icon: "PE",
     description: "Eksklusive fester, firmaaftener og specialevents til grupper.",
     features: ["VIP", "DJ", "Sikkerhed", "Tilpasning"],
   },

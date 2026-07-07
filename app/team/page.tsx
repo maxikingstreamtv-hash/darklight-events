@@ -1,4 +1,4 @@
-const team = [
+﻿const team = [
   {
     name: "Cole Kane",
     role: "Founder & Event Director",
@@ -45,7 +45,7 @@ export default function TeamPage() {
               </p>
 
               <p className="mt-6 text-lg italic text-gray-300">
-                “{member.quote}”
+                &ldquo;{member.quote}&rdquo;
               </p>
 
               <div className="mt-8 flex flex-wrap gap-3">

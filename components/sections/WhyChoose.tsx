@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { motion } from "framer-motion";
 
@@ -10,8 +10,8 @@ const reasons = [
   },
   {
     number: "02",
-    title: "Bygget til RP",
-    text: "Alt er lavet til FiveM Roleplay — ikke som en almindelig virksomhedsservice.",
+    title: "Bygget til FiveM",
+    text: "Alt er lavet til serverens eventmiljø og den måde spillere samles omkring oplevelser på.",
   },
   {
     number: "03",
@@ -44,8 +44,8 @@ export default function WhyChoose() {
 
           <p className="max-w-2xl text-zinc-400">
             DarkLight Events handler ikke kun om at samle folk. Det handler om
-            at skabe scener, øjeblikke og oplevelser, som giver serveren mere
-            liv og bedre roleplay.
+            at skabe scener, øjeblikke og oplevelser, som giver byen mere liv
+            og bedre samspil.
           </p>
         </div>
 
@@ -53,12 +53,12 @@ export default function WhyChoose() {
           {reasons.map((reason, index) => (
             <motion.div
               key={reason.number}
-              initial={{ opacity: 0, y: 35 }}
+              initial={{ opacity: 0, y: 32 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: index * 0.1, duration: 0.6 }}
+              viewport={{ once: true, margin: "-80px" }}
+              transition={{ delay: index * 0.08, duration: 0.5 }}
               whileHover={{ y: -8 }}
-              className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.04] p-8 backdrop-blur-xl"
+              className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.04] p-8 shadow-[0_24px_80px_rgba(0,0,0,0.35)] ring-1 ring-white/[0.02] backdrop-blur-xl transition duration-300 hover:border-white/25 hover:bg-white/[0.06]"
             >
               <div className="absolute -right-10 -top-10 h-36 w-36 rounded-full bg-white/10 blur-3xl" />
 
@@ -67,10 +67,7 @@ export default function WhyChoose() {
               </p>
 
               <h3 className="text-2xl font-black">{reason.title}</h3>
-
-              <p className="mt-4 max-w-xl text-sm leading-7 text-zinc-400">
-                {reason.text}
-              </p>
+              <p className="mt-4 max-w-xl text-sm leading-7 text-zinc-400">{reason.text}</p>
             </motion.div>
           ))}
         </div>
@@ -78,3 +75,4 @@ export default function WhyChoose() {
     </section>
   );
 }
+

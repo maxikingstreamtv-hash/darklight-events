@@ -1,7 +1,6 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
-import { motion } from "framer-motion";
 import DriverCard from "@/components/competition/DriverCard";
 import { drivers } from "@/data/drivers";
 
@@ -14,16 +13,16 @@ export default function DriversOverview() {
         <div className="mb-14 flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
           <div>
             <p className="mb-4 text-sm uppercase tracking-[0.45em] text-zinc-500">
-              Event Control Center
+              Eventkontrol
             </p>
 
             <h1 className="text-4xl font-black md:text-6xl">
-              DarkLight ID Database
+              DarkLight ID oversigt
             </h1>
 
             <p className="mt-5 max-w-2xl text-zinc-400">
-              Her samles alle deltagere, profiler og statistikker. Senere kan
-              denne side kobles til Firebase, så profiler opdateres automatisk.
+              Her samles deltagere, profiler og statistikker, så DarkLight staff
+              hurtigt kan finde kørere før og under events.
             </p>
           </div>
 
@@ -44,3 +43,4 @@ export default function DriversOverview() {
     </section>
   );
 }
+

@@ -24,3 +24,21 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+.field {
+  width: 100%;
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.88);
+  padding: 1rem 1.25rem;
+  color: #fff;
+  outline: none;
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.18);
+  transition: border-color 200ms ease, background-color 200ms ease, box-shadow 200ms ease;
+}
+
+.field:focus {
+  border-color: rgba(255, 255, 255, 0.9);
+  background: rgba(0, 0, 0, 1);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.08), 0 18px 45px rgba(0, 0, 0, 0.24);
+}

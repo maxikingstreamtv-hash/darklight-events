@@ -1,13 +1,16 @@
-import Navbar from "@/components/layout/Navbar";
+﻿import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+import CompetitionLayout from "@/components/competition/CompetitionLayout";
 import DriversOverview from "@/components/competition/DriversOverview";
 
 export default function DriversPage() {
   return (
-    <main className="min-h-screen bg-black text-white">
+    <>
       <Navbar />
-      <DriversOverview />
+      <CompetitionLayout>
+        <DriversOverview />
+      </CompetitionLayout>
       <Footer />
-    </main>
+    </>
   );
 }

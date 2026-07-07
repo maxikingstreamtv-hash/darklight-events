@@ -1,4 +1,4 @@
-import Image from "next/image";
+﻿import Image from "next/image";
 import { upcomingEvents } from "@/data/upcoming-events";
 
 export default function UpcomingPage() {
@@ -38,8 +38,8 @@ export default function UpcomingPage() {
 
                 <h2 className="mt-4 text-4xl font-black">{event.title}</h2>
 
-                <p className="mt-6 text-gray-400">📅 {event.date}</p>
-                <p className="mt-2 text-gray-400">📍 {event.location}</p>
+                <p className="mt-6 text-gray-400">{event.date}</p>
+                <p className="mt-2 text-gray-400">Lokation: {event.location}</p>
 
                 <a
                   href="/booking"

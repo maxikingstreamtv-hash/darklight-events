@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { motion } from "framer-motion";
 
@@ -6,7 +6,7 @@ const stats = [
   {
     value: "01",
     label: "Nyt eventfirma",
-    text: "DarkLight Events er klar til at skabe de første store RP-oplevelser.",
+    text: "DarkLight Events er klar til at skabe de første store oplevelser.",
   },
   {
     value: "24H",
@@ -15,13 +15,13 @@ const stats = [
   },
   {
     value: "100%",
-    label: "FiveM-fokus",
-    text: "Alt er bygget til roleplay — ikke en almindelig virksomhedsside.",
+    label: "FiveM fokus",
+    text: "Alt er bygget til serverens eventmiljø og spilleroplevelser.",
   },
   {
-    value: "∞",
+    value: "Uendeligt",
     label: "Eventmuligheder",
-    text: "Biltræf, bryllupper, koncerter, racerløb, firmafester og meget mere.",
+    text: "Biltræf, bryllupper, koncerter, racerløb, fester og meget mere.",
   },
 ];
 
@@ -41,8 +41,8 @@ export default function Stats() {
           </h2>
 
           <p className="mx-auto mt-5 max-w-2xl text-zinc-400">
-            DarkLight Events er under opstart — derfor viser vi ærlige tal og
-            fokusområder frem for falske resultater.
+            DarkLight Events starter rent og viser ærlige tal, indtil de første
+            officielle events er kørt.
           </p>
         </div>
 
@@ -50,26 +50,18 @@ export default function Stats() {
           {stats.map((stat, index) => (
             <motion.div
               key={stat.label}
-              initial={{ opacity: 0, y: 35 }}
+              initial={{ opacity: 0, y: 32 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: index * 0.1, duration: 0.6 }}
+              viewport={{ once: true, margin: "-80px" }}
+              transition={{ delay: index * 0.08, duration: 0.5 }}
               whileHover={{ y: -8 }}
-              className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.04] p-8 text-center backdrop-blur-xl"
+              className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.04] p-8 text-center shadow-[0_24px_80px_rgba(0,0,0,0.35)] ring-1 ring-white/[0.02] backdrop-blur-xl transition duration-300 hover:border-white/25 hover:bg-white/[0.06]"
             >
               <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-white/10 blur-3xl" />
 
-              <p className="text-5xl font-black md:text-6xl">
-                {stat.value}
-              </p>
-
-              <h3 className="mt-5 text-xl font-black">
-                {stat.label}
-              </h3>
-
-              <p className="mt-4 text-sm leading-7 text-zinc-400">
-                {stat.text}
-              </p>
+              <p className="text-5xl font-black md:text-6xl">{stat.value}</p>
+              <h3 className="mt-5 text-xl font-black">{stat.label}</h3>
+              <p className="mt-4 text-sm leading-7 text-zinc-400">{stat.text}</p>
             </motion.div>
           ))}
         </div>
@@ -77,3 +69,4 @@ export default function Stats() {
     </section>
   );
 }
+

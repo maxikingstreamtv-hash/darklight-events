@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { motion } from "framer-motion";
 import { eventCategories } from "@/data/categories";
@@ -19,7 +19,7 @@ export default function EventCategories() {
           </h2>
 
           <p className="mt-5 text-zinc-400">
-            DarkLight Events hjælper med at gøre idéer til oplevelser på serveren —
+            DarkLight Events hjælper med at gøre idéer til oplevelser på serveren -
             med planlægning, stemning og struktur fra start til slut.
           </p>
         </div>
@@ -52,7 +52,7 @@ export default function EventCategories() {
                 {category.features.map((feature) => (
                   <div key={feature} className="flex items-center gap-3 text-sm text-zinc-300">
                     <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white text-xs text-black">
-                      ✓
+                      OK
                     </span>
                     {feature}
                   </div>
@@ -60,7 +60,7 @@ export default function EventCategories() {
               </div>
 
               <div className="mt-8 text-sm font-bold text-white">
-                Book denne type →
+                Book denne type
               </div>
             </motion.a>
           ))}

@@ -1,5 +1,5 @@
 import GalleryCard from "@/components/gallery/GalleryCard";
-import { gallery } from "@/data/gallery";
+import { galleryItems } from "@/data/gallery";
 
 export default function GalleryPage() {
   return (
@@ -18,9 +18,9 @@ export default function GalleryPage() {
         </p>
 
         <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {gallery.map((item) => (
+          {galleryItems.map((item) => (
             <GalleryCard
-              key={item.title}
+              key={item.id}
               image={item.image}
               title={item.title}
               category={item.category}

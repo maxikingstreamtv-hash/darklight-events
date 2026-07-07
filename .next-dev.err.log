@@ -1,0 +1,84 @@
+[browser] Image with src "/logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+⚠ Fast Refresh had to perform a full reload when ./components/competition/eventos-store.ts changed. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+[browser] Image with src "/logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[browser] Image with src "/logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[browser] Uncaught Error: ./components/competition/CompetitionCard.tsx:58:24
+Unexpected token. Did you mean `{'>'}` or `&gt;`?
+  56 |           className="mt-8 inline-flex rounded-full bg-white px-6 py-3 font-black text-blac...
+  57 |         >
+> 58 |           Åbn turnering ->
+     |                       ^
+  59 |         </Link>
+  60 |       ) : (
+  61 |         <button
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./components/competition/CompetitionCard.tsx
+    ./app/competition/page.tsx
+
+
+    at <unknown> (Error: ./components/competition/CompetitionCard.tsx:58:24)
+    at <unknown> (Error: (./components/competition/CompetitionCard.tsx:58:24)
+[browser] Uncaught Error: ./components/competition/CompetitionCard.tsx:58:24
+Unexpected token. Did you mean `{'>'}` or `&gt;`?
+  56 |           className="mt-8 inline-flex rounded-full bg-white px-6 py-3 font-black text-blac...
+  57 |         >
+> 58 |           Åbn turnering ->
+     |                       ^
+  59 |         </Link>
+  60 |       ) : (
+  61 |         <button
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./components/competition/CompetitionCard.tsx
+    ./app/competition/page.tsx
+
+
+    at <unknown> (Error: ./components/competition/CompetitionCard.tsx:58:24)
+    at <unknown> (Error: (./components/competition/CompetitionCard.tsx:58:24)
+[browser] Uncaught Error: ./components/competition/CompetitionCard.tsx:58:24
+Unexpected token. Did you mean `{'>'}` or `&gt;`?
+  56 |           className="mt-8 inline-flex rounded-full bg-white px-6 py-3 font-black text-blac...
+  57 |         >
+> 58 |           Åbn turnering ->
+     |                       ^
+  59 |         </Link>
+  60 |       ) : (
+  61 |         <button
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./components/competition/CompetitionCard.tsx
+    ./app/competition/page.tsx
+
+
+    at <unknown> (Error: ./components/competition/CompetitionCard.tsx:58:24)
+    at <unknown> (Error: (./components/competition/CompetitionCard.tsx:58:24)
+[browser] Uncaught Error: ./components/competition/CompetitionCard.tsx:58:24
+Unexpected token. Did you mean `{'>'}` or `&gt;`?
+  56 |           className="mt-8 inline-flex rounded-full bg-white px-6 py-3 font-black text-blac...
+  57 |         >
+> 58 |           Åbn turnering ->
+     |                       ^
+  59 |         </Link>
+  60 |       ) : (
+  61 |         <button
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./components/competition/CompetitionCard.tsx
+    ./app/competition/page.tsx
+
+
+    at <unknown> (Error: ./components/competition/CompetitionCard.tsx:58:24)
+    at <unknown> (Error: (./components/competition/CompetitionCard.tsx:58:24)

@@ -1,42 +1,61 @@
-export const gallery = [
+﻿export type GalleryCategory =
+  | "Drift"
+  | "Drag Race"
+  | "Biltræf"
+  | "Show & Shine"
+  | "Koncert"
+  | "Bryllup"
+  | "Festival"
+  | "Offroad";
+
+export type GalleryItem = {
+  id: string;
+  title: string;
+  category: GalleryCategory;
+  eventRef: string;
+  date: string;
+  description: string;
+  image: string;
+};
+
+export const galleryCategories: GalleryCategory[] = [
+  "Drift",
+  "Drag Race",
+  "Biltræf",
+  "Show & Shine",
+  "Koncert",
+  "Bryllup",
+  "Festival",
+  "Offroad",
+];
+
+export const galleryItems: GalleryItem[] = [
   {
-    title: "Drag Race",
-    image: "/images/events/drag-race.png",
-    category: "Motorsport",
+    id: "gallery-carmeet",
+    title: "Night meet preview",
+    category: "Biltræf",
+    eventRef: "Car Meet Night",
+    date: "2026-07-02",
+    description: "Stemning fra DarkLight biltræf-universet med parkering, crew og lys.",
+    image: "/images/events/car-meetup.png",
   },
   {
-    title: "Beach Party",
-    image: "/images/events/beach-party.png",
-    category: "Sociale Events",
+    id: "gallery-drift",
+    title: "Drift staging",
+    category: "Drift",
+    eventRef: "Drift Championship",
+    date: "2026-07-02",
+    description: "Staging, dommere og kørerkø før første heat.",
+    image: "/images/events/races.png",
   },
   {
-    title: "Pool Party",
-    image: "/images/events/pool-party.png",
-    category: "Sociale Events",
-  },
-  {
-    title: "Bryllupper",
-    image: "/images/events/Brylluper.png",
-    category: "Livsbegivenheder",
-  },
-  {
-    title: "Fight Night",
-    image: "/images/events/Fight-night.png",
-    category: "Shows",
-  },
-  {
-    title: "Awardshow",
-    image: "/images/events/Awardshow.png",
-    category: "Shows",
-  },
-  {
-    title: "Car Show",
-    image: "/images/events/car-show.png",
-    category: "Automotive",
-  },
-  {
-    title: "Drift Events",
-    image: "/images/events/Drift-events.png",
-    category: "Motorsport",
+    id: "gallery-stage",
+    title: "Stage lights",
+    category: "Koncert",
+    eventRef: "Festival Night",
+    date: "2026-07-02",
+    description: "Lys, lyd og crowd control til større events.",
+    image: "/images/events/dj-events.png",
   },
 ];
+

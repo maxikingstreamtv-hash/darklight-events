@@ -1,4 +1,4 @@
-export const events = [
+﻿export const events = [
   {
     title: "Beach Party",
     category: "Sociale Events",
@@ -9,7 +9,7 @@ export const events = [
     title: "Pool Party",
     category: "Sociale Events",
     image: "/images/events/pool-party.png",
-    description: "Poolparty med DJ, drinks, lys og premium DarkLight-stemning.",
+    description: "Poolparty med DJ, VIP-spots, lys og premium DarkLight-stemning.",
   },
   {
     title: "Bryllupper",
@@ -156,9 +156,9 @@ export const events = [
     description: "Motorcykeltræf med fællesskab, ruter, show og stemning.",
   },
   {
-    title: "Demolition Derby",
+    title: "Crash Derby",
     category: "Motorsport",
-    image: "/images/events/demolition-derby.png",
+    image: "/images/events/races.png",
     description: "Vildt derby-event med kaos, action, publikum og præmier.",
   },
   {
@@ -174,3 +174,4 @@ export const events = [
     description: "Sjovt race-event med golf carts eller plæneklippere og masser af grin.",
   },
 ];
+
