@@ -7,6 +7,25 @@ import { canAdminManageTarget, getAssignableRoles, requireAdminUser } from "@/li
 import { isAppRole } from "@/lib/auth/types";
 import { grantBadgeAction, grantPermissionAction, removeBadgeAction, removePermissionAction, updateUserAction } from "../actions";
 
+type UserBadgeAssignment = {
+  badgeId: string;
+  badge: {
+    id: string;
+    name: string;
+    label: string;
+    color: string | null;
+  };
+};
+
+type UserPermissionAssignment = {
+  permissionId: string;
+  permission: {
+    id: string;
+    key: string;
+    label: string;
+  };
+};
+
 function readParam(value?: string | string[]) {
   return Array.isArray(value) ? value[0] : value;
 }
@@ -75,8 +94,8 @@ export default async function UserDetailPage({
     }),
   ]);
 
-  const assignedBadgeIds = new Set(user.badges.map((item) => item.badgeId));
-  const assignedPermissionIds = new Set(user.permissions.map((item) => item.permissionId));
+  const assignedBadgeIds = new Set(user.badges.map((item: UserBadgeAssignment) => item.badgeId));
+  const assignedPermissionIds = new Set(user.permissions.map((item: UserPermissionAssignment) => item.permissionId));
   const availableBadges = badges.filter((badge) => !assignedBadgeIds.has(badge.id));
   const availablePermissions = permissions.filter((permission) => !assignedPermissionIds.has(permission.id));
 
@@ -160,7 +179,7 @@ export default async function UserDetailPage({
             <p className="mt-2 text-sm text-zinc-400">Badges er kun visuel status og giver ikke adgang.</p>
             <div className="mt-5 flex flex-wrap gap-2">
               {user.badges.length > 0 ? (
-                user.badges.map(({ badge }) => (
+                user.badges.map(({ badge }: UserBadgeAssignment) => (
                   <form key={badge.id} action={removeBadgeAction.bind(null, user.id, badge.id)}>
                     <button disabled={!canManage} className="rounded-full border border-white/10 bg-black px-4 py-2 text-xs font-black uppercase tracking-[0.14em] text-zinc-300 transition hover:bg-white hover:text-black disabled:cursor-not-allowed disabled:opacity-50">
                       Fjern {badge.label}
@@ -192,7 +211,7 @@ export default async function UserDetailPage({
             <p className="mt-2 text-sm text-zinc-400">Permissions kan give individuelle ekstrarettigheder. Badges gør ikke.</p>
             <div className="mt-5 flex flex-wrap gap-2">
               {user.permissions.length > 0 ? (
-                user.permissions.map(({ permission }) => (
+                user.permissions.map(({ permission }: UserPermissionAssignment) => (
                   <form key={permission.id} action={removePermissionAction.bind(null, user.id, permission.id)}>
                     <button disabled={!canManage} className="rounded-full border border-white/10 bg-black px-4 py-2 text-xs font-black uppercase tracking-[0.14em] text-zinc-300 transition hover:bg-white hover:text-black disabled:cursor-not-allowed disabled:opacity-50">
                       Fjern {permission.key}
