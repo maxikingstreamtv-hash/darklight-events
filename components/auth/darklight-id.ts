@@ -3,7 +3,7 @@ type DarkLightIdentity = {
 };
 
 export function generateNextDarkLightId(existingAccountsOrDrivers: DarkLightIdentity[]) {
-  const highest = existingAccountsOrDrivers.reduce((max, account) => {
+  const highest = existingAccountsOrDrivers.reduce((max: number, account: DarkLightIdentity) => {
     const match = account.darklightId?.match(/DL-(\d+)/i);
     const value = match ? Number(match[1]) : 0;
     return Number.isFinite(value) && value > max ? value : max;

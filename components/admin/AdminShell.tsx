@@ -7,6 +7,8 @@ const adminLinks = [
   { href: "/admin/users", label: "Brugere" },
 ];
 
+type AdminLink = (typeof adminLinks)[number];
+
 export default function AdminShell({ title, eyebrow, children, action }: { title: string; eyebrow?: string; children: React.ReactNode; action?: React.ReactNode }) {
   return (
     <main className="min-h-screen bg-black text-white">
@@ -22,7 +24,7 @@ export default function AdminShell({ title, eyebrow, children, action }: { title
           </div>
 
           <div className="mb-8 flex flex-wrap gap-3">
-            {adminLinks.map((link) => (
+            {adminLinks.map((link: AdminLink) => (
               <Link key={link.href} href={link.href} className="rounded-full border border-white/10 bg-white/[0.04] px-5 py-2.5 text-sm font-black text-zinc-200 transition hover:bg-white hover:text-black">
                 {link.label}
               </Link>

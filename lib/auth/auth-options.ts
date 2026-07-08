@@ -4,6 +4,22 @@ import { prisma } from "@/lib/prisma";
 import { verifyPassword } from "./password";
 import { isAppRole, type AppRole, type AuthUser } from "./types";
 
+type UserBadgeRelation = {
+  badge: {
+    id: string;
+    name: string;
+    label: string;
+    color: string | null;
+    icon: string | null;
+  };
+};
+
+type UserPermissionRelation = {
+  permission: {
+    key: string;
+  };
+};
+
 function toAuthUser(user: {
   id: string;
   username: string;
@@ -19,14 +35,14 @@ function toAuthUser(user: {
     displayName: user.displayName,
     avatar: user.avatar,
     role: isAppRole(user.role) ? user.role : "USER",
-    badges: user.badges.map(({ badge }) => ({
+    badges: user.badges.map(({ badge }: UserBadgeRelation) => ({
       id: badge.id,
       name: badge.name,
       label: badge.label,
       color: badge.color,
       icon: badge.icon,
     })),
-    permissions: user.permissions.map(({ permission }) => permission.key),
+    permissions: user.permissions.map(({ permission }: UserPermissionRelation) => permission.key),
   };
 }
 

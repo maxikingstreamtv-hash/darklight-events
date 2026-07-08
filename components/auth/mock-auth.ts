@@ -90,7 +90,7 @@ export const staffAccessRoles: MockRole[] = [
 
 export function findStaffAccount(characterName: string, darklightId: string, rpPin: string) {
   return staffAccounts.find(
-    (account) =>
+    (account: StaffAccount) =>
       characterName.trim().toLowerCase() === account.characterName.toLowerCase() &&
       darklightId.trim().toUpperCase() === account.darklightId &&
       rpPin.trim() === account.rpPin
@@ -113,7 +113,7 @@ export function readRegisteredAccounts() {
 
 export function findRegisteredAccount(characterName: string, darklightId: string, rpPin: string) {
   return readRegisteredAccounts().find(
-    (account) =>
+    (account: RegisteredAccount) =>
       account.characterName.trim().toLowerCase() === characterName.trim().toLowerCase() &&
       account.darklightId.trim().toUpperCase() === darklightId.trim().toUpperCase() &&
       account.rpPin === rpPin
@@ -138,7 +138,7 @@ export function isFounderSession(session: MockSession | null) {
 export function hasEventOSAccess(session: MockSession | null) {
   return (
     !!session &&
-    session.roles.some((role) => staffAccessRoles.includes(role))
+    session.roles.some((role: MockRole) => staffAccessRoles.includes(role))
   );
 }
 

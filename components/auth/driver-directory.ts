@@ -29,10 +29,10 @@ function accountToDriver(account: RegisteredAccount): Driver | null {
 }
 
 export function getAvailableDrivers() {
-  const registeredDrivers = readRegisteredAccounts().map(accountToDriver).filter((driver): driver is Driver => Boolean(driver));
+  const registeredDrivers = readRegisteredAccounts().map((account: RegisteredAccount) => accountToDriver(account)).filter((driver: Driver | null): driver is Driver => Boolean(driver));
   const byId = new Map<string, Driver>();
 
-  [...drivers, ...registeredDrivers].forEach((driver) => {
+  [...drivers, ...registeredDrivers].forEach((driver: Driver) => {
     byId.set(driver.id, driver);
   });
 
@@ -41,14 +41,14 @@ export function getAvailableDrivers() {
 
 export function findAvailableDriver(driverId?: string) {
   if (!driverId) return undefined;
-  return getAvailableDrivers().find((driver) => driver.id === driverId);
+  return getAvailableDrivers().find((driver: Driver) => driver.id === driverId);
 }
 
 export function getSessionDriver(session: MockSession | null) {
   if (!session) return drivers[0]!;
 
   return (
-    getAvailableDrivers().find((driver) => driver.darklightId === session.darklightId) ?? {
+    getAvailableDrivers().find((driver: Driver) => driver.darklightId === session.darklightId) ?? {
       id: driverIdFromDarkLightId(session.darklightId),
       darklightId: session.darklightId,
       name: session.characterName,

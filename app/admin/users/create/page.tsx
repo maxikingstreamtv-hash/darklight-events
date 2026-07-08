@@ -2,6 +2,7 @@ import Link from "next/link";
 import AdminShell from "@/components/admin/AdminShell";
 import { AdminCard, Field, fieldClassName } from "@/components/admin/AdminUi";
 import { getAssignableRoles, requireAdminUser } from "@/lib/admin/access";
+import type { AppRole } from "@/lib/auth/types";
 import { createUserAction } from "../actions";
 
 function readParam(value?: string | string[]) {
@@ -42,7 +43,7 @@ export default async function CreateUserPage({
           </Field>
           <Field label="Rolle">
             <select name="role" className={fieldClassName} defaultValue="USER">
-              {roles.map((role) => (
+              {roles.map((role: AppRole) => (
                 <option key={role} value={role}>
                   {role}
                 </option>
