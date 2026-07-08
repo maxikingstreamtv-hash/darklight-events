@@ -1,5 +1,4 @@
 import Link from "next/link";
-import type { Prisma } from "@prisma/client";
 import AdminShell from "@/components/admin/AdminShell";
 import { AdminCard, StatusBadge } from "@/components/admin/AdminUi";
 import { prisma } from "@/lib/prisma";
@@ -7,6 +6,26 @@ import { requireAdminUser } from "@/lib/admin/access";
 import { appRoles, isAppRole, type AppRole } from "@/lib/auth/types";
 
 const pageSize = 10;
+
+type UserListItem = {
+  id: string;
+  username: string;
+  displayName: string;
+  role: AppRole;
+  createdAt: Date;
+  badges: {
+    badge: {
+      id: string;
+      label: string;
+    };
+  }[];
+  permissions: {
+    permission: {
+      id: string;
+      key: string;
+    };
+  }[];
+};
 
 const userListSelect = {
   id: true,
@@ -16,9 +35,7 @@ const userListSelect = {
   createdAt: true,
   badges: { select: { badge: { select: { id: true, label: true } } } },
   permissions: { select: { permission: { select: { id: true, key: true } } } },
-} satisfies Prisma.UserSelect;
-
-type UserListItem = Prisma.UserGetPayload<{ select: typeof userListSelect }>;
+};
 
 function readParam(value?: string | string[]) {
   return Array.isArray(value) ? value[0] : value;
