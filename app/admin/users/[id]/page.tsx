@@ -4,8 +4,31 @@ import AdminShell from "@/components/admin/AdminShell";
 import { AdminCard, Field, StatusBadge, fieldClassName } from "@/components/admin/AdminUi";
 import { prisma } from "@/lib/prisma";
 import { canAdminManageTarget, getAssignableRoles, requireAdminUser } from "@/lib/admin/access";
-import { isAppRole } from "@/lib/auth/types";
+import { isAppRole, type AppRole } from "@/lib/auth/types";
 import { grantBadgeAction, grantPermissionAction, removeBadgeAction, removePermissionAction, updateUserAction } from "../actions";
+
+type BadgeOption = {
+  id: string;
+  name: string;
+  label: string;
+};
+
+type PermissionOption = {
+  id: string;
+  key: string;
+  label: string;
+};
+
+type AuditLogEntry = {
+  id: string;
+  action: string;
+  details: string | null;
+  createdAt: Date;
+  actor: {
+    displayName: string;
+    username: string;
+  } | null;
+};
 
 type UserBadgeAssignment = {
   badgeId: string;
@@ -96,8 +119,8 @@ export default async function UserDetailPage({
 
   const assignedBadgeIds = new Set(user.badges.map((item: UserBadgeAssignment) => item.badgeId));
   const assignedPermissionIds = new Set(user.permissions.map((item: UserPermissionAssignment) => item.permissionId));
-  const availableBadges = badges.filter((badge) => !assignedBadgeIds.has(badge.id));
-  const availablePermissions = permissions.filter((permission) => !assignedPermissionIds.has(permission.id));
+  const availableBadges = badges.filter((badge: BadgeOption) => !assignedBadgeIds.has(badge.id));
+  const availablePermissions = permissions.filter((permission: PermissionOption) => !assignedPermissionIds.has(permission.id));
 
   return (
     <AdminShell
@@ -133,7 +156,7 @@ export default async function UserDetailPage({
               </Field>
               <Field label="Rolle">
                 <select name="role" defaultValue={user.role} className={fieldClassName} disabled={!canManage}>
-                  {assignableRoles.map((role) => (
+                  {assignableRoles.map((role: AppRole) => (
                     <option key={role} value={role}>
                       {role}
                     </option>
@@ -193,7 +216,7 @@ export default async function UserDetailPage({
             <form action={grantBadgeAction.bind(null, user.id)} className="mt-6 grid gap-3 sm:grid-cols-[1fr_auto]">
               <select name="badgeId" className={fieldClassName} disabled={!canManage || availableBadges.length === 0}>
                 <option value="">Vælg badge</option>
-                {availableBadges.map((badge) => (
+                {availableBadges.map((badge: BadgeOption) => (
                   <option key={badge.id} value={badge.id}>
                     {badge.label}
                   </option>
@@ -225,7 +248,7 @@ export default async function UserDetailPage({
             <form action={grantPermissionAction.bind(null, user.id)} className="mt-6 grid gap-3 sm:grid-cols-[1fr_auto]">
               <select name="permissionId" className={fieldClassName} disabled={!canManage || availablePermissions.length === 0}>
                 <option value="">Vælg permission</option>
-                {availablePermissions.map((permission) => (
+                {availablePermissions.map((permission: PermissionOption) => (
                   <option key={permission.id} value={permission.id}>
                     {permission.key}
                   </option>
@@ -245,7 +268,7 @@ export default async function UserDetailPage({
             <p className="mt-4 text-sm text-zinc-500">Ingen audit logs for denne bruger endnu.</p>
           ) : (
             <div className="mt-5 grid gap-3">
-              {auditLogs.map((log) => (
+              {auditLogs.map((log: AuditLogEntry) => (
                 <div key={log.id} className="rounded-2xl border border-white/10 bg-black px-4 py-3">
                   <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
                     <p className="font-black">{log.action}</p>
