@@ -1,63 +1,60 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
-import { useState, type FormEvent } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { signIn } from "next-auth/react";
+import { Suspense, useState, type FormEvent } from "react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import {
-  clearMockSession,
-  createSessionFromRegisteredAccount,
-  findRegisteredAccount,
-  findStaffAccount,
-  founderAccount,
-  isFounderLogin,
-  saveMockSession,
-  staffAccounts,
-  type MockSession,
-} from "@/components/auth/mock-auth";
-import { useMockSession } from "@/components/auth/use-mock-session";
 
-const roles = ["Founder", "Co-Founder", "DarkLight Events Admin", "Event Manager", "Dommer", "Check-in staff", "Kører"];
+function getSafeReturnTo(value: string | null) {
+  if (!value || !value.startsWith("/") || value.startsWith("//")) {
+    return null;
+  }
+
+  return value;
+}
 
 export default function LoginPage() {
-  const [characterName, setCharacterName] = useState(founderAccount.characterName);
-  const [darklightId, setDarklightId] = useState(founderAccount.darklightId);
-  const [rpPin, setRpPin] = useState(founderAccount.rpPin);
-  const storedSession = useMockSession();
-  const [localSession, setLocalSession] = useState<MockSession | null>(null);
-  const session = localSession ?? storedSession;
-  const [remember, setRemember] = useState(true);
-  const [error, setError] = useState("");
+  return (
+    <Suspense fallback={<LoginShell />}>
+      <LoginForm />
+    </Suspense>
+  );
+}
 
-  function handleLogin(event: FormEvent<HTMLFormElement>) {
+function LoginForm() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [pending, setPending] = useState(false);
+
+  async function handleLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
+    setPending(true);
 
-    const staffAccount = findStaffAccount(characterName, darklightId, rpPin);
-    const registeredAccount = findRegisteredAccount(characterName, darklightId, rpPin);
+    const returnTo = getSafeReturnTo(searchParams.get("returnTo"));
+    const callbackUrl = returnTo ? `/auth/redirect?returnTo=${encodeURIComponent(returnTo)}` : "/auth/redirect";
 
-    if (!isFounderLogin(characterName, darklightId, rpPin) && !registeredAccount) {
-      setError("Login matcher ikke en kendt DarkLight-konto.");
+    const result = await signIn("credentials", {
+      username,
+      password,
+      redirect: false,
+      callbackUrl,
+    });
+
+    setPending(false);
+
+    if (!result?.ok) {
+      setError("Login mislykkedes. Tjek brugernavn og adgangskode.");
       return;
     }
 
-    const nextSession: MockSession = registeredAccount
-      ? createSessionFromRegisteredAccount(registeredAccount, remember)
-      : {
-          characterName: staffAccount?.characterName ?? founderAccount.characterName,
-          darklightId: staffAccount?.darklightId ?? founderAccount.darklightId,
-          roles: staffAccount?.roles ?? founderAccount.roles,
-          remembered: remember,
-        };
-
-    saveMockSession(nextSession, remember);
-    setLocalSession(nextSession);
-  }
-
-  function handleLogout() {
-    clearMockSession();
-    setLocalSession(null);
-    setError("");
+    router.push(result.url ?? callbackUrl);
+    router.refresh();
   }
 
   return (
@@ -70,73 +67,37 @@ export default function LoginPage() {
             <p className="mb-4 text-sm uppercase tracking-[0.45em] text-zinc-500">DarkLight adgang</p>
             <h1 className="text-5xl font-black md:text-7xl">Log ind</h1>
             <p className="mt-5 max-w-2xl text-zinc-400">
-              Log ind med din character-konto. Cole Kane og Izadora Solis har fuld EventOS-adgang som DarkLight Events staff.
+              Log ind med dit DarkLight brugernavn og din adgangskode. Adgang styres af rolle, permissions og badges fra databasen.
             </p>
             <div className="mt-8 rounded-[2rem] border border-white/10 bg-white/[0.04] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.35)] backdrop-blur-xl">
-              <p className="font-black">EventOS adgang</p>
+              <p className="font-black">V2 database-login</p>
               <p className="mt-2 text-sm leading-6 text-zinc-500">
-                Staff-værktøjer er til DarkLight staff-konti. Spillere kan bruge booking, profil og eventsider.
+                Brugere valideres server-side med PostgreSQL, Prisma og Argon2. Badges er kun visuel status og giver ikke adgang.
               </p>
             </div>
           </div>
 
-          <div className="rounded-[2.5rem] border border-white/10 bg-white/[0.04] p-8 shadow-[0_24px_80px_rgba(0,0,0,0.4)] ring-1 ring-white/[0.02] backdrop-blur-xl">
-            {session ? (
-              <>
-                <p className="text-sm uppercase tracking-[0.35em] text-zinc-500">Logget ind som</p>
-                <h2 className="mt-3 text-4xl font-black">{session.characterName}</h2>
-                <p className="mt-2 text-zinc-400">{session.darklightId}</p>
-                <div className="mt-6 flex flex-wrap gap-2">
-                  {session.roles.map((role) => (
-                    <span key={role} className="rounded-full border border-white/10 bg-black px-4 py-2 text-xs font-black uppercase tracking-[0.16em] text-zinc-300">
-                      {role}
-                    </span>
-                  ))}
-                </div>
-                <div className="mt-8 grid gap-3">
-                  <Link href="/competition/control-center" className="inline-flex justify-center rounded-full bg-white px-6 py-4 font-black text-black transition duration-300 hover:-translate-y-0.5 hover:bg-zinc-300">
-                    Åbn EventOS
-                  </Link>
-                  <button onClick={handleLogout} className="rounded-full border border-white/15 px-6 py-4 font-black text-white transition duration-300 hover:-translate-y-0.5 hover:border-white hover:bg-white hover:text-black">
-                    Log ud
-                  </button>
-                </div>
-              </>
-            ) : (
-              <form onSubmit={handleLogin}>
-                <p className="text-sm uppercase tracking-[0.35em] text-zinc-500">Log ind</p>
-                <h2 className="mt-3 text-4xl font-black">DarkLight ID</h2>
-                <p className="mt-2 text-sm leading-6 text-zinc-500">
-                  Brug dit character navn, DarkLight ID og RP PIN.
-                </p>
-                <div className="mt-7 grid gap-4">
-                  <TextInput label="Character navn" value={characterName} onChange={setCharacterName} />
-                  <TextInput label="DarkLight ID" value={darklightId} onChange={setDarklightId} />
-                  <TextInput label="RP PIN" value={rpPin} onChange={setRpPin} type="password" />
-                  <label className="flex items-center gap-3 rounded-2xl border border-white/10 bg-black px-5 py-4 text-sm text-zinc-300">
-                    <input type="checkbox" checked={remember} onChange={(event) => setRemember(event.target.checked)} className="h-4 w-4 accent-white" />
-                    Husk mig
-                  </label>
-                  {error && <p className="rounded-2xl border border-red-500/20 bg-red-500/10 px-5 py-4 text-sm text-red-300">{error}</p>}
-                  <button className="rounded-full bg-white px-6 py-4 font-black text-black transition duration-300 hover:-translate-y-0.5 hover:bg-zinc-300">Log ind</button>
-                </div>
-                <div className="mt-5 grid gap-2 text-xs text-zinc-500">
-                  {staffAccounts.map((account) => (
-                    <p key={account.darklightId}>{account.characterName}: {account.darklightId} / PIN {account.rpPin}</p>
-                  ))}
-                </div>
-                <Link href="/register" className="mt-4 inline-flex text-sm font-black text-zinc-300 underline underline-offset-4 hover:text-white">
-                  Opret bruger
-                </Link>
-              </form>
-            )}
-            <div className="mt-8 rounded-2xl border border-white/10 bg-black p-5">
-              <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">Roller</p>
-              <div className="mt-4 flex flex-wrap gap-2">
-                {roles.map((role) => <span key={role} className="rounded-full bg-white/[0.06] px-3 py-2 text-xs text-zinc-300">{role}</span>)}
-              </div>
+          <form onSubmit={handleLogin} className="rounded-[2.5rem] border border-white/10 bg-white/[0.04] p-8 shadow-[0_24px_80px_rgba(0,0,0,0.4)] ring-1 ring-white/[0.02] backdrop-blur-xl">
+            <p className="text-sm uppercase tracking-[0.35em] text-zinc-500">Log ind</p>
+            <h2 className="mt-3 text-4xl font-black">DarkLight konto</h2>
+            <p className="mt-2 text-sm leading-6 text-zinc-500">
+              Brug dit brugernavn. Email bruges ikke til login i DarkLight Events V2.
+            </p>
+            <div className="mt-7 grid gap-4">
+              <TextInput label="Brugernavn" value={username} onChange={setUsername} autoComplete="username" />
+              <TextInput label="Adgangskode" value={password} onChange={setPassword} type="password" autoComplete="current-password" />
+              {error ? <p className="rounded-2xl border border-red-500/20 bg-red-500/10 px-5 py-4 text-sm text-red-300">{error}</p> : null}
+              <button
+                disabled={pending}
+                className="rounded-full bg-white px-6 py-4 font-black text-black transition duration-300 hover:-translate-y-0.5 hover:bg-zinc-300 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {pending ? "Logger ind..." : "Log ind"}
+              </button>
             </div>
-          </div>
+            <Link href="/register" className="mt-4 inline-flex text-sm font-black text-zinc-300 underline underline-offset-4 hover:text-white">
+              Opret bruger
+            </Link>
+          </form>
         </div>
       </section>
       <Footer />
@@ -144,12 +105,44 @@ export default function LoginPage() {
   );
 }
 
-function TextInput({ label, value, onChange, type = "text" }: { label: string; value: string; onChange: (value: string) => void; type?: string }) {
+function LoginShell() {
   return (
-    <label className="grid gap-2">
-      <span className="text-xs font-black uppercase tracking-[0.25em] text-zinc-500">{label}</span>
-      <input type={type} value={value} onChange={(event) => onChange(event.target.value)} className="field" />
-    </label>
+    <main className="min-h-screen bg-black text-white">
+      <Navbar />
+      <section className="flex min-h-screen items-center justify-center px-6 py-32">
+        <div className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-8 text-center backdrop-blur-xl">
+          <p className="text-sm font-black uppercase tracking-[0.35em] text-zinc-500">DarkLight adgang</p>
+          <h1 className="mt-4 text-4xl font-black">Indlæser login</h1>
+        </div>
+      </section>
+      <Footer />
+    </main>
   );
 }
 
+function TextInput({
+  label,
+  value,
+  onChange,
+  type = "text",
+  autoComplete,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  type?: string;
+  autoComplete?: string;
+}) {
+  return (
+    <label className="grid gap-2">
+      <span className="text-xs font-black uppercase tracking-[0.25em] text-zinc-500">{label}</span>
+      <input
+        type={type}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        autoComplete={autoComplete}
+        className="field"
+      />
+    </label>
+  );
+}

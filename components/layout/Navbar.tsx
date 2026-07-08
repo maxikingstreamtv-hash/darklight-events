@@ -1,9 +1,8 @@
 ﻿"use client";
 
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import { useState } from "react";
-import { isFounderSession } from "@/components/auth/mock-auth";
-import { useMockSession } from "@/components/auth/use-mock-session";
 
 const primaryLinks = [
   { href: "/events", label: "Events" },
@@ -29,8 +28,9 @@ const moreLinks = [
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
-  const session = useMockSession();
-  const isStaff = isFounderSession(session);
+  const { data: session } = useSession();
+  const role = session?.user?.role;
+  const isStaff = role === "SUPER_ADMIN" || role === "ADMIN" || role === "EVENT_MANAGER";
   const ctaHref = isStaff ? "/competition/control-center" : session ? "/booking" : "/login";
   const ctaLabel = isStaff ? "Kontrolcenter" : session ? "Book event" : "Log ind";
   const accountLabel = session ? "Konto" : "Log ind / Konto";
