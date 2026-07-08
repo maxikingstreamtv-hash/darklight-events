@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Prisma } from "@prisma/client";
 import AdminShell from "@/components/admin/AdminShell";
 import { AdminCard, StatusBadge } from "@/components/admin/AdminUi";
 import { prisma } from "@/lib/prisma";
@@ -6,6 +7,18 @@ import { requireAdminUser } from "@/lib/admin/access";
 import { appRoles, isAppRole, type AppRole } from "@/lib/auth/types";
 
 const pageSize = 10;
+
+const userListSelect = {
+  id: true,
+  username: true,
+  displayName: true,
+  role: true,
+  createdAt: true,
+  badges: { select: { badge: { select: { id: true, label: true } } } },
+  permissions: { select: { permission: { select: { id: true, key: true } } } },
+} satisfies Prisma.UserSelect;
+
+type UserListItem = Prisma.UserGetPayload<{ select: typeof userListSelect }>;
 
 function readParam(value?: string | string[]) {
   return Array.isArray(value) ? value[0] : value;
@@ -43,15 +56,7 @@ export default async function UsersPage({
       orderBy: { createdAt: "desc" },
       skip: (currentPage - 1) * pageSize,
       take: pageSize,
-      select: {
-        id: true,
-        username: true,
-        displayName: true,
-        role: true,
-        createdAt: true,
-        badges: { select: { badge: { select: { id: true, label: true } } } },
-        permissions: { select: { permission: { select: { id: true, key: true } } } },
-      },
+      select: userListSelect,
     }),
     prisma.user.count({ where }),
   ]);
@@ -77,7 +82,7 @@ export default async function UsersPage({
             <input name="q" defaultValue={q} placeholder="Søg efter brugernavn eller visningsnavn" className="field" />
             <select name="role" defaultValue={role} className="field">
               <option value="">Alle roller</option>
-              {appRoles.map((item) => (
+              {appRoles.map((item: AppRole) => (
                 <option key={item} value={item}>
                   {roleLabel(item)}
                 </option>
@@ -107,7 +112,7 @@ export default async function UsersPage({
                   </tr>
                 </thead>
                 <tbody>
-                  {users.map((user) => (
+                  {users.map((user: UserListItem) => (
                     <tr key={user.id} className="border-b border-white/10 last:border-0">
                       <td className="py-4">
                         <p className="font-black text-white">{user.displayName}</p>
