@@ -30,7 +30,7 @@ function formatSponsorStatus(status: string) {
 
 export default async function SponsorDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const sponsor = await prisma.sponsor.findUnique({ where: { slug: id } });
+  const sponsor = await prisma.sponsor.findFirst({ where: { slug: id, active: true, status: "ACTIVE" } });
 
   return (
     <main className="min-h-screen bg-black text-white">
@@ -41,7 +41,7 @@ export default async function SponsorDetailPage({ params }: { params: Promise<{ 
           {sponsor ? (
             <div className="mt-10 rounded-[2.5rem] border border-white/10 bg-white/[0.04] p-8">
               <div className="flex items-center gap-5">
-                <div className="flex h-20 w-20 items-center justify-center rounded-3xl border border-white/10 bg-black text-2xl font-black">{sponsor.logoInitials}</div>
+                <div className="flex h-20 w-20 items-center justify-center rounded-3xl border border-white/10 bg-black bg-contain bg-center bg-no-repeat text-2xl font-black" style={sponsor.logoUrl ? { backgroundImage: `url(${sponsor.logoUrl})` } : undefined}>{sponsor.logoUrl ? "" : sponsor.logoInitials}</div>
                 <div>
                   <p className="text-sm uppercase tracking-[0.25em] text-zinc-500">{formatSponsorLevel(sponsor.level)}</p>
                   <h1 className="text-5xl font-black">{sponsor.name}</h1>

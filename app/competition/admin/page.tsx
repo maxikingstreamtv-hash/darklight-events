@@ -4,6 +4,7 @@ import CompetitionLayout from "@/components/competition/CompetitionLayout";
 import AdminDataControl from "@/components/competition/AdminDataControl";
 import AdminLiveDataPanel from "@/components/competition/AdminLiveDataPanel";
 import { FaqManagerPanel, RulesManagerPanel } from "@/components/competition/ContentManagerPanel";
+import SponsorDbManagerPanel from "@/components/competition/SponsorDbManagerPanel";
 import CompetitionPageShell from "@/components/competition/layout/CompetitionPageShell";
 import ManualManagerPanel, { type ManualManagerItem } from "@/components/competition/ManualManagerPanel";
 import Badge from "@/components/competition/ui/Badge";
@@ -13,12 +14,12 @@ import StatCard from "@/components/competition/ui/StatCard";
 import { staffAccounts } from "@/components/auth/mock-auth";
 import { documents } from "@/data/documents";
 import { permissions } from "@/data/permissions";
-import { sponsors } from "@/data/sponsors";
 import { news } from "@/data/news";
 import { galleryItems } from "@/data/gallery";
 import { staffMembers } from "@/data/staff";
 import { dataModeCopy, eventOSDataMode } from "@/data/eventos-mode";
 import { prisma } from "@/lib/prisma";
+import { getCurrentUser } from "@/lib/auth/session";
 
 const modules = [
   ["Eventkontrol", "Online", "/competition/control-center"],
@@ -36,18 +37,6 @@ const modules = [
 ];
 
 const managerPanels = [
-  {
-    title: "Sponsor Manager",
-    description: "Opret, rediger og arkiver RP-sponsorer til DarkLight Events.",
-    storageKey: "darklight-manager-sponsors",
-    items: sponsors.map((item) => ({
-      id: item.id,
-      title: item.name,
-      status: item.status,
-      meta: `${item.level} · ${item.eventsSupported.join(", ")}`,
-      description: item.description,
-    })),
-  },
   {
     title: "Tilladelses Manager",
     description: "Hold styr på lokationer, eventtilladelser og koordinering i DreamLight.",
@@ -124,9 +113,11 @@ function param(value?: string | string[]) {
 export default async function CompetitionAdminPage({ searchParams }: { searchParams: Promise<AdminSearchParams> }) {
   const params = await searchParams;
   const modeCopy = dataModeCopy[eventOSDataMode];
-  const [faqItems, ruleSets] = await Promise.all([
+  const currentUser = await getCurrentUser();
+  const [faqItems, ruleSets, dbSponsors] = await Promise.all([
     prisma.faqItem.findMany({ orderBy: [{ sortOrder: "asc" }, { question: "asc" }] }),
     prisma.ruleSet.findMany({ orderBy: [{ sortOrder: "asc" }, { title: "asc" }] }),
+    prisma.sponsor.findMany({ orderBy: [{ isMainSponsor: "desc" }, { sponsorType: "asc" }, { sortOrder: "asc" }, { name: "asc" }] }),
   ]);
 
   return (
@@ -167,6 +158,8 @@ export default async function CompetitionAdminPage({ searchParams }: { searchPar
           <div className="mt-8">
             <AdminDataControl resetOk={param(params.resetOk)} resetError={param(params.resetError)} />
           </div>
+
+          <SponsorDbManagerPanel sponsors={dbSponsors} canDelete={currentUser?.role === "SUPER_ADMIN"} />
 
           {param(params.contentOk) ? (
             <p className="mt-8 rounded-2xl border border-green-400/20 bg-green-400/10 px-5 py-4 text-sm font-black text-green-300">

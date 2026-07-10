@@ -13,6 +13,12 @@ enum UserRole {
   USER
 }
 
+enum ProfileStatus {
+  ACTIVE
+  INACTIVE
+  ARCHIVED
+}
+
 enum EventStatus {
   DRAFT
   UPCOMING
@@ -81,6 +87,12 @@ enum SponsorStatus {
   ARCHIVED
 }
 
+enum SponsorType {
+  MAIN_SPONSOR
+  SPONSOR
+  PARTNER
+}
+
 enum InboxStatus {
   NEW
   READ
@@ -101,16 +113,20 @@ enum ContentStatus {
 }
 
 model User {
-  id           String    @id @default(cuid())
-  username     String    @unique
-  passwordHash String
-  displayName  String
-  avatar       String?
-  bio          String?
-  role         UserRole  @default(USER)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  lastLoginAt  DateTime?
+  id            String        @id @default(cuid())
+  username      String        @unique
+  passwordHash  String
+  displayName   String
+  avatar        String?
+  bio           String?
+  role          UserRole      @default(USER)
+  profileStatus ProfileStatus @default(ACTIVE)
+  active        Boolean       @default(true)
+  archivedAt    DateTime?
+  deletedAt     DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  lastLoginAt   DateTime?
 
   badges          UserBadge[]
   permissions     UserPermission[]
@@ -176,11 +192,16 @@ model Event {
   slug            String      @unique
   description     String
   bannerUrl       String?
+  imageAlt        String?
+  thumbnailUrl    String?
   location        String?
   startsAt        DateTime
   endsAt          DateTime?
   maxParticipants Int?
   status          EventStatus @default(DRAFT)
+  sortOrder       Int         @default(0)
+  active          Boolean     @default(true)
+  public          Boolean     @default(true)
   createdById     String
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
@@ -278,12 +299,18 @@ model Sponsor {
   slug            String        @unique
   name            String
   level           SponsorLevel
+  sponsorType     SponsorType   @default(SPONSOR)
+  isMainSponsor   Boolean       @default(false)
   contactPerson   String?
   partnerSince    DateTime?
   eventsSupported String[]
   description     String
   logoInitials    String
   logoUrl         String?
+  websiteUrl      String?
+  ctaLabel        String?
+  sortOrder       Int           @default(0)
+  active          Boolean       @default(true)
   status          SponsorStatus @default(ACTIVE)
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt

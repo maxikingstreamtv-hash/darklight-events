@@ -67,7 +67,7 @@ function LoginForm() {
             <p className="mb-4 text-sm uppercase tracking-[0.45em] text-zinc-500">DarkLight adgang</p>
             <h1 className="text-5xl font-black md:text-7xl">Log ind</h1>
             <p className="mt-5 max-w-2xl text-zinc-400">
-              Log ind med dit DarkLight brugernavn og din adgangskode. Adgang styres af rolle, permissions og badges fra databasen.
+              Log ind med dit DarkLight ID eller brugernavn og din DL PIN. Adgang styres af rolle, permissions og badges fra databasen.
             </p>
             <div className="mt-8 rounded-[2rem] border border-white/10 bg-white/[0.04] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.35)] backdrop-blur-xl">
               <p className="font-black">V2 database-login</p>
@@ -81,11 +81,11 @@ function LoginForm() {
             <p className="text-sm uppercase tracking-[0.35em] text-zinc-500">Log ind</p>
             <h2 className="mt-3 text-4xl font-black">DarkLight konto</h2>
             <p className="mt-2 text-sm leading-6 text-zinc-500">
-              Brug dit brugernavn. Email bruges ikke til login i DarkLight Events V2.
+                Brug dit DarkLight ID eller brugernavn. Email bruges ikke til login i DarkLight Events V2.
             </p>
             <div className="mt-7 grid gap-4">
-              <TextInput label="Brugernavn" value={username} onChange={setUsername} autoComplete="username" />
-              <TextInput label="Adgangskode" value={password} onChange={setPassword} type="password" autoComplete="current-password" />
+              <TextInput label="DarkLight ID / brugernavn" value={username} onChange={setUsername} autoComplete="username" />
+              <TextInput label="DL PIN" value={password} onChange={setPassword} type="password" autoComplete="current-password" />
               {error ? <p className="rounded-2xl border border-red-500/20 bg-red-500/10 px-5 py-4 text-sm text-red-300">{error}</p> : null}
               <button
                 disabled={pending}
