@@ -52,6 +52,7 @@ enum InspectionStatus {
 }
 
 enum ChecklistCategory {
+  PERFORMANCE
   ENGINE
   SAFETY
   DOCUMENTS
@@ -67,27 +68,59 @@ enum ChecklistResult {
   NOT_APPLICABLE
 }
 
+enum SponsorLevel {
+  PLATINUM
+  GOLD
+  SILVER
+  PARTNER
+}
+
+enum SponsorStatus {
+  ACTIVE
+  PENDING
+  ARCHIVED
+}
+
+enum InboxStatus {
+  NEW
+  READ
+  ANSWERED
+  ARCHIVED
+}
+
+enum EventPermissionStatus {
+  APPROVED
+  PENDING
+  REJECTED
+  ARCHIVED
+}
+
+enum ContentStatus {
+  ACTIVE
+  ARCHIVED
+}
+
 model User {
-  id           String   @id @default(cuid())
-  username     String   @unique
+  id           String    @id @default(cuid())
+  username     String    @unique
   passwordHash String
   displayName  String
   avatar       String?
   bio          String?
-  role         UserRole @default(USER)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  role         UserRole  @default(USER)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
   lastLoginAt  DateTime?
 
-  badges       UserBadge[]
-  permissions  UserPermission[]
-  events       Event[] @relation("CreatedEvents")
-  bookings     Booking[]
-  results      Result[] @relation("ResultCreatedBy")
-  auditLogs    AuditLog[] @relation("AuditActor")
-  vehicles     Vehicle[] @relation("VehicleOwner")
-  createdVehicles Vehicle[] @relation("VehicleCreatedBy")
-  inspections  VehicleInspection[] @relation("VehicleInspectionInspector")
+  badges          UserBadge[]
+  permissions     UserPermission[]
+  events          Event[]             @relation("CreatedEvents")
+  bookings        Booking[]
+  results         Result[]            @relation("ResultCreatedBy")
+  auditLogs       AuditLog[]          @relation("AuditActor")
+  vehicles        Vehicle[]           @relation("VehicleOwner")
+  createdVehicles Vehicle[]           @relation("VehicleCreatedBy")
+  inspections     VehicleInspection[] @relation("VehicleInspectionInspector")
 }
 
 model Badge {
@@ -99,7 +132,7 @@ model Badge {
   color       String?
   createdAt   DateTime @default(now())
 
-  users       UserBadge[]
+  users UserBadge[]
 }
 
 model UserBadge {
@@ -109,19 +142,19 @@ model UserBadge {
   grantedBy String?
   createdAt DateTime @default(now())
 
-  user      User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  badge     Badge @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge Badge @relation(fields: [badgeId], references: [id], onDelete: Cascade)
 
   @@unique([userId, badgeId])
 }
 
 model Permission {
-  id          String   @id @default(cuid())
-  key         String   @unique
+  id          String  @id @default(cuid())
+  key         String  @unique
   label       String
   description String?
 
-  users       UserPermission[]
+  users UserPermission[]
 }
 
 model UserPermission {
@@ -131,32 +164,32 @@ model UserPermission {
   grantedBy    String?
   createdAt    DateTime @default(now())
 
-  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  permission    Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
 
   @@unique([userId, permissionId])
 }
 
 model Event {
-  id             String      @id @default(cuid())
-  title          String
-  slug           String      @unique
-  description    String
-  bannerUrl      String?
-  location       String?
-  startsAt       DateTime
-  endsAt         DateTime?
+  id              String      @id @default(cuid())
+  title           String
+  slug            String      @unique
+  description     String
+  bannerUrl       String?
+  location        String?
+  startsAt        DateTime
+  endsAt          DateTime?
   maxParticipants Int?
-  status         EventStatus @default(DRAFT)
-  createdById    String
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
+  status          EventStatus @default(DRAFT)
+  createdById     String
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
 
-  createdBy      User          @relation("CreatedEvents", fields: [createdById], references: [id])
-  bookings       Booking[]
-  competitions   Competition[]
-  gallery        GalleryImage[]
-  hallOfFame     HallOfFame[]
+  createdBy    User           @relation("CreatedEvents", fields: [createdById], references: [id])
+  bookings     Booking[]
+  competitions Competition[]
+  gallery      GalleryImage[]
+  hallOfFame   HallOfFame[]
 }
 
 model Booking {
@@ -168,8 +201,8 @@ model Booking {
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
 
-  user      User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  event     Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
   @@unique([userId, eventId])
 }
@@ -196,23 +229,23 @@ model Participant {
   team          String?
   createdAt     DateTime @default(now())
 
-  competition   Competition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
-  results       Result[]
+  competition Competition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  results     Result[]
 }
 
 model Result {
-  id             String   @id @default(cuid())
-  competitionId  String
-  participantId  String
-  placement      Int
-  points         Int?
-  notes          String?
-  createdById    String
-  createdAt      DateTime @default(now())
+  id            String   @id @default(cuid())
+  competitionId String
+  participantId String
+  placement     Int
+  points        Int?
+  notes         String?
+  createdById   String
+  createdAt     DateTime @default(now())
 
-  competition    Competition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
-  participant    Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
-  createdBy      User @relation("ResultCreatedBy", fields: [createdById], references: [id])
+  competition Competition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  createdBy   User        @relation("ResultCreatedBy", fields: [createdById], references: [id])
 }
 
 model HallOfFame {
@@ -225,19 +258,107 @@ model HallOfFame {
   notes     String?
   createdAt DateTime @default(now())
 
-  event     Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
 }
 
 model GalleryImage {
-  id          String   @id @default(cuid())
-  eventId     String?
-  title       String
-  imageUrl    String
-  description String?
+  id           String   @id @default(cuid())
+  eventId      String?
+  title        String
+  imageUrl     String
+  description  String?
   photographer String?
-  createdAt   DateTime @default(now())
+  createdAt    DateTime @default(now())
 
-  event       Event? @relation(fields: [eventId], references: [id], onDelete: SetNull)
+  event Event? @relation(fields: [eventId], references: [id], onDelete: SetNull)
+}
+
+model Sponsor {
+  id              String        @id @default(cuid())
+  slug            String        @unique
+  name            String
+  level           SponsorLevel
+  contactPerson   String?
+  partnerSince    DateTime?
+  eventsSupported String[]
+  description     String
+  logoInitials    String
+  logoUrl         String?
+  status          SponsorStatus @default(ACTIVE)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+model BookingRequest {
+  id             String      @id @default(cuid())
+  characterName  String
+  ingamePhone    String
+  eventType      String
+  desiredDate    String
+  desiredTime    String
+  ingameLocation String
+  participants   String
+  ingameBudget   String?
+  description    String
+  status         InboxStatus @default(NEW)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+}
+
+model ContactMessage {
+  id            String      @id @default(cuid())
+  characterName String
+  ingamePhone   String
+  subject       String
+  message       String
+  status        InboxStatus @default(NEW)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+model EventPermission {
+  id          String                @id @default(cuid())
+  slug        String                @unique
+  event       String
+  location    String
+  status      EventPermissionStatus @default(PENDING)
+  authority   String
+  applicant   String
+  date        String?
+  comment     String
+  documentRef String?
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+}
+
+model FaqItem {
+  id        String        @id @default(cuid())
+  slug      String        @unique
+  question  String
+  category  String        @default("Generelt")
+  note      String?
+  answer    String
+  active    Boolean       @default(true)
+  status    ContentStatus @default(ACTIVE)
+  sortOrder Int           @default(0)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+}
+
+model RuleSet {
+  id          String        @id @default(cuid())
+  slug        String        @unique
+  title       String
+  category    String        @default("Generelt")
+  description String?
+  summary     String
+  content     String
+  rules       String[]
+  active      Boolean       @default(true)
+  status      ContentStatus @default(ACTIVE)
+  sortOrder   Int           @default(0)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 }
 
 model AuditLog {
@@ -248,7 +369,7 @@ model AuditLog {
   details   String?
   createdAt DateTime @default(now())
 
-  actor     User? @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+  actor User? @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
 }
 
 model Vehicle {
@@ -266,9 +387,9 @@ model Vehicle {
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 
-  owner        User          @relation("VehicleOwner", fields: [ownerId], references: [id], onDelete: Cascade)
-  createdBy    User          @relation("VehicleCreatedBy", fields: [createdById], references: [id])
-  inspections  VehicleInspection[]
+  owner       User                @relation("VehicleOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  createdBy   User                @relation("VehicleCreatedBy", fields: [createdById], references: [id])
+  inspections VehicleInspection[]
 }
 
 model VehicleInspection {
@@ -282,9 +403,9 @@ model VehicleInspection {
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
 
-  vehicle       Vehicle          @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
-  inspectedBy   User?            @relation("VehicleInspectionInspector", fields: [inspectedById], references: [id], onDelete: SetNull)
-  items         VehicleChecklistItem[]
+  vehicle     Vehicle                @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  inspectedBy User?                  @relation("VehicleInspectionInspector", fields: [inspectedById], references: [id], onDelete: SetNull)
+  items       VehicleChecklistItem[]
 }
 
 model VehicleChecklistItem {
@@ -298,7 +419,7 @@ model VehicleChecklistItem {
   sortOrder    Int               @default(0)
   adminNote    String?
 
-  inspection   VehicleInspection @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
+  inspection VehicleInspection @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
 }
 
 model VehicleChecklistTemplate {
@@ -308,17 +429,17 @@ model VehicleChecklistTemplate {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  items       VehicleChecklistTemplateItem[]
+  items VehicleChecklistTemplateItem[]
 }
 
 model VehicleChecklistTemplateItem {
-  id          String                   @id @default(cuid())
+  id          String            @id @default(cuid())
   templateId  String
   category    ChecklistCategory
   label       String
   description String?
-  required    Boolean                  @default(true)
-  sortOrder   Int                      @default(0)
+  required    Boolean           @default(true)
+  sortOrder   Int               @default(0)
 
-  template    VehicleChecklistTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  template VehicleChecklistTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
 }

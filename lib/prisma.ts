@@ -13,7 +13,19 @@ const globalForPrisma = globalThis as unknown as {
   prisma?: PrismaClient;
 };
 
-export const prisma = globalForPrisma.prisma ?? new PrismaClient({ adapter });
+function hasCurrentDelegates(client: PrismaClient) {
+  const delegates = client as PrismaClient & {
+    faqItem?: unknown;
+    ruleSet?: unknown;
+  };
+
+  return Boolean(delegates.faqItem && delegates.ruleSet);
+}
+
+export const prisma =
+  globalForPrisma.prisma && hasCurrentDelegates(globalForPrisma.prisma)
+    ? globalForPrisma.prisma
+    : new PrismaClient({ adapter });
 
 if (process.env.NODE_ENV !== "production") {
   globalForPrisma.prisma = prisma;

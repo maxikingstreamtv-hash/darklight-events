@@ -1,26 +1,22 @@
-"use client";
-
 import Link from "next/link";
-import { use } from "react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import { EVENTOS_ADMIN_PERMISSION_STORAGE_KEY } from "@/components/competition/eventos-store";
-import { permissions } from "@/data/permissions";
+import { prisma } from "@/lib/prisma";
 
-function readPermissions() {
-  if (typeof window === "undefined") return permissions;
+function formatStatus(status: string) {
+  const labels: Record<string, string> = {
+    APPROVED: "Godkendt",
+    PENDING: "Afventer",
+    REJECTED: "Afvist",
+    ARCHIVED: "Arkiveret",
+  };
 
-  try {
-    const stored = JSON.parse(window.localStorage.getItem(EVENTOS_ADMIN_PERMISSION_STORAGE_KEY) ?? "null");
-    return Array.isArray(stored) ? stored : permissions;
-  } catch {
-    return permissions;
-  }
+  return labels[status] ?? status;
 }
 
-export default function TilladelseDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
-  const permission = readPermissions().find((item) => item.id === id);
+export default async function TilladelseDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const permission = await prisma.eventPermission.findUnique({ where: { slug: id } });
 
   return (
     <main className="min-h-screen bg-black text-white">
@@ -33,7 +29,7 @@ export default function TilladelseDetailPage({ params }: { params: Promise<{ id:
               <h1 className="mt-8 text-5xl font-black">{permission.event}</h1>
               <p className="mt-4 text-zinc-400">{permission.comment}</p>
               <div className="mt-8 grid gap-4 sm:grid-cols-2">
-                <Info label="Status" value={permission.status} />
+                <Info label="Status" value={formatStatus(permission.status)} />
                 <Info label="Lokation" value={permission.location} />
                 <Info label="Ansøger" value={permission.applicant} />
                 <Info label="Koordinering" value={permission.authority} />

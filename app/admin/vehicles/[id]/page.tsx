@@ -35,7 +35,7 @@ type Inspection = {
   items: ChecklistItem[];
 };
 
-const categories = ["ENGINE", "SAFETY", "DOCUMENTS", "REQUIRED_EQUIPMENT", "EXTERIOR", "OTHER"] as const;
+const categories = ["PERFORMANCE", "ENGINE", "SAFETY", "DOCUMENTS", "REQUIRED_EQUIPMENT", "EXTERIOR", "OTHER"] as const;
 const results = ["NOT_CHECKED", "APPROVED", "REJECTED", "NOT_APPLICABLE"] as const;
 
 function param(value?: string | string[]) {

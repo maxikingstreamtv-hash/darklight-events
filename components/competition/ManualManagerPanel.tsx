@@ -21,6 +21,10 @@ export default function ManualManagerPanel({ title, description, storageKey, ite
   const [localItems, setLocalItems] = useState(items);
   const [name, setName] = useState("");
   const [note, setNote] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingTitle, setEditingTitle] = useState("");
+  const [editingNote, setEditingNote] = useState("");
+  const [editingStatus, setEditingStatus] = useState("Aktiv");
   const [message, setMessage] = useState("");
 
   const activeItems = useMemo(() => localItems.filter((item) => item.status !== "Arkiveret"), [localItems]);
@@ -55,11 +59,41 @@ export default function ManualManagerPanel({ title, description, storageKey, ite
     persist(nextItems, "Elementet er arkiveret lokalt.");
   }
 
-  function editItem(id: string) {
+  function startEditItem(item: ManualManagerItem) {
+    setEditingId(item.id);
+    setEditingTitle(item.title);
+    setEditingNote(item.description ?? item.meta ?? "");
+    setEditingStatus(item.status ?? "Aktiv");
+    setMessage("");
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setEditingTitle("");
+    setEditingNote("");
+    setEditingStatus("Aktiv");
+  }
+
+  function saveEditItem() {
+    if (!editingId || !editingTitle.trim()) {
+      setMessage("Skriv en titel før du gemmer.");
+      return;
+    }
+
     const nextItems = localItems.map((item) =>
-      item.id === id ? { ...item, status: "Opdateret", meta: "Redigeret manuelt" } : item
+      item.id === editingId
+        ? {
+            ...item,
+            title: editingTitle.trim(),
+            status: editingStatus,
+            meta: editingNote.trim() || item.meta,
+            description: editingNote.trim() || item.description,
+          }
+        : item
     );
-    persist(nextItems, "Elementet er markeret som opdateret.");
+
+    persist(nextItems, "Ændringerne er gemt.");
+    cancelEdit();
   }
 
   return (
@@ -106,25 +140,57 @@ export default function ManualManagerPanel({ title, description, storageKey, ite
         {localItems.length ? (
           localItems.slice(0, 5).map((item) => (
             <article key={item.id} className="rounded-2xl border border-white/10 bg-black/70 p-4">
-              <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
-                <div>
-                  <div className="flex flex-wrap items-center gap-3">
-                    <h4 className="font-black text-white">{item.title}</h4>
-                    <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[11px] font-black text-zinc-300">
-                      {item.status || "Aktiv"}
-                    </span>
+              {editingId === item.id ? (
+                <div className="grid gap-3">
+                  <input
+                    value={editingTitle}
+                    onChange={(event) => setEditingTitle(event.target.value)}
+                    className="rounded-2xl border border-white/10 bg-black px-4 py-3 text-sm text-white outline-none transition focus:border-white/40"
+                  />
+                  <input
+                    value={editingNote}
+                    onChange={(event) => setEditingNote(event.target.value)}
+                    className="rounded-2xl border border-white/10 bg-black px-4 py-3 text-sm text-white outline-none transition focus:border-white/40"
+                  />
+                  <select
+                    value={editingStatus}
+                    onChange={(event) => setEditingStatus(event.target.value)}
+                    className="rounded-2xl border border-white/10 bg-black px-4 py-3 text-sm text-white outline-none transition focus:border-white/40"
+                  >
+                    <option>Aktiv</option>
+                    <option>Afventer</option>
+                    <option>Arkiveret</option>
+                  </select>
+                  <div className="flex flex-wrap gap-2">
+                    <button type="button" onClick={saveEditItem} className="rounded-full bg-white px-4 py-2 text-xs font-black text-black transition hover:bg-zinc-300">
+                      Gem ændringer
+                    </button>
+                    <button type="button" onClick={cancelEdit} className="rounded-full border border-white/10 px-4 py-2 text-xs font-black text-zinc-200 transition hover:bg-white hover:text-black">
+                      Annuller
+                    </button>
                   </div>
-                  <p className="mt-2 text-sm text-zinc-500">{item.meta || item.description || "Klar til håndtering."}</p>
                 </div>
-                <div className="flex shrink-0 gap-2">
-                  <button type="button" onClick={() => editItem(item.id)} className="rounded-full border border-white/10 px-4 py-2 text-xs font-black text-zinc-200 transition hover:bg-white hover:text-black">
-                    Rediger
-                  </button>
-                  <button type="button" onClick={() => archiveItem(item.id)} className="rounded-full border border-white/10 px-4 py-2 text-xs font-black text-zinc-200 transition hover:bg-white hover:text-black">
-                    Arkiver
-                  </button>
+              ) : (
+                <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+                  <div>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <h4 className="font-black text-white">{item.title}</h4>
+                      <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[11px] font-black text-zinc-300">
+                        {item.status || "Aktiv"}
+                      </span>
+                    </div>
+                    <p className="mt-2 text-sm text-zinc-500">{item.meta || item.description || "Klar til håndtering."}</p>
+                  </div>
+                  <div className="flex shrink-0 gap-2">
+                    <button type="button" onClick={() => startEditItem(item)} className="rounded-full border border-white/10 px-4 py-2 text-xs font-black text-zinc-200 transition hover:bg-white hover:text-black">
+                      Rediger
+                    </button>
+                    <button type="button" onClick={() => archiveItem(item.id)} className="rounded-full border border-white/10 px-4 py-2 text-xs font-black text-zinc-200 transition hover:bg-white hover:text-black">
+                      Arkiver
+                    </button>
+                  </div>
                 </div>
-              </div>
+              )}
             </article>
           ))
         ) : (

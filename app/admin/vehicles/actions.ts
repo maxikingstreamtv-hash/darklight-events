@@ -8,13 +8,23 @@ import { writeAuditLog } from "@/lib/admin/audit";
 
 type VehicleStatusValue = "ACTIVE" | "INACTIVE" | "SUSPENDED";
 type InspectionStatusValue = "PENDING" | "IN_PROGRESS" | "APPROVED" | "REJECTED";
-type ChecklistCategoryValue = "ENGINE" | "SAFETY" | "DOCUMENTS" | "REQUIRED_EQUIPMENT" | "EXTERIOR" | "OTHER";
+type ChecklistCategoryValue = "PERFORMANCE" | "ENGINE" | "SAFETY" | "DOCUMENTS" | "REQUIRED_EQUIPMENT" | "EXTERIOR" | "OTHER";
 type ChecklistResultValue = "NOT_CHECKED" | "APPROVED" | "REJECTED" | "NOT_APPLICABLE";
 
 const vehicleStatuses: VehicleStatusValue[] = ["ACTIVE", "INACTIVE", "SUSPENDED"];
 const inspectionStatuses: InspectionStatusValue[] = ["PENDING", "IN_PROGRESS", "APPROVED", "REJECTED"];
-const checklistCategories: ChecklistCategoryValue[] = ["ENGINE", "SAFETY", "DOCUMENTS", "REQUIRED_EQUIPMENT", "EXTERIOR", "OTHER"];
+const checklistCategories: ChecklistCategoryValue[] = ["PERFORMANCE", "ENGINE", "SAFETY", "DOCUMENTS", "REQUIRED_EQUIPMENT", "EXTERIOR", "OTHER"];
 const checklistResults: ChecklistResultValue[] = ["NOT_CHECKED", "APPROVED", "REJECTED", "NOT_APPLICABLE"];
+
+const oldDefaultTemplateLabels = ["Motor og ydelse", "Sikkerhed", "Dokumenter", "Obligatorisk udstyr", "Karrosseri"];
+
+const performanceTemplateItems = [
+  { category: "PERFORMANCE" as const, label: "Motor Tier", description: "Kontroller motorens tier.", required: true, sortOrder: 10 },
+  { category: "PERFORMANCE" as const, label: "Bil Class", description: "Kontroller hvilken klasse køretøjet tilhører.", required: true, sortOrder: 20 },
+  { category: "PERFORMANCE" as const, label: "Nitro", description: "Kontroller om nitro er monteret og om niveauet overholder reglerne.", required: true, sortOrder: 30 },
+  { category: "PERFORMANCE" as const, label: "Bremser", description: "Kontroller bremseopgraderingen.", required: true, sortOrder: 40 },
+  { category: "PERFORMANCE" as const, label: "Armor", description: "Kontroller armor-opgraderingen.", required: true, sortOrder: 50 },
+];
 
 function text(formData: FormData, key: string) {
   return String(formData.get(key) ?? "").trim();
@@ -324,18 +334,42 @@ export async function createChecklistTemplateAction(formData: FormData) {
     create: {
       name,
       description: optionalText(formData, "templateDescription"),
-      items: {
-        create: [
-          { category: "ENGINE", label: "Motor og ydelse", description: "Basis gennemgang af motoropsætning", required: true, sortOrder: 10 },
-          { category: "SAFETY", label: "Sikkerhed", description: "Sikker drift under event", required: true, sortOrder: 20 },
-          { category: "DOCUMENTS", label: "Dokumenter", description: "RP-dokumenter og tilladelser", required: true, sortOrder: 30 },
-          { category: "REQUIRED_EQUIPMENT", label: "Obligatorisk udstyr", description: "Udstyr krævet af eventet", required: true, sortOrder: 40 },
-          { category: "EXTERIOR", label: "Karrosseri", description: "Synlig stand og eventklar fremtoning", required: false, sortOrder: 50 },
-        ],
-      },
     },
     select: { id: true, name: true },
   });
+
+  await prisma.vehicleChecklistTemplateItem.deleteMany({
+    where: {
+      templateId: template.id,
+      label: { in: oldDefaultTemplateLabels },
+    },
+  });
+
+  await Promise.all(
+    performanceTemplateItems.map(async (defaultItem: (typeof performanceTemplateItems)[number]) => {
+      const existing = await prisma.vehicleChecklistTemplateItem.findFirst({
+        where: {
+          templateId: template.id,
+          label: defaultItem.label,
+        },
+        select: { id: true },
+      });
+
+      if (existing) {
+        return prisma.vehicleChecklistTemplateItem.update({
+          where: { id: existing.id },
+          data: defaultItem,
+        });
+      }
+
+      return prisma.vehicleChecklistTemplateItem.create({
+        data: {
+          templateId: template.id,
+          ...defaultItem,
+        },
+      });
+    }),
+  );
 
   await writeAuditLog({
     actorId: actor.id,

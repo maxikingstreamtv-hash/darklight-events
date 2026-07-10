@@ -1289,7 +1289,7 @@ function GalleryTab({
           <p className="text-sm uppercase tracking-[0.35em] text-zinc-500">Billeder</p>
           <h3 className="mt-3 text-3xl font-black">Der er endnu ikke uploadet billeder</h3>
           <p className="mt-3 text-sm leading-6 text-zinc-500">
-            Galleri er klar til billeder fra {activeEvent?.title ?? "eventet"}. Upload gemmes lokalt i denne version.
+            Galleri er klar til billeder fra {activeEvent?.title ?? "eventet"}. V2-galleri til public visning styres via PostgreSQL.
           </p>
         </div>
         <div className="grid gap-3">

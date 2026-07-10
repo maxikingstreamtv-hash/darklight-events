@@ -142,6 +142,65 @@ Vigtige relationer:
 
 Billeder kan også bruges som generelle DarkLight-galleribilleder uden eventrelation.
 
+## Sponsor
+
+`Sponsor` beskriver en offentlig sponsorprofil eller RP-partneraftale.
+
+Vigtige felter:
+
+- `slug`: bruges til public detaljeside.
+- `name`, `level`, `status`, `description` og `logoInitials`: styrer public sponsorvisning.
+- `eventsSupported`: liste over eventnavne eller sponsorområder.
+
+Sponsorprofiler er separate fra Sponsor-badges på brugere. En bruger med Sponsor-badge får ikke automatisk sponsorprofil eller systemadgang.
+
+## BookingRequest
+
+`BookingRequest` beskriver en fri bookingforespørgsel fra public bookingformularen.
+
+Den bruges til henvendelser, hvor der endnu ikke findes et konkret `Event` i databasen. Reset af bookingforespørgsler sletter kun `BookingRequest`, ikke brugere eller eventbookinger.
+
+## ContactMessage
+
+`ContactMessage` beskriver en besked fra public kontaktformularen.
+
+Kontaktbeskeder gemmes i PostgreSQL og kan nulstilles fra Admin Data Control.
+
+## EventPermission
+
+`EventPermission` beskriver en RP-eventtilladelse til public `/tilladelser`.
+
+Den er separat fra auth-modellen `Permission`, som styrer systemadgang. Reset af eventtilladelser må ikke slette brugerpermissions eller roller.
+
+## FaqItem
+
+`FaqItem` beskriver et public FAQ-punkt.
+
+Vigtige felter:
+
+- `question`: spørgsmålet eller titlen.
+- `note`: kort intern/offentlig note.
+- `answer`: det fulde svar.
+- `status`: `ACTIVE` eller `ARCHIVED`.
+- `sortOrder`: styrer rækkefølge på public `/faq`.
+
+FAQ redigeres fra adminpanelet og gemmes i PostgreSQL.
+
+## RuleSet
+
+`RuleSet` beskriver et public regelsæt-afsnit.
+
+Vigtige felter:
+
+- `title`: overskrift.
+- `summary`: kort beskrivelse.
+- `content`: fuldt regelindhold som tekst.
+- `rules`: linjeopdelt liste til public visning.
+- `status`: `ACTIVE` eller `ARCHIVED`.
+- `sortOrder`: styrer rækkefølge på public `/regelsaet`.
+
+Regelsæt redigeres fra adminpanelet og gemmes i PostgreSQL.
+
 ## Vehicle
 
 `Vehicle` beskriver et databasegemt køretøj, som er tildelt en brugerprofil.
@@ -187,7 +246,7 @@ Vigtige relationer:
 
 Vigtige felter:
 
-- `category`: `ENGINE`, `SAFETY`, `DOCUMENTS`, `REQUIRED_EQUIPMENT`, `EXTERIOR` eller `OTHER`.
+- `category`: `PERFORMANCE`, `ENGINE`, `SAFETY`, `DOCUMENTS`, `REQUIRED_EQUIPMENT`, `EXTERIOR` eller `OTHER`.
 - `label`: punktets navn.
 - `description`: valgfri forklaring.
 - `result`: `NOT_CHECKED`, `APPROVED`, `REJECTED` eller `NOT_APPLICABLE`.

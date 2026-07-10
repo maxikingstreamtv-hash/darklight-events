@@ -3,6 +3,7 @@ import Footer from "@/components/layout/Footer";
 import CompetitionLayout from "@/components/competition/CompetitionLayout";
 import AdminDataControl from "@/components/competition/AdminDataControl";
 import AdminLiveDataPanel from "@/components/competition/AdminLiveDataPanel";
+import { FaqManagerPanel, RulesManagerPanel } from "@/components/competition/ContentManagerPanel";
 import CompetitionPageShell from "@/components/competition/layout/CompetitionPageShell";
 import ManualManagerPanel, { type ManualManagerItem } from "@/components/competition/ManualManagerPanel";
 import Badge from "@/components/competition/ui/Badge";
@@ -16,9 +17,8 @@ import { sponsors } from "@/data/sponsors";
 import { news } from "@/data/news";
 import { galleryItems } from "@/data/gallery";
 import { staffMembers } from "@/data/staff";
-import { faqItems } from "@/data/faq";
-import { ruleSections } from "@/data/rules";
 import { dataModeCopy, eventOSDataMode } from "@/data/eventos-mode";
+import { prisma } from "@/lib/prisma";
 
 const modules = [
   ["Eventkontrol", "Online", "/competition/control-center"],
@@ -108,33 +108,26 @@ const managerPanels = [
       description: item.responsibilities.join(", "),
     })),
   },
-  {
-    title: "FAQ Manager",
-    description: "Rediger spørgsmål og svar til spillere og bookere.",
-    storageKey: "darklight-manager-faq",
-    items: faqItems.map((item) => ({
-      id: item.id,
-      title: item.question,
-      status: "Aktiv",
-      meta: item.answer,
-    })),
-  },
-  {
-    title: "Regelsæt Manager",
-    description: "Hold eventregler opdateret for kørere, crew, dommere og publikum.",
-    storageKey: "darklight-manager-rules",
-    items: ruleSections.map((item) => ({
-      id: item.id,
-      title: item.title,
-      status: "Aktiv",
-      meta: item.summary,
-      description: `${item.rules.length} regler`,
-    })),
-  },
 ] satisfies Array<{ title: string; description: string; storageKey: string; items: ManualManagerItem[] }>;
 
-export default function CompetitionAdminPage() {
+type AdminSearchParams = {
+  resetOk?: string | string[];
+  resetError?: string | string[];
+  contentOk?: string | string[];
+  contentError?: string | string[];
+};
+
+function param(value?: string | string[]) {
+  return Array.isArray(value) ? value[0] : value ?? "";
+}
+
+export default async function CompetitionAdminPage({ searchParams }: { searchParams: Promise<AdminSearchParams> }) {
+  const params = await searchParams;
   const modeCopy = dataModeCopy[eventOSDataMode];
+  const [faqItems, ruleSets] = await Promise.all([
+    prisma.faqItem.findMany({ orderBy: [{ sortOrder: "asc" }, { question: "asc" }] }),
+    prisma.ruleSet.findMany({ orderBy: [{ sortOrder: "asc" }, { title: "asc" }] }),
+  ]);
 
   return (
     <>
@@ -172,8 +165,20 @@ export default function CompetitionAdminPage() {
           </Card>
 
           <div className="mt-8">
-            <AdminDataControl />
+            <AdminDataControl resetOk={param(params.resetOk)} resetError={param(params.resetError)} />
           </div>
+
+          {param(params.contentOk) ? (
+            <p className="mt-8 rounded-2xl border border-green-400/20 bg-green-400/10 px-5 py-4 text-sm font-black text-green-300">
+              {param(params.contentOk)}
+            </p>
+          ) : null}
+
+          {param(params.contentError) ? (
+            <p className="mt-8 rounded-2xl border border-red-400/20 bg-red-400/10 px-5 py-4 text-sm font-black text-red-200">
+              {param(params.contentError)}
+            </p>
+          ) : null}
 
           <div className="mt-8">
             <AdminLiveDataPanel />
@@ -230,6 +235,8 @@ export default function CompetitionAdminPage() {
           </Card>
 
           <div className="mt-8 grid gap-6 xl:grid-cols-2">
+            <FaqManagerPanel items={faqItems} />
+            <RulesManagerPanel items={ruleSets} />
             {managerPanels.map((panel) => (
               <ManualManagerPanel key={panel.storageKey} {...panel} />
             ))}

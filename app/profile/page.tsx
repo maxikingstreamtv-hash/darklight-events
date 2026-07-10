@@ -96,9 +96,10 @@ export default async function DriverPortalPage() {
             ) : (
               vehicles.map((vehicle: ProfileVehicle) => {
                 const latest = vehicle.inspections[0];
+                const performanceItems = latest?.items.filter((item: ProfileVehicle["inspections"][number]["items"][number]) => item.category === "PERFORMANCE") ?? [];
                 const engineItems = latest?.items.filter((item: ProfileVehicle["inspections"][number]["items"][number]) => item.category === "ENGINE") ?? [];
                 const equipmentItems = latest?.items.filter((item: ProfileVehicle["inspections"][number]["items"][number]) => item.category === "REQUIRED_EQUIPMENT") ?? [];
-                const otherItems = latest?.items.filter((item: ProfileVehicle["inspections"][number]["items"][number]) => item.category !== "ENGINE" && item.category !== "REQUIRED_EQUIPMENT") ?? [];
+                const otherItems = latest?.items.filter((item: ProfileVehicle["inspections"][number]["items"][number]) => item.category !== "PERFORMANCE" && item.category !== "ENGINE" && item.category !== "REQUIRED_EQUIPMENT") ?? [];
 
                 return (
                   <article key={vehicle.id} className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-6 backdrop-blur-xl">
@@ -114,6 +115,7 @@ export default async function DriverPortalPage() {
 
                     {latest ? (
                       <div className="mt-6 grid gap-5 lg:grid-cols-3">
+                        <ChecklistGroup title="Performance" items={performanceItems} />
                         <ChecklistGroup title="Motor og ydelse" items={engineItems} />
                         <ChecklistGroup title="Obligatorisk udstyr" items={equipmentItems} />
                         <ChecklistGroup title="Øvrige krav" items={otherItems} />

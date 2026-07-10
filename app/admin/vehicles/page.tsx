@@ -66,6 +66,7 @@ function readInspectionStatus(value: string): InspectionStatusValue | null {
 function CategoryOptions() {
   return (
     <>
+      <option value="PERFORMANCE">Performance</option>
       <option value="ENGINE">Motor og ydelse</option>
       <option value="SAFETY">Sikkerhed</option>
       <option value="DOCUMENTS">Dokumenter</option>

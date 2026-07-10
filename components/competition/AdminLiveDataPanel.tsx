@@ -50,6 +50,19 @@ type AdminSponsor = Sponsor & {
   logoUrl?: string;
 };
 
+const emptySponsor: AdminSponsor = {
+  id: "",
+  name: "",
+  level: "Partner",
+  contactPerson: "",
+  partnerSince: "",
+  eventsSupported: [],
+  description: "",
+  logoInitials: "",
+  status: "Aktiv",
+  logoUrl: "",
+};
+
 const tabs: Array<{ id: AdminTab; label: string }> = [
   { id: "overview", label: "Overblik" },
   { id: "events", label: "Events" },
@@ -124,7 +137,7 @@ export default function AdminLiveDataPanel() {
   const [localPermissions, setLocalPermissions] = useState<PermissionItem[]>(() => readStorageList(EVENTOS_ADMIN_PERMISSION_STORAGE_KEY, permissions));
   const [localGallery, setLocalGallery] = useState<GalleryItem[]>(() => readStorageList(EVENTOS_ADMIN_GALLERY_STORAGE_KEY, galleryItems));
   const [eventDraft, setEventDraft] = useState<ManagedEvent>({ ...emptyEvent, date: today() });
-  const [sponsorDraft, setSponsorDraft] = useState<AdminSponsor>(() => ({ ...sponsors[0], id: "", name: "", status: "Aktiv", logoUrl: "" }));
+  const [sponsorDraft, setSponsorDraft] = useState<AdminSponsor>(() => ({ ...emptySponsor }));
   const [permissionDraft, setPermissionDraft] = useState<PermissionItem>(() => ({ ...permissions[0], id: "", event: "", location: "", status: "Afventer", authority: "Eventkoordinering", applicant: "DarkLight staff", date: today(), comment: "", documentRef: "eventmanual" }));
   const [galleryDraft, setGalleryDraft] = useState<GalleryItem>(() => ({ ...galleryItems[0], id: "", title: "", category: "Drift", eventRef: "", date: today(), description: "", image: "/images/events/races.png" }));
   const [editingResultId, setEditingResultId] = useState<string | null>(null);
@@ -216,7 +229,7 @@ export default function AdminLiveDataPanel() {
     const next = [{ ...sponsorDraft, id, partnerSince: sponsorDraft.partnerSince || today(), eventsSupported: sponsorDraft.eventsSupported.length ? sponsorDraft.eventsSupported : ["DarkLight Events"] }, ...localSponsors.filter((sponsor) => sponsor.id !== id)];
     setLocalSponsors(next);
     writeStorageList(EVENTOS_ADMIN_SPONSOR_STORAGE_KEY, next);
-    setSponsorDraft({ ...sponsors[0], id: "", name: "", status: "Aktiv", logoUrl: "" });
+    setSponsorDraft({ ...emptySponsor });
     setMessage("Sponsor er gemt lokalt.");
   }
 
@@ -320,7 +333,7 @@ export default function AdminLiveDataPanel() {
           <p className="text-xs font-black uppercase tracking-[0.35em] text-zinc-500">Admin kontrolpanel</p>
           <h2 className="mt-3 text-3xl font-black">Styr hele V1-platformen</h2>
           <p className="mt-3 max-w-3xl text-sm leading-6 text-zinc-400">
-            Events, deltagere, resultater, indbakke, partnere, galleri og eksport samles her. Data gemmes lokalt i denne version.
+            Legacy EventOS-panel til V1-workflows. V2-public data og reset styres via PostgreSQL i Admin Data Control.
           </p>
         </div>
         <div className="flex flex-wrap gap-3">

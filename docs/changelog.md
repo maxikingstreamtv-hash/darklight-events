@@ -61,3 +61,41 @@ Bemærkninger:
 - Køretøjsdata i V2 skal gemmes i PostgreSQL via Prisma.
 - Badges giver fortsat ingen adgang.
 - Brugere kan se egne køretøjer, men kan ikke redigere dem.
+
+## Sprint: Reset og Data Management
+
+Tilføjet:
+
+- Databasemodeller til `Sponsor`, `BookingRequest`, `ContactMessage` og `EventPermission`.
+- Prisma migrationer:
+  - `20260710092655_add_data_management_models`
+  - `20260710092838_add_event_permissions`
+- `/sponsorer` og `/sponsorer/[id]` læser nu kun sponsorer fra PostgreSQL.
+- Fjernet hardcodede demo-sponsorer fra `data/sponsors.ts`.
+- `/galleri` læser nu `GalleryImage` fra PostgreSQL og viser empty state ved tom database.
+- `/tilladelser` og `/tilladelser/[id]` læser nu `EventPermission` fra PostgreSQL og viser empty state ved tom database.
+- Bookingformularen gemmer `BookingRequest` i PostgreSQL.
+- Kontaktformularen gemmer `ContactMessage` i PostgreSQL.
+- Admin Data Control kører reset via server actions med SUPER_ADMIN-check.
+- Reset actions skriver `AuditLog` med modul og antal nulstillede databaseposter.
+
+Bemærkninger:
+
+- Reset af Sponsor sletter database-sponsorprofiler og genskaber ikke demo-data.
+- Sponsor-badge på brugere er fortsat separat fra sponsorprofiler.
+- Legacy EventOS-paneler kan stadig bruge V1 localStorage til lokale live-workflows, men V2-public sponsor, galleri, tilladelser, kontakt og bookingforespørgsler er database-backed.
+
+## Sprint: FAQ og Regelsæt Manager
+
+Tilføjet:
+
+- Databasemodeller til `FaqItem` og `RuleSet`.
+- Prisma migration `20260710113041_add_faq_rules_content`.
+- One-time content seed via `scripts/seed-content.ts`.
+- Public `/faq` læser nu aktive FAQ-punkter fra PostgreSQL.
+- Public `/regelsaet` læser nu aktive regelsæt fra PostgreSQL.
+- Admin FAQ Manager har inline editor med spørgsmål, note, svar, status og sortering.
+- Admin Regelsæt Manager har inline editor med titel, kort beskrivelse, fuldt indhold, status og sortering.
+- FAQ/regler gemmes via server actions med SUPER_ADMIN/ADMIN-check.
+- FAQ/regler skriver `AuditLog` ved redigering og arkivering.
+- Fjernet den falske placeholder-adfærd fra rediger-knapperne.

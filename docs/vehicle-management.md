@@ -108,14 +108,13 @@ En template består af:
 - required flag
 - sort order
 
-Anbefalede kategorier:
+Indbygget Performance-template:
 
-- Motor og ydelse
-- Sikkerhed
-- Dokumenter
-- Obligatorisk udstyr
-- Karrosseri
-- Andet
+- Motor Tier
+- Bil Class
+- Nitro
+- Bremser
+- Armor
 
 ## Køretøjsnavne
 
