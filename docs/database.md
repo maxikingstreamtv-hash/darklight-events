@@ -1,6 +1,6 @@
 # DarkLight Events V2 Database
 
-Databasen er bygget til PostgreSQL og styres med Prisma. Alle modeller beskriver DarkLight Events som et fiktivt DreamLight FiveM RP-eventsystem.
+Databasen er bygget til PostgreSQL og styres med Prisma. Alle modeller beskriver DarkLight Events som et fiktivt DreamLight FiveM RP-eventsystem, ikke en virkelig virksomhed.
 
 ## User
 
@@ -13,6 +13,9 @@ Vigtige relationer:
 - En bruger kan oprette mange `Event` via relationen `CreatedEvents`.
 - En bruger kan have mange `Booking`.
 - En bruger kan registrere mange `Result` via relationen `ResultCreatedBy`.
+- En bruger kan eje mange `Vehicle`.
+- En bruger kan oprette mange `Vehicle`.
+- En bruger kan være inspektør på mange `VehicleInspection`.
 - En bruger kan være aktør på mange `AuditLog`.
 
 Brugeren har én rolle via `role`.
@@ -45,7 +48,7 @@ Vigtige relationer:
 
 - En permission kan gives til mange brugere via `UserPermission`.
 
-Permissions bruges til ekstra adgang udover rolle.
+Permissions bruges til ekstra adgang ud over rolle.
 
 ## UserPermission
 
@@ -104,7 +107,7 @@ Vigtige relationer:
 - En participant tilhører én `Competition`.
 - En participant kan have mange `Result`.
 
-Participant kan have navn, køretøj, nummer og team.
+Participant kan have navn, køretøj, nummer og team. Køretøjsnavne skal være FiveM-/in-game-navne og må ikke bruge virkelige bilmærker.
 
 ## Result
 
@@ -139,6 +142,88 @@ Vigtige relationer:
 
 Billeder kan også bruges som generelle DarkLight-galleribilleder uden eventrelation.
 
+## Vehicle
+
+`Vehicle` beskriver et databasegemt køretøj, som er tildelt en brugerprofil.
+
+Vigtige felter:
+
+- `ownerId`: brugeren der ejer eller har fået tildelt køretøjet.
+- `displayName`: synligt in-game køretøjsnavn.
+- `modelName` og `spawnCode`: valgfri FiveM-/in-game-reference.
+- `licensePlate`, `vehicleClass`, `description` og `imageUrl`: valgfri profilfelter.
+- `status`: `ACTIVE`, `INACTIVE` eller `SUSPENDED`.
+- `createdById`: adminbrugeren der oprettede køretøjet.
+
+Vigtige relationer:
+
+- Ét køretøj tilhører én owner via `VehicleOwner`.
+- Ét køretøj er oprettet af én bruger via `VehicleCreatedBy`.
+- Ét køretøj kan have mange `VehicleInspection`.
+
+Køretøjsdata skal gemmes i PostgreSQL. V2 må ikke bruge `localStorage` eller hardcodede arrays til køretøjsprofiler.
+
+## VehicleInspection
+
+`VehicleInspection` beskriver en konkret inspektion af et køretøj.
+
+Vigtige felter:
+
+- `vehicleId`: køretøjet der inspiceres.
+- `title`: navn på inspektionen.
+- `notes`: interne noter.
+- `status`: `PENDING`, `IN_PROGRESS`, `APPROVED` eller `REJECTED`.
+- `inspectedById` og `inspectedAt`: sættes når en inspektion godkendes eller afvises.
+
+Vigtige relationer:
+
+- Én inspektion tilhører ét `Vehicle`.
+- Én inspektion kan have mange `VehicleChecklistItem`.
+- Én inspektion kan have én valgfri inspektør.
+
+## VehicleChecklistItem
+
+`VehicleChecklistItem` beskriver ét punkt på en inspektionscheckliste.
+
+Vigtige felter:
+
+- `category`: `ENGINE`, `SAFETY`, `DOCUMENTS`, `REQUIRED_EQUIPMENT`, `EXTERIOR` eller `OTHER`.
+- `label`: punktets navn.
+- `description`: valgfri forklaring.
+- `result`: `NOT_CHECKED`, `APPROVED`, `REJECTED` eller `NOT_APPLICABLE`.
+- `required`: markerer om punktet er obligatorisk.
+- `sortOrder`: styrer rækkefølge.
+- `adminNote`: intern adminnote.
+
+Vigtige relationer:
+
+- Ét checklist item tilhører én `VehicleInspection`.
+
+## VehicleChecklistTemplate
+
+`VehicleChecklistTemplate` beskriver en genbrugelig skabelon, som admins kan bruge når de opretter inspektioner.
+
+Vigtige relationer:
+
+- Én template kan have mange `VehicleChecklistTemplateItem`.
+- Template-navn er unikt.
+
+Templates er valgfrie og bruges til at standardisere krav som motor, sikkerhed, dokumenter og obligatorisk udstyr.
+
+## VehicleChecklistTemplateItem
+
+`VehicleChecklistTemplateItem` beskriver et standardpunkt i en checklist template.
+
+Vigtige felter:
+
+- `category`
+- `label`
+- `description`
+- `required`
+- `sortOrder`
+
+Når en template bruges på en inspektion, kopieres punkterne til konkrete `VehicleChecklistItem`-records.
+
 ## AuditLog
 
 `AuditLog` gemmer vigtige systemhandlinger.
@@ -148,4 +233,4 @@ Vigtige relationer:
 - En audit log kan have én `User` som aktør.
 - Hvis brugeren slettes, bevares loggen med `actorId` sat til null.
 
-AuditLog bør bruges til oprettelse, redigering, sletning, rolleændringer, badgeændringer, permissionændringer og resultatændringer.
+AuditLog bør bruges til oprettelse, redigering, sletning/deaktivering, rolleændringer, badgeændringer, permissionændringer, resultatændringer, køretøjsændringer og inspektionsændringer.

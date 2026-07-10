@@ -15,7 +15,7 @@ function getDriverName(driverId?: string) {
 function getDriverVehicle(driverId?: string) {
   if (!driverId) return "Ingen bil endnu";
   const vehicle = getActiveVehicle(driverId);
-  return vehicle ? `${vehicle.brand} ${vehicle.model}` : "Ukendt bil";
+  return vehicle ? vehicle.model : "Ukendt bil";
 }
 
 export default function PublicHallOfFamePage() {

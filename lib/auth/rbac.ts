@@ -22,6 +22,14 @@ export function canAccessPath(subject: AccessSubject, pathname: string) {
   const permissions = subject.permissions ?? [];
 
   if (pathname.startsWith("/admin")) {
+    if (pathname.startsWith("/admin/vehicles")) {
+      return (
+        subject.role === "SUPER_ADMIN" ||
+        subject.role === "ADMIN" ||
+        subject.role === "EVENT_MANAGER"
+      );
+    }
+
     return subject.role === "SUPER_ADMIN" || subject.role === "ADMIN";
   }
 

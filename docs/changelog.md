@@ -39,3 +39,25 @@ Tilføjet:
 - Permission assignment/removal.
 - Audit logs for brugerændringer, rolleændringer, badges, permissions og passwordændringer.
 - Dokumenteret manglende schemafelter for aktivering/deaktivering og soft delete i `docs/user-management.md`.
+
+## Sprint: Vehicle Profiles and Inspection Checklists
+
+Tilføjet:
+
+- Databasemodeller til køretøjer, køretøjsinspektioner, checklist items og checklist templates.
+- Prisma migration `20260710081424_add_vehicle_profiles`.
+- Adminområde under `/admin/vehicles`, `/admin/vehicles/create` og `/admin/vehicles/[id]`.
+- Søge- og filtermuligheder for køretøjer.
+- Server-side beskyttede actions for oprettelse, redigering, deaktivering, inspektioner og checklist ændringer.
+- Read-only køretøjsvisning for EVENT_MANAGER.
+- Read-only køretøjsoversigt på brugerprofilen.
+- Køretøjsoversigt på admin bruger-detaljesiden.
+- Audit logs for køretøjer, inspektioner og checklist ændringer.
+- Fjernet kendte real-life bilmærker fra eksisterende køretøjs-/driverdemoer.
+- Dokumentation i `docs/vehicle-management.md`.
+
+Bemærkninger:
+
+- Køretøjsdata i V2 skal gemmes i PostgreSQL via Prisma.
+- Badges giver fortsat ingen adgang.
+- Brugere kan se egne køretøjer, men kan ikke redigere dem.

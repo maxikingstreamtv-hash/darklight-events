@@ -5,6 +5,7 @@ import Footer from "@/components/layout/Footer";
 const adminLinks = [
   { href: "/admin", label: "Dashboard" },
   { href: "/admin/users", label: "Brugere" },
+  { href: "/admin/vehicles", label: "Køretøjer" },
 ];
 
 type AdminLink = (typeof adminLinks)[number];

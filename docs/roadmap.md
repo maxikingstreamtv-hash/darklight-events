@@ -32,6 +32,7 @@ Formål: give admins kontrol over brugere.
 - Tildel badges.
 - Tildel permissions.
 - Vis brugerhistorik og relevante audit logs.
+- Vis tildelte køretøjer på brugerens adminprofil.
 
 ## 4. Admin Dashboard
 
@@ -110,7 +111,18 @@ Formål: vise sponsorer i RP-konteksten.
 - Admin kan styre sponsorindhold.
 - Sponsorvisning skal ikke give systemadgang.
 
-## 12. Settings Center
+## 12. Vehicle Profiles
+
+Formål: gøre køretøjsprofiler og inspektioner databasebaserede.
+
+- SUPER_ADMIN og ADMIN kan tildele køretøjer til brugere.
+- EVENT_MANAGER kan se køretøjer og inspektionsstatus read-only.
+- USER kan se egne køretøjer på profilen.
+- Inspektioner kan have checklist items, status og adminnoter.
+- Checklist templates kan genbruges på flere inspektioner.
+- Virkelige bilmærker må ikke bruges i UI, demoindhold eller profiler.
+
+## 13. Settings Center
 
 Formål: gøre V2 konfigurerbar uden kodeændringer.
 
@@ -121,8 +133,9 @@ Formål: gøre V2 konfigurerbar uden kodeændringer.
 - Sponsorindhold.
 - Hall of Fame-tekster.
 - Generelle tekster.
+- Fremtidige køretøjsklasser og checklist defaults.
 
-## 13. Future Discord OAuth
+## 14. Future Discord OAuth
 
 Formål: planlægge fremtidig Discord-login uden at implementere det nu.
 

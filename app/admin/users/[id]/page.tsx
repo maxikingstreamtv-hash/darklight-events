@@ -30,6 +30,15 @@ type AuditLogEntry = {
   } | null;
 };
 
+type UserVehicleSummary = {
+  id: string;
+  displayName: string;
+  licensePlate: string | null;
+  vehicleClass: string | null;
+  status: string;
+  inspections: { status: string; createdAt: Date }[];
+};
+
 type UserBadgeAssignment = {
   badgeId: string;
   badge: {
@@ -90,6 +99,17 @@ export default async function UserDetailPage({
           permission: { select: { id: true, key: true, label: true } },
         },
         orderBy: { createdAt: "desc" },
+      },
+      vehicles: {
+        orderBy: { updatedAt: "desc" },
+        select: {
+          id: true,
+          displayName: true,
+          licensePlate: true,
+          vehicleClass: true,
+          status: true,
+          inspections: { orderBy: { createdAt: "desc" }, take: 1, select: { status: true, createdAt: true } },
+        },
       },
     },
   });
@@ -195,6 +215,31 @@ export default async function UserDetailPage({
             </dl>
           </AdminCard>
         </div>
+
+        <AdminCard>
+          <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+            <div>
+              <h2 className="text-2xl font-black">Køretøjer</h2>
+              <p className="mt-2 text-sm text-zinc-400">Kun Admin og Super Admin kan tildele og ændre køretøjer. Brugeren kan kun læse egne køretøjer på profilen.</p>
+            </div>
+            <Link href={`/admin/vehicles/create?ownerId=${user.id}`} className="w-fit rounded-full bg-white px-5 py-3 font-black text-black transition hover:bg-zinc-300">
+              Tildel køretøj
+            </Link>
+          </div>
+          <div className="mt-5 grid gap-3 md:grid-cols-2">
+            {user.vehicles.length === 0 ? (
+              <p className="text-sm text-zinc-500">Ingen køretøjer tildelt.</p>
+            ) : (
+              user.vehicles.map((vehicle: UserVehicleSummary) => (
+                <Link key={vehicle.id} href={`/admin/vehicles/${vehicle.id}`} className="rounded-2xl border border-white/10 bg-black p-4 transition hover:border-white/30">
+                  <p className="font-black">{vehicle.displayName}</p>
+                  <p className="mt-1 text-sm text-zinc-500">{vehicle.licensePlate ?? "Ingen plade"} · {vehicle.vehicleClass ?? "Klasse ikke sat"}</p>
+                  <p className="mt-2 text-xs uppercase tracking-[0.18em] text-zinc-400">Status: {vehicle.status} · Inspektion: {vehicle.inspections[0]?.status ?? "Ingen"}</p>
+                </Link>
+              ))
+            )}
+          </div>
+        </AdminCard>
 
         <div className="grid gap-6 lg:grid-cols-2">
           <AdminCard>

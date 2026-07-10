@@ -14,7 +14,7 @@ function getDriverName(driverId: string) {
 function getVehicleLabel(driverId: string) {
   const vehicle = getActiveVehicle(driverId);
 
-  return vehicle ? `${vehicle.brand} ${vehicle.model}` : "Ukendt bil";
+  return vehicle ? vehicle.model : "Ukendt bil";
 }
 
 function resultLabel(entry: LiveLeaderboardRow) {

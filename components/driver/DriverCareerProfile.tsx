@@ -187,7 +187,7 @@ export default function DriverCareerProfile({ driver, adminMode = false }: Drive
                 <div className="mb-5 flex aspect-video items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-sm font-black uppercase tracking-[0.25em] text-zinc-500">Bil</div>
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <h3 className="text-xl font-black">{vehicle.brand} {vehicle.model}</h3>
+                    <h3 className="text-xl font-black">{vehicle.model}</h3>
                     <p className="mt-1 text-sm text-zinc-500">{vehicle.nickname}</p>
                   </div>
                   {vehicle.id === activeVehicle?.id || vehicle.active ? <span className="rounded-full bg-green-500/20 px-3 py-1 text-xs font-black text-green-300">Aktiv bil</span> : null}

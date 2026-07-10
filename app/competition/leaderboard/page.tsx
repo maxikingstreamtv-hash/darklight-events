@@ -26,7 +26,7 @@ function getDriverVehicle(driverId: string) {
   const activeVehicle = getActiveVehicle(driverId);
 
   if (activeVehicle) {
-    return `${activeVehicle.brand} ${activeVehicle.model}`;
+    return activeVehicle.model;
   }
 
   return drivers.find((driver) => driver.id === driverId)?.favoriteVehicle ?? "Ukendt køretøj";

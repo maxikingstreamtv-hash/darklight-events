@@ -15,6 +15,7 @@ Bør have:
 - Adgang til Settings Center.
 - Mulighed for at styre roller, badges og permissions.
 - Mulighed for at registrere og rette resultater.
+- Mulighed for at styre køretøjer, inspektioner og checklist templates.
 
 ### ADMIN
 
@@ -30,7 +31,7 @@ Bør have:
 - `MANAGE_GALLERY`
 - `MANAGE_SETTINGS`, hvis Super Admin tillader det
 
-ADMIN bør ikke kunne fjerne sidste SUPER_ADMIN eller give højere adgang end tilladt.
+ADMIN kan styre køretøjer og inspektionschecklister. ADMIN bør ikke kunne fjerne sidste SUPER_ADMIN eller give højere adgang end tilladt.
 
 ### EVENT_MANAGER
 
@@ -39,6 +40,8 @@ EVENT_MANAGER styrer events og eventafvikling.
 Bør have:
 
 - `MANAGE_EVENTS`
+
+EVENT_MANAGER har read-only adgang til køretøjsoversigten, så eventafvikling kan se relevante køretøjer og inspektionsstatus. Rollen må ikke redigere køretøjer, checklister eller inspektioner.
 
 EVENT_MANAGER bør ikke have:
 
@@ -58,6 +61,7 @@ Bør have:
 - Adgang til egen profil.
 - Adgang til egne bookinger.
 - Adgang til egne resultater og badges.
+- Read-only adgang til egne tildelte køretøjer og inspektionskrav.
 
 ## Permissions
 
@@ -132,6 +136,17 @@ Anbefalet til:
 - ADMIN efter behov
 
 Settings kan påvirke store dele af systemet og bør derfor være begrænset.
+
+## Køretøjsadgang
+
+Køretøjsmodulet bruger de eksisterende roller:
+
+- SUPER_ADMIN: kan oprette, redigere, deaktivere og inspicere alle køretøjer.
+- ADMIN: kan oprette, redigere, deaktivere og inspicere alle køretøjer.
+- EVENT_MANAGER: kan se adminoversigten, men ikke skrive.
+- USER: kan kun se egne tildelte køretøjer på egen profil.
+
+Alle writes skal valideres server-side. Frontend-hiding er ikke nok.
 
 ## Badge-regler
 

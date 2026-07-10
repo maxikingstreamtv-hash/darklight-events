@@ -82,7 +82,7 @@ export default function ParticipantList() {
                   <h3 className="font-black">{driver.name}</h3>
                   <p className="text-sm text-zinc-500">{driver.darklightId}</p>
                   <p className="mt-1 text-sm text-zinc-400">
-                    Aktiv bil: {activeVehicle ? `${activeVehicle.brand} ${activeVehicle.model}` : "Ingen bil"}
+                    Aktiv bil: {activeVehicle ? activeVehicle.model : "Ingen bil"}
                   </p>
                 </div>
               </div>
@@ -90,7 +90,7 @@ export default function ParticipantList() {
               <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-zinc-300">
                 <p className="text-xs uppercase tracking-[0.25em] text-zinc-500">Event-bil</p>
                 <p className="mt-2 font-bold">
-                  {activeVehicle ? `${activeVehicle.brand} ${activeVehicle.model} · ${activeVehicle.registration}` : driverVehicles.length > 0 ? "Vælg aktiv bil på driverprofilen" : "Ingen bil registreret"}
+                  {activeVehicle ? `${activeVehicle.model} · ${activeVehicle.registration}` : driverVehicles.length > 0 ? "Vælg aktiv bil på driverprofilen" : "Ingen bil registreret"}
                 </p>
               </div>
 
