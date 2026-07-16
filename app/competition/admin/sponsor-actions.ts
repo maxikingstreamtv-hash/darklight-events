@@ -18,6 +18,17 @@ function text(formData: FormData, key: string) {
   return String(formData.get(key) ?? "").trim();
 }
 
+function safeUrl(value: string) {
+  if (!value) return null;
+
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:" ? url.toString() : null;
+  } catch {
+    return null;
+  }
+}
+
 function slugify(value: string) {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || `sponsor-${Date.now()}`;
 }
@@ -31,6 +42,7 @@ function redirectAdmin(key: "contentOk" | "contentError", message: string): neve
 }
 
 function revalidateSponsorRoutes(slug?: string) {
+  revalidatePath("/");
   revalidatePath("/competition/admin");
   revalidatePath("/sponsorer");
   if (slug) revalidatePath(`/sponsorer/${slug}`);
@@ -69,6 +81,19 @@ export async function saveSponsorAction(formData: FormData) {
   const isMainSponsor = formData.get("isMainSponsor") === "on" || sponsorType === "MAIN_SPONSOR";
   const status = readEnum(text(formData, "status"), sponsorStatuses, "ACTIVE");
   const slug = slugify(text(formData, "slug") || name);
+  const logoUrlInput = text(formData, "logoUrl");
+  const websiteUrlInput = text(formData, "websiteUrl");
+  const logoUrl = safeUrl(logoUrlInput);
+  const websiteUrl = safeUrl(websiteUrlInput);
+
+  if (logoUrlInput && !logoUrl) {
+    redirectAdmin("contentError", "Logo-URL skal starte med http:// eller https://.");
+  }
+
+  if (websiteUrlInput && !websiteUrl) {
+    redirectAdmin("contentError", "Website-URL skal starte med http:// eller https://.");
+  }
+
   const payload = {
     slug,
     name,
@@ -79,8 +104,8 @@ export async function saveSponsorAction(formData: FormData) {
     eventsSupported: text(formData, "eventsSupported").split(",").map((item) => item.trim()).filter(Boolean),
     description: text(formData, "description") || "Ingen beskrivelse endnu.",
     logoInitials: text(formData, "logoInitials") || name.slice(0, 3).toUpperCase(),
-    logoUrl: text(formData, "logoUrl") || null,
-    websiteUrl: text(formData, "websiteUrl") || null,
+    logoUrl,
+    websiteUrl,
     ctaLabel: text(formData, "ctaLabel") || null,
     sortOrder: Number(text(formData, "sortOrder")) || 0,
     active: status === "ACTIVE",

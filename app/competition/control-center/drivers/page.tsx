@@ -1,10 +1,5 @@
-import ControlCenterLayout from "@/components/competition/ControlCenterLayout";
-import DriversOverview from "@/components/competition/DriversOverview";
+import { redirect } from "next/navigation";
 
 export default function ControlCenterDriversPage() {
-  return (
-    <ControlCenterLayout>
-      <DriversOverview />
-    </ControlCenterLayout>
-  );
+  redirect("/competition/drivers");
 }

@@ -4,9 +4,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { ShieldCheck } from "lucide-react";
 import { useSession } from "next-auth/react";
+import type { ReactNode } from "react";
 import ScrollIndicator from "./ScrollIndicator";
 
-export default function Hero() {
+export default function Hero({ sponsorSlot }: { sponsorSlot?: ReactNode }) {
   const { data: session } = useSession();
 
   return (
@@ -79,7 +80,9 @@ export default function Hero() {
           </Link>
         </div>
 
-        <div className="mx-auto mt-20 grid max-w-5xl gap-5 md:grid-cols-4">
+        {sponsorSlot ? <div className="mx-auto mt-12 max-w-5xl">{sponsorSlot}</div> : null}
+
+        <div className={`mx-auto grid max-w-5xl gap-5 md:grid-cols-4 ${sponsorSlot ? "mt-6" : "mt-20"}`}>
           <Stat value="10+" label="Eventtyper" />
           <Stat value="100%" label="FiveM fokus" />
           <Stat value="24H" label="Typisk svartid" />

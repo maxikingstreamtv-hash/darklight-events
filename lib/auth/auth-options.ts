@@ -65,7 +65,7 @@ export const authOptions: AuthOptions = {
       name: "DarkLight login",
       credentials: {
         username: { label: "Brugernavn", type: "text" },
-        password: { label: "Adgangskode", type: "password" },
+        password: { label: "DL PIN", type: "password" },
       },
       async authorize(credentials) {
         const username = credentials?.username?.trim();
@@ -75,8 +75,8 @@ export const authOptions: AuthOptions = {
           return null;
         }
 
-        const user = await prisma.user.findUnique({
-          where: { username },
+        const user = await prisma.user.findFirst({
+          where: { username: { equals: username, mode: "insensitive" } },
           include: {
             badges: { include: { badge: true } },
             permissions: { include: { permission: true } },

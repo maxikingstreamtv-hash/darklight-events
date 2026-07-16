@@ -50,7 +50,7 @@ export default async function CompetitionAdminPage({ searchParams }: { searchPar
     prisma.user.findMany({
       where: {
         role: { in: ["SUPER_ADMIN", "ADMIN", "EVENT_MANAGER"] },
-        deletedAt: null,
+        archivedAt: null,
       },
       orderBy: [{ role: "asc" }, { displayName: "asc" }],
       select: {

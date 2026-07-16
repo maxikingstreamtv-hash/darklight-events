@@ -41,7 +41,11 @@ export default async function SponsorDetailPage({ params }: { params: Promise<{ 
           {sponsor ? (
             <div className="mt-10 rounded-[2.5rem] border border-white/10 bg-white/[0.04] p-8">
               <div className="flex items-center gap-5">
-                <div className="flex h-20 w-20 items-center justify-center rounded-3xl border border-white/10 bg-black bg-contain bg-center bg-no-repeat text-2xl font-black" style={sponsor.logoUrl ? { backgroundImage: `url(${sponsor.logoUrl})` } : undefined}>{sponsor.logoUrl ? "" : sponsor.logoInitials}</div>
+                <SponsorLogo
+                  name={sponsor.name}
+                  initials={sponsor.logoInitials}
+                  logoUrl={sponsor.logoUrl}
+                />
                 <div>
                   <p className="text-sm uppercase tracking-[0.25em] text-zinc-500">{formatSponsorLevel(sponsor.level)}</p>
                   <h1 className="text-5xl font-black">{sponsor.name}</h1>
@@ -74,6 +78,23 @@ function Info({ label, value }: { label: string; value: string }) {
     <div className="rounded-2xl border border-white/10 bg-black p-5">
       <p className="text-xs uppercase tracking-[0.25em] text-zinc-500">{label}</p>
       <p className="mt-2 font-black">{value}</p>
+    </div>
+  );
+}
+
+function SponsorLogo({ name, initials, logoUrl }: { name: string; initials: string; logoUrl: string | null }) {
+  if (logoUrl) {
+    return (
+      <div className="flex h-[7.5rem] w-[7.5rem] shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-neutral-950 p-1.5">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={logoUrl} alt={`${name} logo`} className="h-full w-full object-contain" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex h-[7.5rem] w-[7.5rem] shrink-0 items-center justify-center rounded-xl border border-white/10 bg-neutral-950 p-1.5 text-2xl font-black text-white">
+      {initials}
     </div>
   );
 }

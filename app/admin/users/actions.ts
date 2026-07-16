@@ -226,3 +226,104 @@ export async function removePermissionAction(userId: string, permissionId: strin
   revalidatePath(pagePath);
   redirectWithMessage(pagePath, "ok", "Permission blev fjernet.");
 }
+
+export async function deleteUserAction(userId: string, formData: FormData) {
+  const actor = await requireAdminUser();
+  const pagePath = `/admin/users/${userId}`;
+
+  if (actor.role !== "SUPER_ADMIN") {
+    redirectWithMessage(pagePath, "error", "Kun Super Admin kan slette brugere permanent.");
+  }
+
+  if (actor.id === userId) {
+    redirectWithMessage(pagePath, "error", "Du kan ikke slette din egen bruger gennem standardflowet.");
+  }
+
+  const confirmation = String(formData.get("confirmation") ?? "").trim();
+  const target = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      username: true,
+      displayName: true,
+      role: true,
+      active: true,
+      profileStatus: true,
+    },
+  });
+
+  if (!target || !isAppRole(target.role)) {
+    redirectWithMessage("/admin/users", "error", "Brugeren blev ikke fundet.");
+  }
+
+  const expectedConfirmation = `SLET ${target.displayName}`;
+  if (confirmation !== expectedConfirmation) {
+    redirectWithMessage(pagePath, "error", `Bekræft sletning ved at skrive: ${expectedConfirmation}`);
+  }
+
+  if (target.role === "SUPER_ADMIN") {
+    const activeSuperAdmins = await prisma.user.count({
+      where: {
+        role: "SUPER_ADMIN",
+        active: true,
+        profileStatus: "ACTIVE",
+        archivedAt: null,
+      },
+    });
+
+    if (activeSuperAdmins <= 1) {
+      redirectWithMessage(pagePath, "error", "Den sidste aktive Super Admin kan ikke slettes.");
+    }
+  }
+
+  const [createdEvents, createdResults, createdVehicles, ownedVehicles, bookings, badges, permissions] = await Promise.all([
+    prisma.event.count({ where: { createdById: userId } }),
+    prisma.result.count({ where: { createdById: userId } }),
+    prisma.vehicle.count({ where: { createdById: userId, ownerId: { not: userId } } }),
+    prisma.vehicle.count({ where: { ownerId: userId } }),
+    prisma.booking.count({ where: { userId } }),
+    prisma.userBadge.count({ where: { userId } }),
+    prisma.userPermission.count({ where: { userId } }),
+  ]);
+
+  const blockers = [
+    createdEvents ? `${createdEvents} oprettede event(s)` : "",
+    createdResults ? `${createdResults} oprettede resultat(er)` : "",
+    createdVehicles ? `${createdVehicles} køretøj(er) oprettet for andre brugere` : "",
+  ].filter(Boolean);
+
+  if (blockers.length > 0) {
+    redirectWithMessage(
+      pagePath,
+      "error",
+      `Permanent sletning er blokeret af historiske relationer: ${blockers.join(", ")}. Arkivér brugeren i stedet.`,
+    );
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.auditLog.create({
+      data: {
+        actorId: actor.id,
+        action: "user_deleted",
+        target: `user:${target.id}`,
+        details: JSON.stringify({
+          username: target.username,
+          displayName: target.displayName,
+          role: target.role,
+          removedRelations: { ownedVehicles, bookings, badges, permissions },
+        }),
+      },
+    });
+
+    await tx.userBadge.deleteMany({ where: { userId } });
+    await tx.userPermission.deleteMany({ where: { userId } });
+    await tx.booking.deleteMany({ where: { userId } });
+    await tx.vehicle.deleteMany({ where: { ownerId: userId } });
+    await tx.user.delete({ where: { id: userId } });
+  });
+
+  revalidatePath("/admin/users");
+  revalidatePath("/competition/drivers");
+  revalidatePath(pagePath);
+  redirectWithMessage("/admin/users", "ok", "Brugeren blev slettet permanent.");
+}

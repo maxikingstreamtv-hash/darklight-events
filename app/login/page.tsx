@@ -49,7 +49,7 @@ function LoginForm() {
     setPending(false);
 
     if (!result?.ok) {
-      setError("Login mislykkedes. Tjek brugernavn og adgangskode.");
+      setError("Forkert brugernavn eller DL PIN.");
       return;
     }
 
@@ -67,12 +67,17 @@ function LoginForm() {
             <p className="mb-4 text-sm uppercase tracking-[0.45em] text-zinc-500">DarkLight adgang</p>
             <h1 className="text-5xl font-black md:text-7xl">Log ind</h1>
             <p className="mt-5 max-w-2xl text-zinc-400">
-              Log ind med dit DarkLight ID eller brugernavn og din DL PIN. Adgang styres af rolle, permissions og badges fra databasen.
+              Brug det brugernavn og den DL PIN, du valgte, da du oprettede din konto.
             </p>
             <div className="mt-8 rounded-[2rem] border border-white/10 bg-white/[0.04] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.35)] backdrop-blur-xl">
-              <p className="font-black">V2 database-login</p>
-              <p className="mt-2 text-sm leading-6 text-zinc-500">
-                Brugere valideres server-side med PostgreSQL, Prisma og Argon2. Badges er kun visuel status og giver ikke adgang.
+              <p className="font-black">Sådan logger du ind</p>
+              <ol className="mt-4 grid gap-2 text-sm leading-6 text-zinc-400">
+                <li>1. Skriv dit brugernavn.</li>
+                <li>2. Skriv din DL PIN.</li>
+                <li>3. Tryk på Log ind.</li>
+              </ol>
+              <p className="mt-4 text-sm leading-6 text-zinc-500">
+                Dit DarkLight ID bruges på din profil og i DarkLight-systemet, men du behøver det ikke for at logge ind.
               </p>
             </div>
           </div>
@@ -81,11 +86,11 @@ function LoginForm() {
             <p className="text-sm uppercase tracking-[0.35em] text-zinc-500">Log ind</p>
             <h2 className="mt-3 text-4xl font-black">DarkLight konto</h2>
             <p className="mt-2 text-sm leading-6 text-zinc-500">
-                Brug dit DarkLight ID eller brugernavn. Email bruges ikke til login i DarkLight Events V2.
+              Fremtidigt login er altid brugernavn + DL PIN.
             </p>
             <div className="mt-7 grid gap-4">
-              <TextInput label="DarkLight ID / brugernavn" value={username} onChange={setUsername} autoComplete="username" />
-              <TextInput label="DL PIN" value={password} onChange={setPassword} type="password" autoComplete="current-password" />
+              <TextInput label="Brugernavn" value={username} onChange={setUsername} autoComplete="username" placeholder="Fx ColeKane" />
+              <TextInput label="DL PIN" value={password} onChange={setPassword} type="password" autoComplete="current-password" placeholder="Indtast din DL PIN" />
               {error ? <p className="rounded-2xl border border-red-500/20 bg-red-500/10 px-5 py-4 text-sm text-red-300">{error}</p> : null}
               <button
                 disabled={pending}
@@ -126,12 +131,14 @@ function TextInput({
   onChange,
   type = "text",
   autoComplete,
+  placeholder,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   type?: string;
   autoComplete?: string;
+  placeholder?: string;
 }) {
   return (
     <label className="grid gap-2">
@@ -141,6 +148,7 @@ function TextInput({
         value={value}
         onChange={(event) => onChange(event.target.value)}
         autoComplete={autoComplete}
+        placeholder={placeholder}
         className="field"
       />
     </label>

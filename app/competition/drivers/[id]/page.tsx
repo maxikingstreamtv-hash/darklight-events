@@ -35,7 +35,7 @@ export default async function DriverProfilePage({ params }: { params: Promise<{ 
     },
   });
 
-  if (!user || user.deletedAt) {
+  if (!user || !user.active || user.profileStatus !== "ACTIVE" || user.archivedAt) {
     notFound();
   }
 
@@ -52,10 +52,16 @@ export default async function DriverProfilePage({ params }: { params: Promise<{ 
 
             <div className="grid gap-8 xl:grid-cols-[1fr_360px]">
               <section className="rounded-[2.5rem] border border-white/10 bg-white/[0.04] p-8">
-                <p className="text-sm uppercase tracking-[0.35em] text-zinc-500">{user.role}</p>
-                <h1 className="mt-4 text-5xl font-black md:text-7xl">{user.displayName}</h1>
-                <p className="mt-4 text-zinc-500">{user.username}</p>
-                <p className="mt-6 max-w-3xl leading-7 text-zinc-400">{user.bio ?? "Ingen profiltekst gemt endnu."}</p>
+                <div className="flex flex-col gap-6 md:flex-row md:items-center">
+                  <Avatar avatar={user.avatar ?? ""} displayName={user.displayName} />
+                  <div>
+                    <p className="text-sm uppercase tracking-[0.35em] text-zinc-500">{user.role}</p>
+                    <h1 className="mt-4 text-5xl font-black md:text-7xl">{user.displayName}</h1>
+                    <p className="mt-4 text-zinc-500">@{user.username}</p>
+                    <p className="mt-1 text-zinc-500">DarkLight ID: {user.darklightId ?? "Ikke tildelt"}</p>
+                  </div>
+                </div>
+                {user.bio ? <p className="mt-6 max-w-3xl leading-7 text-zinc-400">{user.bio}</p> : null}
               </section>
 
               <aside className="rounded-[2.5rem] border border-white/10 bg-white/[0.04] p-8">
@@ -135,4 +141,19 @@ function Panel({ title, children, className = "" }: { title: string; children: R
       {children}
     </section>
   );
+}
+
+function Avatar({ avatar, displayName }: { avatar: string; displayName: string }) {
+  const initials = displayName.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase();
+
+  if (avatar) {
+    return (
+      <div className="h-28 w-28 shrink-0 overflow-hidden rounded-3xl border border-white/10 bg-neutral-950">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={avatar} alt={`${displayName} avatar`} className="h-full w-full object-cover" />
+      </div>
+    );
+  }
+
+  return <div className="flex h-28 w-28 shrink-0 items-center justify-center rounded-3xl border border-white/10 bg-neutral-950 text-3xl font-black text-white">{initials}</div>;
 }

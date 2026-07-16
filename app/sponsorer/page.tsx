@@ -130,11 +130,16 @@ function SponsorSection({ title, sponsors, compact = false }: { title: string; s
 }
 
 function SponsorLogo({ sponsor, large = false }: { sponsor: PublicSponsor; large?: boolean }) {
-  const size = large ? "h-44 w-44 text-5xl" : "h-16 w-16 text-xl";
+  const size = large ? "h-56 w-56 text-5xl" : "h-20 w-20 text-xl";
 
   if (sponsor.logoUrl) {
-    return <div className={`flex shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white bg-contain bg-center bg-no-repeat font-black text-black ${size}`} style={{ backgroundImage: `url(${sponsor.logoUrl})` }} aria-label={`${sponsor.name} logo`} />;
+    return (
+      <div className={`flex shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-neutral-950 p-1.5 font-black text-white ${size}`}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={sponsor.logoUrl} alt={`${sponsor.name} logo`} className="h-full w-full object-contain" />
+      </div>
+    );
   }
 
-  return <div className={`flex shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-black font-black text-white ${size}`}>{initials(sponsor)}</div>;
+  return <div className={`flex shrink-0 items-center justify-center rounded-xl border border-white/10 bg-neutral-950 p-1.5 font-black text-white ${size}`}>{initials(sponsor)}</div>;
 }

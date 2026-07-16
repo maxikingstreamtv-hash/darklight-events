@@ -9,13 +9,18 @@ export const dynamic = "force-dynamic";
 export default async function DriversPage() {
   const users = await prisma.user.findMany({
     where: {
-      deletedAt: null,
+      active: true,
+      profileStatus: "ACTIVE",
+      archivedAt: null,
     },
     orderBy: [{ displayName: "asc" }],
     select: {
       id: true,
       username: true,
+      darklightId: true,
       displayName: true,
+      avatar: true,
+      bio: true,
       role: true,
       active: true,
       profileStatus: true,
@@ -52,9 +57,16 @@ export default async function DriversPage() {
               <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
                 {users.map((user) => (
                   <article key={user.id} className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.35)]">
-                    <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">{user.role}</p>
-                    <h2 className="mt-3 text-2xl font-black">{user.displayName}</h2>
-                    <p className="mt-2 text-sm text-zinc-500">{user.username}</p>
+                    <div className="flex items-center gap-4">
+                      <Avatar avatar={user.avatar ?? ""} displayName={user.displayName} />
+                      <div>
+                        <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">{user.role}</p>
+                        <h2 className="mt-3 text-2xl font-black">{user.displayName}</h2>
+                        <p className="mt-2 text-sm text-zinc-500">@{user.username}</p>
+                        <p className="mt-1 text-sm text-zinc-500">{user.darklightId ?? "Intet DarkLight ID"}</p>
+                      </div>
+                    </div>
+                    {user.bio ? <p className="mt-5 line-clamp-3 text-sm leading-6 text-zinc-400">{user.bio}</p> : null}
                     <div className="mt-5 grid gap-3">
                       <MiniStat label="Status" value={user.active ? user.profileStatus : "INACTIVE"} />
                       <MiniStat label="Køretøjer" value={user._count.vehicles} />
@@ -88,4 +100,19 @@ function MiniStat({ label, value }: { label: string; value: string | number }) {
       <span className="text-sm font-black text-white">{value}</span>
     </div>
   );
+}
+
+function Avatar({ avatar, displayName }: { avatar: string; displayName: string }) {
+  const initials = displayName.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase();
+
+  if (avatar) {
+    return (
+      <div className="h-16 w-16 shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-neutral-950">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={avatar} alt={`${displayName} avatar`} className="h-full w-full object-cover" />
+      </div>
+    );
+  }
+
+  return <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-neutral-950 text-lg font-black text-white">{initials}</div>;
 }

@@ -5,7 +5,7 @@ import { AdminCard, Field, StatusBadge, fieldClassName } from "@/components/admi
 import { prisma } from "@/lib/prisma";
 import { canAdminManageTarget, getAssignableRoles, requireAdminUser } from "@/lib/admin/access";
 import { isAppRole, type AppRole } from "@/lib/auth/types";
-import { grantBadgeAction, grantPermissionAction, removeBadgeAction, removePermissionAction, updateUserAction } from "../actions";
+import { deleteUserAction, grantBadgeAction, grantPermissionAction, removeBadgeAction, removePermissionAction, updateUserAction } from "../actions";
 
 type BadgeOption = {
   id: string;
@@ -120,7 +120,7 @@ export default async function UserDetailPage({
 
   const canManage = canAdminManageTarget(admin, user.role);
   const assignableRoles = getAssignableRoles(admin);
-  const [badges, permissions, auditLogs] = await Promise.all([
+  const [badges, permissions, auditLogs, deleteRelations] = await Promise.all([
     prisma.badge.findMany({ orderBy: { label: "asc" }, select: { id: true, name: true, label: true } }),
     prisma.permission.findMany({ orderBy: { key: "asc" }, select: { id: true, key: true, label: true } }),
     prisma.auditLog.findMany({
@@ -135,6 +135,19 @@ export default async function UserDetailPage({
         actor: { select: { displayName: true, username: true } },
       },
     }),
+    Promise.all([
+      prisma.event.count({ where: { createdById: user.id } }),
+      prisma.result.count({ where: { createdById: user.id } }),
+      prisma.vehicle.count({ where: { createdById: user.id, ownerId: { not: user.id } } }),
+      prisma.vehicle.count({ where: { ownerId: user.id } }),
+      prisma.booking.count({ where: { userId: user.id } }),
+    ]).then(([createdEvents, createdResults, createdVehiclesForOthers, ownedVehicles, bookings]) => ({
+      createdEvents,
+      createdResults,
+      createdVehiclesForOthers,
+      ownedVehicles,
+      bookings,
+    })),
   ]);
 
   const assignedBadgeIds = new Set(user.badges.map((item: UserBadgeAssignment) => item.badgeId));
@@ -326,6 +339,38 @@ export default async function UserDetailPage({
             </div>
           )}
         </AdminCard>
+
+        <AdminCard className="border-red-400/20 bg-red-500/[0.04]">
+          <h2 className="text-2xl font-black text-red-100">Slet bruger permanent</h2>
+          <p className="mt-3 text-sm leading-6 text-red-100/80">
+            Kun Super Admin kan slette fejl-oprettede brugere. Brugere med historiske relationer som oprettede events,
+            resultater eller køretøjer oprettet for andre bliver blokeret og skal arkiveres i stedet.
+          </p>
+          <div className="mt-5 grid gap-3 text-sm md:grid-cols-2 xl:grid-cols-5">
+            <RelationCount label="Oprettede events" value={deleteRelations.createdEvents} critical />
+            <RelationCount label="Oprettede resultater" value={deleteRelations.createdResults} critical />
+            <RelationCount label="Oprettede køretøjer" value={deleteRelations.createdVehiclesForOthers} critical />
+            <RelationCount label="Egne køretøjer" value={deleteRelations.ownedVehicles} />
+            <RelationCount label="Bookinger" value={deleteRelations.bookings} />
+          </div>
+          {admin.role === "SUPER_ADMIN" && admin.id !== user.id ? (
+            <form action={deleteUserAction.bind(null, user.id)} className="mt-6 grid gap-3 md:grid-cols-[1fr_auto]">
+              <input
+                name="confirmation"
+                className={fieldClassName}
+                placeholder={`Skriv SLET ${user.displayName}`}
+                aria-label="Bekræft permanent sletning"
+              />
+              <button className="rounded-full border border-red-400/30 bg-red-500/10 px-6 py-3 font-black text-red-100 transition hover:bg-red-400 hover:text-black">
+                Slet bruger
+              </button>
+            </form>
+          ) : (
+            <p className="mt-5 rounded-2xl border border-white/10 bg-black p-4 text-sm text-zinc-400">
+              Denne handling er skjult, fordi du ikke er Super Admin eller fordi det er din egen bruger.
+            </p>
+          )}
+        </AdminCard>
       </div>
     </AdminShell>
   );
@@ -333,4 +378,13 @@ export default async function UserDetailPage({
 
 function Message({ tone, text }: { tone: "ok" | "error"; text: string }) {
   return <div className={`rounded-2xl border px-5 py-4 text-sm ${tone === "ok" ? "border-emerald-400/20 bg-emerald-400/10 text-emerald-200" : "border-red-400/20 bg-red-400/10 text-red-200"}`}>{text}</div>;
+}
+
+function RelationCount({ label, value, critical = false }: { label: string; value: number; critical?: boolean }) {
+  return (
+    <div className={`rounded-2xl border p-4 ${critical && value > 0 ? "border-red-400/30 bg-red-500/10" : "border-white/10 bg-black"}`}>
+      <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">{label}</p>
+      <p className="mt-2 text-2xl font-black">{value}</p>
+    </div>
+  );
 }
