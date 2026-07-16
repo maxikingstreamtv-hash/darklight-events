@@ -2,21 +2,13 @@
 import Footer from "@/components/layout/Footer";
 import CompetitionLayout from "@/components/competition/CompetitionLayout";
 import AdminDataControl from "@/components/competition/AdminDataControl";
-import AdminLiveDataPanel from "@/components/competition/AdminLiveDataPanel";
 import { FaqManagerPanel, RulesManagerPanel } from "@/components/competition/ContentManagerPanel";
 import SponsorDbManagerPanel from "@/components/competition/SponsorDbManagerPanel";
 import CompetitionPageShell from "@/components/competition/layout/CompetitionPageShell";
-import ManualManagerPanel, { type ManualManagerItem } from "@/components/competition/ManualManagerPanel";
 import Badge from "@/components/competition/ui/Badge";
 import Button from "@/components/competition/ui/Button";
 import Card from "@/components/competition/ui/Card";
 import StatCard from "@/components/competition/ui/StatCard";
-import { staffAccounts } from "@/components/auth/mock-auth";
-import { documents } from "@/data/documents";
-import { permissions } from "@/data/permissions";
-import { news } from "@/data/news";
-import { galleryItems } from "@/data/gallery";
-import { staffMembers } from "@/data/staff";
 import { dataModeCopy, eventOSDataMode } from "@/data/eventos-mode";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth/session";
@@ -36,69 +28,6 @@ const modules = [
   ["Sponsorer", "Klar", "/sponsorer"],
 ];
 
-const managerPanels = [
-  {
-    title: "Tilladelses Manager",
-    description: "Hold styr på lokationer, eventtilladelser og koordinering i DreamLight.",
-    storageKey: "darklight-manager-permissions",
-    items: permissions.map((item) => ({
-      id: item.id,
-      title: item.event,
-      status: item.status,
-      meta: `${item.location} · ${item.applicant}`,
-      description: item.comment,
-    })),
-  },
-  {
-    title: "Dokument Manager",
-    description: "Administrer manualer, regelsæt og sponsoroversigter.",
-    storageKey: "darklight-manager-documents",
-    items: documents.map((item) => ({
-      id: item.id,
-      title: item.title,
-      status: item.status,
-      meta: `${item.category} · ${item.owner}`,
-      description: item.summary,
-    })),
-  },
-  {
-    title: "Nyheds Manager",
-    description: "Planlæg og arkiver nyheder til den offentlige platform.",
-    storageKey: "darklight-manager-news",
-    items: news.map((item) => ({
-      id: item.id,
-      title: item.title,
-      status: item.featured ? "Fremhævet" : "Aktiv",
-      meta: `${item.category} · ${item.author}`,
-      description: item.excerpt,
-    })),
-  },
-  {
-    title: "Galleri Manager",
-    description: "Hold styr på billeder, eventreferencer og kategorier.",
-    storageKey: "darklight-manager-gallery",
-    items: galleryItems.map((item) => ({
-      id: item.id,
-      title: item.title,
-      status: "Aktiv",
-      meta: `${item.category} · ${item.eventRef}`,
-      description: item.description,
-    })),
-  },
-  {
-    title: "Staff Manager",
-    description: "Oversigt over DarkLight staff, roller og ansvarsområder.",
-    storageKey: "darklight-manager-staff",
-    items: staffMembers.map((item) => ({
-      id: item.id,
-      title: item.characterName,
-      status: item.status,
-      meta: `${item.role} · ${item.department}`,
-      description: item.responsibilities.join(", "),
-    })),
-  },
-] satisfies Array<{ title: string; description: string; storageKey: string; items: ManualManagerItem[] }>;
-
 type AdminSearchParams = {
   resetOk?: string | string[];
   resetError?: string | string[];
@@ -114,10 +43,25 @@ export default async function CompetitionAdminPage({ searchParams }: { searchPar
   const params = await searchParams;
   const modeCopy = dataModeCopy[eventOSDataMode];
   const currentUser = await getCurrentUser();
-  const [faqItems, ruleSets, dbSponsors] = await Promise.all([
+  const [faqItems, ruleSets, dbSponsors, staffUsers] = await Promise.all([
     prisma.faqItem.findMany({ orderBy: [{ sortOrder: "asc" }, { question: "asc" }] }),
     prisma.ruleSet.findMany({ orderBy: [{ sortOrder: "asc" }, { title: "asc" }] }),
     prisma.sponsor.findMany({ orderBy: [{ isMainSponsor: "desc" }, { sponsorType: "asc" }, { sortOrder: "asc" }, { name: "asc" }] }),
+    prisma.user.findMany({
+      where: {
+        role: { in: ["SUPER_ADMIN", "ADMIN", "EVENT_MANAGER"] },
+        deletedAt: null,
+      },
+      orderBy: [{ role: "asc" }, { displayName: "asc" }],
+      select: {
+        id: true,
+        username: true,
+        displayName: true,
+        role: true,
+        active: true,
+        profileStatus: true,
+      },
+    }),
   ]);
 
   return (
@@ -173,10 +117,6 @@ export default async function CompetitionAdminPage({ searchParams }: { searchPar
             </p>
           ) : null}
 
-          <div className="mt-8">
-            <AdminLiveDataPanel />
-          </div>
-
           <div className="mt-8 grid gap-8 xl:grid-cols-[0.9fr_1.1fr]">
             <Card padded="lg">
               <h2 className="mb-7 text-3xl font-black">Manuel eventstyring</h2>
@@ -197,17 +137,18 @@ export default async function CompetitionAdminPage({ searchParams }: { searchPar
             <Card padded="lg">
               <h2 className="mb-7 text-3xl font-black">Staff-konti</h2>
               <div className="grid gap-4">
-                {staffAccounts.map((account) => (
-                  <div key={account.darklightId} className="rounded-2xl border border-white/10 bg-black p-5">
-                    <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">{account.rpRole}</p>
-                    <h3 className="mt-3 text-xl font-black">{account.characterName}</h3>
-                    <p className="mt-2 text-sm text-zinc-500">{account.description}</p>
+                {staffUsers.map((account) => (
+                  <div key={account.id} className="rounded-2xl border border-white/10 bg-black p-5">
+                    <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">{account.role}</p>
+                    <h3 className="mt-3 text-xl font-black">{account.displayName}</h3>
+                    <p className="mt-2 text-sm text-zinc-500">{account.username}</p>
                     <div className="mt-4 flex flex-wrap gap-2">
-                      {account.permissions.map((permission) => (
-                        <span key={permission} className="rounded-full border border-white/10 px-3 py-2 text-xs text-zinc-300">
-                          {permission}
-                        </span>
-                      ))}
+                      <span className="rounded-full border border-white/10 px-3 py-2 text-xs text-zinc-300">
+                        {account.active ? "Aktiv" : "Inaktiv"}
+                      </span>
+                      <span className="rounded-full border border-white/10 px-3 py-2 text-xs text-zinc-300">
+                        {account.profileStatus}
+                      </span>
                     </div>
                   </div>
                 ))}
@@ -230,9 +171,13 @@ export default async function CompetitionAdminPage({ searchParams }: { searchPar
           <div className="mt-8 grid gap-6 xl:grid-cols-2">
             <FaqManagerPanel items={faqItems} />
             <RulesManagerPanel items={ruleSets} />
-            {managerPanels.map((panel) => (
-              <ManualManagerPanel key={panel.storageKey} {...panel} />
-            ))}
+            <Card padded="lg">
+              <h2 className="mb-4 text-3xl font-black">Øvrige managers</h2>
+              <p className="leading-7 text-zinc-400">
+                De gamle localStorage-baserede dokument-, galleri-, nyheds-, staff- og tilladelsesmanagers er fjernet fra runtime.
+                Brug de databasebaserede moduler eller opret en Prisma-model, før der tilføjes redigeringsknapper igen.
+              </p>
+            </Card>
           </div>
         </CompetitionPageShell>
       </CompetitionLayout>

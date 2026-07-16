@@ -1,25 +1,25 @@
-﻿"use client";
-
 import Link from "next/link";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import { findAvailableDriver } from "@/components/auth/driver-directory";
-import { useEventOSStore } from "@/components/competition/eventos-store";
-import { getActiveVehicle } from "@/components/competition/garage-engine";
+import { prisma } from "@/lib/prisma";
 
-function getDriverName(driverId?: string) {
-  if (!driverId) return "Afventer";
-  return findAvailableDriver(driverId)?.name ?? "Ukendt kører";
-}
+export const dynamic = "force-dynamic";
 
-function getDriverVehicle(driverId?: string) {
-  if (!driverId) return "Ingen bil endnu";
-  const vehicle = getActiveVehicle(driverId);
-  return vehicle ? vehicle.model : "Ukendt bil";
-}
-
-export default function PublicHallOfFamePage() {
-  const { hallOfFameWinners } = useEventOSStore();
+export default async function PublicHallOfFamePage() {
+  const winners = await prisma.hallOfFame.findMany({
+    orderBy: [{ year: "desc" }, { createdAt: "desc" }],
+    include: {
+      event: {
+        select: {
+          title: true,
+          slug: true,
+          startsAt: true,
+          active: true,
+          public: true,
+        },
+      },
+    },
+  });
 
   return (
     <main className="min-h-screen bg-black text-white">
@@ -32,22 +32,31 @@ export default function PublicHallOfFamePage() {
               <p className="mb-4 text-sm uppercase tracking-[0.45em] text-zinc-500">DarkLight spillerportal</p>
               <h1 className="text-5xl font-black md:text-7xl">Hall of Fame</h1>
               <p className="mt-5 max-w-3xl text-zinc-400">
-                Officiel eventhistorik vises først, når DarkLight staff manuelt offentliggør officielle vindere.
+                Officiel eventhistorik fra PostgreSQL. Vindere vises kun, når de er gemt i Hall of Fame.
               </p>
             </div>
-            <Link href="/leaderboard" className="w-fit rounded-full border border-white/15 bg-white/[0.03] px-6 py-3 font-black text-zinc-200 transition duration-300 hover:-translate-y-0.5 hover:bg-white hover:text-black">
+            <Link href="/rangliste" className="w-fit rounded-full border border-white/15 bg-white/[0.03] px-6 py-3 font-black text-zinc-200 transition duration-300 hover:-translate-y-0.5 hover:bg-white hover:text-black">
               Se rangliste
             </Link>
           </div>
 
-          {hallOfFameWinners.length > 0 ? (
-            <div className="grid gap-6 md:grid-cols-3">
-              {hallOfFameWinners.map((winner) => (
-                <article key={winner.id} className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-7 text-center shadow-[0_24px_80px_rgba(0,0,0,0.35)] backdrop-blur-xl transition duration-300 hover:-translate-y-1 hover:border-white/25 hover:bg-white/[0.06]">
-                  <p className="text-sm uppercase tracking-[0.3em] text-zinc-500">Offentliggjort P{winner.placement}</p>
-                  <h2 className="mt-4 text-3xl font-black">{getDriverName(winner.driverId)}</h2>
-                  <p className="mt-3 text-zinc-400">{winner.eventId}</p>
-                  <p className="mt-4 rounded-full border border-white/10 bg-black px-4 py-2 text-sm font-black text-zinc-300">{getDriverVehicle(winner.driverId)}</p>
+          {winners.length > 0 ? (
+            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+              {winners.map((winner) => (
+                <article key={winner.id} className="overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.04] shadow-[0_24px_80px_rgba(0,0,0,0.35)] backdrop-blur-xl transition duration-300 hover:-translate-y-1 hover:border-white/25 hover:bg-white/[0.06]">
+                  {winner.imageUrl ? (
+                    <div className="aspect-[16/9] bg-zinc-950">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={winner.imageUrl} alt={winner.title} className="h-full w-full object-cover" />
+                    </div>
+                  ) : null}
+                  <div className="p-7 text-center">
+                    <p className="text-sm uppercase tracking-[0.3em] text-zinc-500">{winner.year}</p>
+                    <h2 className="mt-4 text-3xl font-black">{winner.winner}</h2>
+                    <p className="mt-3 text-zinc-400">{winner.title}</p>
+                    <p className="mt-2 text-sm text-zinc-500">{winner.event.title}</p>
+                    {winner.notes ? <p className="mt-4 text-sm leading-6 text-zinc-400">{winner.notes}</p> : null}
+                  </div>
                 </article>
               ))}
             </div>
@@ -56,7 +65,7 @@ export default function PublicHallOfFamePage() {
               <p className="text-sm uppercase tracking-[0.35em] text-zinc-500">Ren start</p>
               <h2 className="mt-4 text-3xl font-black">Ingen officielle vindere endnu</h2>
               <p className="mx-auto mt-4 max-w-2xl leading-7 text-zinc-500">
-                DarkLight Events starter uden tidligere champions, podier eller historiske sejre.
+                Hall of Fame er tom, indtil DarkLight staff gemmer officielle vindere i databasen.
               </p>
             </div>
           )}
@@ -66,4 +75,3 @@ export default function PublicHallOfFamePage() {
     </main>
   );
 }
-

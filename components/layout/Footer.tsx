@@ -5,7 +5,7 @@ import Link from "next/link";
 const platformLinks = [
   { href: "/", label: "Forside" },
   { href: "/events", label: "Events" },
-  { href: "/leaderboard", label: "Rangliste" },
+  { href: "/rangliste", label: "Rangliste" },
   { href: "/hall-of-fame", label: "Hall of Fame" },
   { href: "/achievements", label: "Præstationer" },
   { href: "/profile", label: "Profil" },

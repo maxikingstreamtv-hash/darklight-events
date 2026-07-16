@@ -6,7 +6,7 @@ import { useState } from "react";
 
 const primaryLinks = [
   { href: "/events", label: "Events" },
-  { href: "/leaderboard", label: "Rangliste" },
+  { href: "/rangliste", label: "Rangliste" },
   { href: "/hall-of-fame", label: "Hall of Fame" },
   { href: "/booking", label: "Booking" },
   { href: "/contact", label: "Kontakt" },

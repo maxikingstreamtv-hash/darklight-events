@@ -2,7 +2,7 @@ import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "./auth-options";
 import { prisma } from "@/lib/prisma";
-import { isAppRole, type AuthUser } from "./types";
+import { isActiveProfile, isAppRole, type AuthUser } from "./types";
 
 type UserBadgeRelation = {
   badge: {
@@ -39,7 +39,7 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
     },
   });
 
-  if (!user) {
+  if (!user || !isActiveProfile(user)) {
     return null;
   }
 
@@ -49,6 +49,8 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
     displayName: user.displayName,
     avatar: user.avatar,
     role: isAppRole(user.role) ? user.role : "USER",
+    active: user.active,
+    profileStatus: user.profileStatus,
     badges: user.badges.map(({ badge }: UserBadgeRelation) => ({
       id: badge.id,
       name: badge.name,

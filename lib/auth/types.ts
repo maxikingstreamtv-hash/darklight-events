@@ -28,10 +28,21 @@ export type AuthUser = {
   displayName: string;
   avatar?: string | null;
   role: AppRole;
+  active: boolean;
+  profileStatus: "ACTIVE" | "INACTIVE" | "ARCHIVED";
   badges: SessionBadge[];
   permissions: string[];
 };
 
 export function isAppRole(value: unknown): value is AppRole {
   return typeof value === "string" && appRoles.includes(value as AppRole);
+}
+
+export function isActiveProfile(user: {
+  active?: boolean | null;
+  profileStatus?: string | null;
+  archivedAt?: Date | string | null;
+  deletedAt?: Date | string | null;
+}) {
+  return user.active !== false && user.profileStatus === "ACTIVE" && !user.archivedAt && !user.deletedAt;
 }

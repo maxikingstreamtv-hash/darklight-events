@@ -58,7 +58,7 @@ export default function LiveLeaderboard({
           {description ? <p className="mt-3 max-w-3xl text-sm leading-6 text-zinc-400">{description}</p> : null}
         </div>
         {showPublicLink ? (
-          <Link href="/leaderboard" className="w-fit rounded-full border border-white/10 px-5 py-2.5 text-sm font-black text-zinc-200 transition hover:bg-white hover:text-black">
+          <Link href="/rangliste" className="w-fit rounded-full border border-white/10 px-5 py-2.5 text-sm font-black text-zinc-200 transition hover:bg-white hover:text-black">
             Åbn public rangliste
           </Link>
         ) : null}

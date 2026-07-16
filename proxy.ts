@@ -12,8 +12,12 @@ export async function proxy(request: NextRequest) {
 
   if (!token?.id || !isAppRole(token.role)) {
     const loginUrl = new URL("/login", request.url);
-    loginUrl.searchParams.set("returnTo", pathname);
+    loginUrl.searchParams.set("callbackUrl", pathname);
     return NextResponse.redirect(loginUrl);
+  }
+
+  if (token.active === false || token.profileStatus === "INACTIVE" || token.profileStatus === "ARCHIVED") {
+    return NextResponse.redirect(new URL("/forbidden", request.url));
   }
 
   const subject = {

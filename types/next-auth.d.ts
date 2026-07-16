@@ -9,6 +9,8 @@ declare module "next-auth" {
       displayName: string;
       avatar?: string | null;
       role: AppRole;
+      active: boolean;
+      profileStatus: "ACTIVE" | "INACTIVE" | "ARCHIVED";
       badges: SessionBadge[];
       permissions: string[];
     } & DefaultSession["user"];
@@ -19,6 +21,8 @@ declare module "next-auth" {
     displayName: string;
     avatar?: string | null;
     role: AppRole;
+    active: boolean;
+    profileStatus: "ACTIVE" | "INACTIVE" | "ARCHIVED";
     badges: SessionBadge[];
     permissions: string[];
   }
@@ -31,6 +35,8 @@ declare module "next-auth/jwt" {
     displayName?: string;
     avatar?: string | null;
     role?: AppRole;
+    active?: boolean;
+    profileStatus?: "ACTIVE" | "INACTIVE" | "ARCHIVED";
     badges?: SessionBadge[];
     permissions?: string[];
   }

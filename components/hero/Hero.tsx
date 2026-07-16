@@ -3,11 +3,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ShieldCheck } from "lucide-react";
-import { useMockSession } from "@/components/auth/use-mock-session";
+import { useSession } from "next-auth/react";
 import ScrollIndicator from "./ScrollIndicator";
 
 export default function Hero() {
-  const session = useMockSession();
+  const { data: session } = useSession();
 
   return (
     <section className="relative flex min-h-screen items-center justify-center overflow-hidden bg-black px-6 text-white">
