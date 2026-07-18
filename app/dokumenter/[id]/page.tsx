@@ -1,6 +1,5 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { notFound } from "next/navigation";
-import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { documents } from "@/data/documents";
 
@@ -16,7 +15,6 @@ export default async function DokumentDetailPage({ params }: { params: Promise<{
 
   return (
     <main className="min-h-screen bg-black text-white">
-      <Navbar />
       <section className="px-6 py-32">
         <article className="mx-auto max-w-4xl rounded-[2rem] border border-white/10 bg-white/[0.04] p-8 backdrop-blur-xl">
           <Link href="/dokumenter" className="text-sm font-black text-zinc-400 transition hover:text-white">Tilbage til dokumenter</Link>

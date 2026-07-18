@@ -84,8 +84,8 @@ export function EventDetailView({ event }: { event: PublicEventRoute }) {
               <Link href="/events" className="rounded-full border border-white/15 bg-white/[0.03] px-6 py-3 font-black text-zinc-200 transition duration-300 hover:-translate-y-0.5 hover:bg-white hover:text-black">
                 Alle events
               </Link>
-              <Link href="/booking" className="rounded-full bg-white px-6 py-3 font-black text-black shadow-[0_18px_45px_rgba(255,255,255,0.10)] transition duration-300 hover:-translate-y-0.5 hover:bg-zinc-300">
-                Book event
+              <Link href="#tilmelding" className="rounded-full bg-white px-6 py-3 font-black text-black shadow-[0_18px_45px_rgba(255,255,255,0.10)] transition duration-300 hover:-translate-y-0.5 hover:bg-zinc-300">
+                Tilmeld event
               </Link>
             </div>
           </div>

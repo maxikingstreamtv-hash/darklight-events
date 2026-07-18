@@ -1,5 +1,4 @@
-import Link from "next/link";
-import Navbar from "@/components/layout/Navbar";
+﻿import Link from "next/link";
 import Footer from "@/components/layout/Footer";
 import { prisma } from "@/lib/prisma";
 
@@ -20,7 +19,6 @@ export default async function TilladelseDetailPage({ params }: { params: Promise
 
   return (
     <main className="min-h-screen bg-black text-white">
-      <Navbar />
       <section className="px-6 py-32">
         <div className="mx-auto max-w-4xl rounded-[2rem] border border-white/10 bg-white/[0.04] p-8 backdrop-blur-xl">
           <Link href="/tilladelser" className="text-sm font-black text-zinc-400 transition hover:text-white">Tilbage til tilladelser</Link>

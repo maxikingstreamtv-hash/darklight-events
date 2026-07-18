@@ -1,12 +1,10 @@
-import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
+﻿import Footer from "@/components/layout/Footer";
 import CompetitionLayout from "@/components/competition/CompetitionLayout";
 import { createCompetitionEventAction } from "@/app/competition/events/actions";
 
 export default function CreateEventPage() {
   return (
     <>
-      <Navbar />
       <CompetitionLayout>
         <section className="bg-black px-6 py-28 text-white">
           <div className="mx-auto max-w-4xl">
@@ -18,7 +16,6 @@ export default function CreateEventPage() {
 
             <form action={createCompetitionEventAction} className="mt-10 grid gap-5 rounded-[2rem] border border-white/10 bg-white/[0.04] p-7">
               <TextInput name="title" label="Titel" required />
-              <TextInput name="slug" label="Slug" />
               <label className="grid gap-2">
                 <span className="text-xs font-black uppercase tracking-[0.25em] text-zinc-500">Beskrivelse</span>
                 <textarea name="description" required className="min-h-32 rounded-2xl border border-white/10 bg-black px-4 py-3 text-white" />

@@ -64,7 +64,7 @@ export default function EventDetailLive({ event }: { event: PublicEventRoute }) 
   }
 
   return (
-    <div className="mt-8 grid gap-8">
+    <div id="tilmelding" className="mt-8 grid gap-8">
       <div className="grid gap-8 xl:grid-cols-[1fr_420px]">
         <Panel title="Tilmelding">
           <p className="text-zinc-400">

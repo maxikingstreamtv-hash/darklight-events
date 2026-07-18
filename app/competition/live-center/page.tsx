@@ -1,6 +1,5 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import type { ReactNode } from "react";
-import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import CompetitionLayout from "@/components/competition/CompetitionLayout";
 import { prisma } from "@/lib/prisma";
@@ -18,7 +17,24 @@ export default async function LiveEventCenterPage() {
         include: {
           participants: true,
           results: true,
+          heats: {
+            orderBy: [{ round: "asc" }, { heatNumber: "asc" }],
+            include: { entries: { orderBy: { startPosition: "asc" }, include: { participant: true } } },
+          },
+          brackets: {
+            include: {
+              matches: {
+                orderBy: [{ round: "asc" }, { matchNumber: "asc" }],
+                include: { participantA: true, participantB: true, winner: true },
+              },
+            },
+          },
         },
+      },
+      announcements: {
+        where: { status: "PUBLISHED" },
+        orderBy: { publishedAt: "desc" },
+        take: 6,
       },
     },
   });
@@ -26,10 +42,11 @@ export default async function LiveEventCenterPage() {
   const competitions = activeEvent?.competitions ?? [];
   const participants = competitions.flatMap((competition) => competition.participants);
   const results = competitions.flatMap((competition) => competition.results);
+  const heats = competitions.flatMap((competition) => competition.heats);
+  const matches = competitions.flatMap((competition) => competition.brackets.flatMap((bracket) => bracket.matches));
 
   return (
     <main className="min-h-screen bg-black text-white">
-      <Navbar />
       <CompetitionLayout>
         <section className="relative overflow-hidden px-6 py-32">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.12),transparent_45%)]" />
@@ -51,6 +68,7 @@ export default async function LiveEventCenterPage() {
               <StatCard title="Konkurrencer" value={competitions.length} />
               <StatCard title="Deltagere" value={participants.length} />
               <StatCard title="Resultater" value={results.length} />
+              <StatCard title="Heats" value={heats.length} />
             </div>
 
             <div className="mt-8 grid gap-8 xl:grid-cols-[1fr_420px]">
@@ -76,6 +94,8 @@ export default async function LiveEventCenterPage() {
               <Panel title="Næste handlinger">
                 <div className="grid gap-4">
                   <ControlLink text="Åbn check-in" href="/competition/check-in" />
+                  <ControlLink text="Event Tablet" href="/competition/tablet" />
+                  <ControlLink text="Lav køreliste" href="/competition/heat-manager" />
                   <ControlLink text="Resultater" href="/competition/results" />
                   <ControlLink text="Public live-resultater" href="/live-resultater" />
                   <ControlLink text="Public rangliste" href="/rangliste" />
@@ -83,7 +103,7 @@ export default async function LiveEventCenterPage() {
               </Panel>
             </div>
 
-            <div className="mt-8 grid gap-8 xl:grid-cols-2">
+            <div className="mt-8 grid gap-8 xl:grid-cols-3">
               <Panel title="Deltagere">
                 <div className="grid gap-4">
                   {participants.map((participant) => (
@@ -99,6 +119,48 @@ export default async function LiveEventCenterPage() {
                     <DriverRow key={result.id} name={`Placering ${result.placement}`} meta={`${result.points ?? Math.max(1000 - result.placement, 0)} point`} status="Resultat" />
                   ))}
                   {results.length === 0 ? <p className="text-zinc-500">Ingen resultater på det aktive event.</p> : null}
+                </div>
+              </Panel>
+
+              <Panel title="Announcements">
+                <div className="grid gap-4">
+                  {activeEvent?.announcements.map((announcement) => (
+                    <div key={announcement.id} className="rounded-2xl border border-white/10 bg-black p-5">
+                      <h3 className="font-black">{announcement.title}</h3>
+                      <p className="mt-2 text-sm leading-6 text-zinc-500">{announcement.message}</p>
+                    </div>
+                  ))}
+                  {(!activeEvent || activeEvent.announcements.length === 0) ? <p className="text-zinc-500">Ingen live announcements.</p> : null}
+                </div>
+              </Panel>
+            </div>
+
+            <div className="mt-8 grid gap-8 xl:grid-cols-2">
+              <Panel title="Kører nu / næste heat">
+                <div className="grid gap-4">
+                  {heats.slice(0, 6).map((heat) => (
+                    <div key={heat.id} className="rounded-2xl border border-white/10 bg-black p-5">
+                      <p className="font-black">{heat.title} · {heat.status}</p>
+                      <p className="mt-2 text-sm text-zinc-500">
+                        {heat.entries.map((entry) => `${entry.startPosition}. ${entry.participant.name}`).join(" / ") || "Ingen deltagere"}
+                      </p>
+                    </div>
+                  ))}
+                  {heats.length === 0 ? <p className="text-zinc-500">Ingen heats genereret endnu.</p> : null}
+                </div>
+              </Panel>
+
+              <Panel title="Live bracket">
+                <div className="grid gap-4">
+                  {matches.slice(0, 8).map((match) => (
+                    <div key={match.id} className="rounded-2xl border border-white/10 bg-black p-5">
+                      <p className="font-black">Runde {match.round} · Kamp {match.matchNumber}</p>
+                      <p className="mt-2 text-sm text-zinc-500">
+                        {match.participantA?.name ?? "BYE"} vs. {match.participantB?.name ?? "BYE"} · {match.winner?.name ? `Vinder: ${match.winner.name}` : match.status}
+                      </p>
+                    </div>
+                  ))}
+                  {matches.length === 0 ? <p className="text-zinc-500">Ingen bracket genereret endnu.</p> : null}
                 </div>
               </Panel>
             </div>

@@ -1,10 +1,9 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { Suspense, useState, type FormEvent } from "react";
-import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 
 function getSafeReturnTo(value: string | null) {
@@ -59,7 +58,6 @@ function LoginForm() {
 
   return (
     <main className="min-h-screen bg-black text-white">
-      <Navbar />
       <section className="relative flex min-h-screen items-center justify-center overflow-hidden px-6 py-32">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.14),transparent_42%)]" />
         <div className="relative grid w-full max-w-6xl gap-8 lg:grid-cols-[1fr_460px] lg:items-center">
@@ -113,7 +111,6 @@ function LoginForm() {
 function LoginShell() {
   return (
     <main className="min-h-screen bg-black text-white">
-      <Navbar />
       <section className="flex min-h-screen items-center justify-center px-6 py-32">
         <div className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-8 text-center backdrop-blur-xl">
           <p className="text-sm font-black uppercase tracking-[0.35em] text-zinc-500">DarkLight adgang</p>

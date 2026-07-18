@@ -1,5 +1,4 @@
-import Link from "next/link";
-import Navbar from "@/components/layout/Navbar";
+﻿import Link from "next/link";
 import Footer from "@/components/layout/Footer";
 import { prisma } from "@/lib/prisma";
 
@@ -34,7 +33,6 @@ export default async function SponsorDetailPage({ params }: { params: Promise<{ 
 
   return (
     <main className="min-h-screen bg-black text-white">
-      <Navbar />
       <section className="px-6 py-32">
         <div className="mx-auto max-w-5xl">
           <Link href="/sponsorer" className="text-sm font-black text-zinc-400 transition hover:text-white">Tilbage til sponsorer</Link>

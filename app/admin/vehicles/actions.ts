@@ -1,4 +1,4 @@
-"use server";
+﻿"use server";
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -68,6 +68,100 @@ async function ensureVehicle(vehicleId: string) {
   return vehicle;
 }
 
+async function nextChecklistSortOrder(inspectionId: string) {
+  const latest = await prisma.vehicleChecklistItem.findFirst({
+    where: { inspectionId },
+    orderBy: { sortOrder: "desc" },
+    select: { sortOrder: true },
+  });
+
+  return (latest?.sortOrder ?? 0) + 10;
+}
+
+async function normalizeChecklistOrder(inspectionId: string) {
+  const items = await prisma.vehicleChecklistItem.findMany({
+    where: { inspectionId },
+    orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
+    select: { id: true },
+  });
+
+  await Promise.all(
+    items.map((item: { id: string }, index: number) =>
+      prisma.vehicleChecklistItem.update({
+        where: { id: item.id },
+        data: { sortOrder: (index + 1) * 10 },
+      }),
+    ),
+  );
+}
+
+async function nextTemplateSortOrder(templateId: string) {
+  const latest = await prisma.vehicleChecklistTemplateItem.findFirst({
+    where: { templateId },
+    orderBy: { sortOrder: "desc" },
+    select: { sortOrder: true },
+  });
+
+  return (latest?.sortOrder ?? 0) + 10;
+}
+
+async function normalizeTemplateOrder(templateId: string) {
+  const items = await prisma.vehicleChecklistTemplateItem.findMany({
+    where: { templateId },
+    orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
+    select: { id: true },
+  });
+
+  await Promise.all(
+    items.map((item: { id: string }, index: number) =>
+      prisma.vehicleChecklistTemplateItem.update({
+        where: { id: item.id },
+        data: { sortOrder: (index + 1) * 10 },
+      }),
+    ),
+  );
+}
+
+async function moveChecklistItem(itemId: string, direction: "up" | "down") {
+  const items = await prisma.vehicleChecklistItem.findMany({
+    where: {
+      inspection: {
+        items: {
+          some: { id: itemId },
+        },
+      },
+    },
+    orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
+    select: { id: true, inspectionId: true },
+  });
+  const currentIndex = items.findIndex((item: { id: string }) => item.id === itemId);
+
+  if (currentIndex < 0) {
+    return null;
+  }
+
+  const targetIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+  if (targetIndex < 0 || targetIndex >= items.length) {
+    await normalizeChecklistOrder(items[currentIndex].inspectionId);
+    return items[currentIndex].inspectionId;
+  }
+
+  const reordered = [...items];
+  const [moved] = reordered.splice(currentIndex, 1);
+  reordered.splice(targetIndex, 0, moved);
+
+  await prisma.$transaction(
+    reordered.map((item: { id: string }, index: number) =>
+      prisma.vehicleChecklistItem.update({
+        where: { id: item.id },
+        data: { sortOrder: (index + 1) * 10 },
+      }),
+    ),
+  );
+
+  return moved.inspectionId;
+}
+
 export async function createVehicleAction(formData: FormData) {
   const actor = await requireVehicleManager();
   const ownerId = text(formData, "ownerId");
@@ -82,9 +176,9 @@ export async function createVehicleAction(formData: FormData) {
       ownerId,
       displayName,
       modelName: optionalText(formData, "modelName"),
-      spawnCode: optionalText(formData, "spawnCode"),
       licensePlate: optionalText(formData, "licensePlate"),
       vehicleClass: optionalText(formData, "vehicleClass"),
+      eventCategory: optionalText(formData, "eventCategory"),
       description: optionalText(formData, "description"),
       imageUrl: optionalText(formData, "imageUrl"),
       status: readVehicleStatus(text(formData, "status")),
@@ -119,9 +213,9 @@ export async function updateVehicleAction(vehicleId: string, formData: FormData)
     data: {
       displayName,
       modelName: optionalText(formData, "modelName"),
-      spawnCode: optionalText(formData, "spawnCode"),
       licensePlate: optionalText(formData, "licensePlate"),
       vehicleClass: optionalText(formData, "vehicleClass"),
+      eventCategory: optionalText(formData, "eventCategory"),
       description: optionalText(formData, "description"),
       imageUrl: optionalText(formData, "imageUrl"),
       status: readVehicleStatus(text(formData, "status")),
@@ -228,7 +322,7 @@ export async function addChecklistItemAction(vehicleId: string, inspectionId: st
       description: optionalText(formData, "description"),
       result: readChecklistResult(text(formData, "result")),
       required: formData.get("required") === "on",
-      sortOrder: Number(text(formData, "sortOrder")) || 0,
+      sortOrder: await nextChecklistSortOrder(inspectionId),
       adminNote: optionalText(formData, "adminNote"),
     },
   });
@@ -260,7 +354,6 @@ export async function updateChecklistItemAction(vehicleId: string, itemId: strin
       description: optionalText(formData, "description"),
       result: readChecklistResult(text(formData, "result")),
       required: formData.get("required") === "on",
-      sortOrder: Number(text(formData, "sortOrder")) || 0,
       adminNote: optionalText(formData, "adminNote"),
     },
     select: { inspectionId: true, label: true },
@@ -277,12 +370,33 @@ export async function updateChecklistItemAction(vehicleId: string, itemId: strin
   redirectWithMessage(`/admin/vehicles/${vehicleId}`, "ok", "Checklist-punkt blev gemt.");
 }
 
+export async function moveChecklistItemAction(vehicleId: string, itemId: string, direction: "up" | "down") {
+  const actor = await requireVehicleManager();
+  const inspectionId = await moveChecklistItem(itemId, direction);
+
+  if (!inspectionId) {
+    redirectWithMessage(`/admin/vehicles/${vehicleId}`, "error", "Checklist-punktet blev ikke fundet.");
+  }
+
+  await writeAuditLog({
+    actorId: actor.id,
+    action: "checklist_changed",
+    target: `inspection:${inspectionId}`,
+    details: { change: direction === "up" ? "item_moved_up" : "item_moved_down", itemId },
+  });
+
+  revalidatePath(`/admin/vehicles/${vehicleId}`);
+  redirectWithMessage(`/admin/vehicles/${vehicleId}`, "ok", "Rækkefølgen blev gemt.");
+}
+
 export async function removeChecklistItemAction(vehicleId: string, itemId: string) {
   const actor = await requireVehicleManager();
   const item = await prisma.vehicleChecklistItem.delete({
     where: { id: itemId },
     select: { inspectionId: true, label: true },
   });
+
+  await normalizeChecklistOrder(item.inspectionId);
 
   await writeAuditLog({
     actorId: actor.id,
@@ -397,7 +511,7 @@ export async function addChecklistTemplateItemAction(templateId: string, formDat
       label,
       description: optionalText(formData, "description"),
       required: formData.get("required") === "on",
-      sortOrder: Number(text(formData, "sortOrder")) || 0,
+      sortOrder: await nextTemplateSortOrder(templateId),
     },
     select: { id: true, label: true },
   });
@@ -428,7 +542,6 @@ export async function updateChecklistTemplateItemAction(templateId: string, item
       label,
       description: optionalText(formData, "description"),
       required: formData.get("required") === "on",
-      sortOrder: Number(text(formData, "sortOrder")) || 0,
     },
     select: { id: true, label: true },
   });
@@ -450,6 +563,8 @@ export async function removeChecklistTemplateItemAction(templateId: string, item
     where: { id: itemId },
     select: { id: true, label: true },
   });
+
+  await normalizeTemplateOrder(templateId);
 
   await writeAuditLog({
     actorId: actor.id,

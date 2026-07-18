@@ -1,5 +1,4 @@
-import Link from "next/link";
-import Navbar from "@/components/layout/Navbar";
+﻿import Link from "next/link";
 import Footer from "@/components/layout/Footer";
 import CompetitionLayout from "@/components/competition/CompetitionLayout";
 import CompetitionPageShell from "@/components/competition/layout/CompetitionPageShell";
@@ -27,7 +26,6 @@ export default async function RaceControlPage() {
 
   return (
     <>
-      <Navbar />
       <CompetitionLayout>
         <CompetitionPageShell
           eyebrow="DarkLight Race Control"

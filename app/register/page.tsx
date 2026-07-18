@@ -1,5 +1,4 @@
-import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
+﻿import Footer from "@/components/layout/Footer";
 import { prisma } from "@/lib/prisma";
 import { registerUserAction } from "./actions";
 
@@ -40,7 +39,6 @@ export default async function RegisterPage({ searchParams }: { searchParams: Pro
 
   return (
     <main className="min-h-screen bg-black text-white">
-      <Navbar />
       <section className="relative overflow-hidden px-6 py-32">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.12),transparent_42%)]" />
         <div className="relative mx-auto grid max-w-6xl gap-8 lg:grid-cols-[1fr_440px] lg:items-start">

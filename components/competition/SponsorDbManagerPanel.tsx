@@ -1,4 +1,4 @@
-import { archiveSponsorAction, deleteSponsorAction, saveSponsorAction } from "@/app/competition/admin/sponsor-actions";
+﻿import { archiveSponsorAction, deleteSponsorAction, saveSponsorAction } from "@/app/competition/admin/sponsor-actions";
 import Card from "@/components/competition/ui/Card";
 
 type SponsorManagerItem = {

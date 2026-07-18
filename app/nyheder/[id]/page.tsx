@@ -1,7 +1,6 @@
 ﻿import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { news } from "@/data/news";
 
@@ -16,7 +15,6 @@ export default async function NyhedDetailPage({ params }: { params: Promise<{ id
 
   return (
     <main className="min-h-screen bg-black text-white">
-      <Navbar />
       <section className="px-6 py-32">
         <article className="mx-auto max-w-4xl overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.04] backdrop-blur-xl">
           <div className="relative aspect-[16/8]">
@@ -37,4 +35,3 @@ export default async function NyhedDetailPage({ params }: { params: Promise<{ id
     </main>
   );
 }
-

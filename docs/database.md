@@ -1,4 +1,4 @@
-# DarkLight Events V2 Database
+﻿# DarkLight Events V2 Database
 
 Databasen er bygget til PostgreSQL og styres med Prisma. Alle modeller beskriver DarkLight Events som et fiktivt DreamLight FiveM RP-eventsystem, ikke en virkelig virksomhed.
 

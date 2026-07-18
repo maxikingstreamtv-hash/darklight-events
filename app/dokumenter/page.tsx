@@ -1,12 +1,10 @@
 ﻿import Link from "next/link";
-import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { documentCategories, documents } from "@/data/documents";
 
 export default function DokumenterPage() {
   return (
     <main className="min-h-screen bg-black text-white">
-      <Navbar />
       <section className="px-6 py-32">
         <div className="mx-auto max-w-7xl">
           <PageHeader label="DarkLight dokumenter" title="Dokumenter" text="Manualer, regler og praktiske papirer til DarkLight Events i DreamLight." />
@@ -50,4 +48,3 @@ function PageHeader({ label, title, text }: { label: string; title: string; text
     </div>
   );
 }
-

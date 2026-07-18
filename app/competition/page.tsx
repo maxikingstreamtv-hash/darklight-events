@@ -1,5 +1,4 @@
 ﻿import Link from "next/link";
-import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import CompetitionHero from "@/components/competition/CompetitionHero";
 import CompetitionCard from "@/components/competition/CompetitionCard";
@@ -10,7 +9,6 @@ export default function CompetitionPage() {
 
   return (
     <main className="min-h-screen bg-black text-white">
-      <Navbar />
       <CompetitionHero />
 
       <section className="bg-black px-6 py-20">

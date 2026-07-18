@@ -1,5 +1,4 @@
-import Link from "next/link";
-import Navbar from "@/components/layout/Navbar";
+﻿import Link from "next/link";
 import Footer from "@/components/layout/Footer";
 import { prisma } from "@/lib/prisma";
 
@@ -7,12 +6,13 @@ export const dynamic = "force-dynamic";
 
 export default async function PublicHallOfFamePage() {
   const winners = await prisma.hallOfFame.findMany({
-    orderBy: [{ year: "desc" }, { createdAt: "desc" }],
+    where: { active: true },
+    orderBy: [{ sortOrder: "asc" }, { year: "desc" }, { createdAt: "desc" }],
     include: {
       event: {
         select: {
           title: true,
-          slug: true,
+          id: true,
           startsAt: true,
           active: true,
           public: true,
@@ -23,7 +23,6 @@ export default async function PublicHallOfFamePage() {
 
   return (
     <main className="min-h-screen bg-black text-white">
-      <Navbar />
       <section className="relative overflow-hidden px-6 py-28">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.14),transparent_42%)]" />
         <div className="relative mx-auto max-w-7xl">

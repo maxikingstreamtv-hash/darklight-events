@@ -1,4 +1,4 @@
-# DarkLight Events V2 Vehicle Management
+﻿# DarkLight Events V2 Vehicle Management
 
 Vehicle Management beskriver køretøjsprofiler og inspektionschecklister for DarkLight Events V2. Modulet er bygget til en fiktiv FiveM / DreamLight RP-kontekst og må ikke bruge virkelige bilmærker eller producentnavne.
 

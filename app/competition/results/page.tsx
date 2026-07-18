@@ -1,6 +1,5 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import type { ReactNode } from "react";
-import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import CompetitionLayout from "@/components/competition/CompetitionLayout";
 import { prisma } from "@/lib/prisma";
@@ -26,7 +25,7 @@ export default async function ResultsPage() {
           event: {
             select: {
               title: true,
-              slug: true,
+              id: true,
             },
           },
         },
@@ -41,7 +40,6 @@ export default async function ResultsPage() {
 
   return (
     <>
-      <Navbar />
       <CompetitionLayout>
         <section className="relative overflow-hidden bg-black px-6 py-28 text-white">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.12),transparent_40%)]" />
@@ -61,7 +59,7 @@ export default async function ResultsPage() {
 
             <div className="mb-8 grid gap-5 md:grid-cols-3">
               <StatCard title="Resultater" value={results.length} text="Gemte databaseposter" />
-              <StatCard title="Events" value={new Set(results.map((result) => result.competition.event.slug)).size} text="Med resultater" />
+              <StatCard title="Events" value={new Set(results.map((result) => result.competition.event.id)).size} text="Med resultater" />
               <StatCard title="Deltagere" value={new Set(results.map((result) => result.participantId)).size} text="Med placering" />
             </div>
 

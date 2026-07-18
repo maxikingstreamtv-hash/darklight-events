@@ -1,4 +1,4 @@
-# DarkLight Events V2 Udviklingsregler
+﻿# DarkLight Events V2 Udviklingsregler
 
 DarkLight Events er et fiktivt eventfirma til DreamLight FiveM RP. Systemet må ikke beskrives som en virkelig virksomhed, og indholdet skal holde sig i RP-universet.
 

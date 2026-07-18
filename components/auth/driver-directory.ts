@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { readRegisteredAccounts, type MockSession, type RegisteredAccount } from "@/components/auth/mock-auth";
 import { drivers, type Driver } from "@/data/drivers";

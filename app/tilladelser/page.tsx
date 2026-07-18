@@ -1,5 +1,4 @@
-import Link from "next/link";
-import Navbar from "@/components/layout/Navbar";
+﻿import Link from "next/link";
 import Footer from "@/components/layout/Footer";
 import { prisma } from "@/lib/prisma";
 
@@ -22,7 +21,6 @@ export default async function TilladelserPage() {
 
   return (
     <main className="min-h-screen bg-black text-white">
-      <Navbar />
       <section className="px-6 py-32">
         <div className="mx-auto max-w-7xl">
           <p className="mb-4 text-sm font-black uppercase tracking-[0.4em] text-zinc-500">Eventkoordinering</p>

@@ -1,4 +1,4 @@
-# DarkLight Events V2 Blueprint
+﻿# DarkLight Events V2 Blueprint
 
 DarkLight Events er et fiktivt eventfirma til DreamLight FiveM RP. Projektet skal understotte events, booking, deltagere, resultater, badges, galleri og administration i et samlet system. Det er ikke en virkelig virksomhed, og systemet skal ikke bruge IRL-data.
 

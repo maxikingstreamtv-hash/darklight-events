@@ -1,13 +1,11 @@
 ﻿import Image from "next/image";
 import Link from "next/link";
-import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { news } from "@/data/news";
 
 export default function NyhederPage() {
   return (
     <main className="min-h-screen bg-black text-white">
-      <Navbar />
       <section className="px-6 py-32">
         <div className="mx-auto max-w-7xl">
           <p className="mb-4 text-sm font-black uppercase tracking-[0.4em] text-zinc-500">DarkLight nyt</p>
@@ -33,4 +31,3 @@ export default function NyhederPage() {
     </main>
   );
 }
-

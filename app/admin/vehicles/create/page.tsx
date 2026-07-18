@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import AdminShell from "@/components/admin/AdminShell";
 import { AdminCard, Field, fieldClassName } from "@/components/admin/AdminUi";
 import { prisma } from "@/lib/prisma";
@@ -33,14 +33,14 @@ export default async function CreateVehiclePage({ searchParams }: { searchParams
           <Field label="Modelnavn">
             <input name="modelName" className={fieldClassName} placeholder="Sultan RS" />
           </Field>
-          <Field label="Spawncode">
-            <input name="spawnCode" className={fieldClassName} placeholder="sultanrs" />
-          </Field>
           <Field label="Nummerplade">
             <input name="licensePlate" className={fieldClassName} placeholder="DL-001" />
           </Field>
-          <Field label="Klasse">
-            <input name="vehicleClass" className={fieldClassName} placeholder="Drift / Race / Show" />
+          <Field label="Køretøjsklasse">
+            <input name="vehicleClass" className={fieldClassName} placeholder="Fx B, A, S eller S+" />
+          </Field>
+          <Field label="Eventkategori">
+            <input name="eventCategory" className={fieldClassName} placeholder="Fx Drift, Race, Drag eller Car Show" />
           </Field>
           <Field label="Status">
             <select name="status" className={fieldClassName} defaultValue="ACTIVE">

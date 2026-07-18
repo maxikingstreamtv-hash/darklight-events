@@ -1,6 +1,5 @@
-import Link from "next/link";
-import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
+﻿import Link from "next/link";
+import AppShell from "@/components/layout/AppShell";
 import LogoutButton from "@/components/auth/LogoutButton";
 import { getDashboardPath } from "@/lib/auth/rbac";
 import { getRolePermissions } from "@/lib/auth/permissions";
@@ -27,10 +26,7 @@ export default async function DashboardPage() {
   const showRoleDashboardLink = dashboardPath !== "/dashboard";
 
   return (
-    <main className="min-h-screen bg-black text-white">
-      <Navbar />
-      <section className="px-6 py-32">
-        <div className="mx-auto max-w-7xl">
+    <AppShell wide>
           <div className="mb-10 flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
             <div>
               <p className="mb-4 text-sm font-black uppercase tracking-[0.4em] text-zinc-500">Spiller-dashboard</p>
@@ -90,10 +86,7 @@ export default async function DashboardPage() {
               </Link>
             ))}
           </div>
-        </div>
-      </section>
-      <Footer />
-    </main>
+    </AppShell>
   );
 }
 
