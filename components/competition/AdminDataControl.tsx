@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { resetDataAction, type DataResetScope } from "@/app/competition/admin/reset-actions";

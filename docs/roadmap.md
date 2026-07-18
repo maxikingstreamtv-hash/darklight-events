@@ -1,4 +1,4 @@
-# DarkLight Events V2 Roadmap
+﻿# DarkLight Events V2 Roadmap
 
 DarkLight Events V2 skal flytte projektet fra lokal V1-logik til en databasebaseret, rollestyret og professionel RP-eventplatform til DreamLight FiveM.
 

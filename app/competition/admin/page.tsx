@@ -1,5 +1,4 @@
-﻿import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
+﻿import AppShell from "@/components/layout/AppShell";
 import CompetitionLayout from "@/components/competition/CompetitionLayout";
 import AdminDataControl from "@/components/competition/AdminDataControl";
 import { FaqManagerPanel, RulesManagerPanel } from "@/components/competition/ContentManagerPanel";
@@ -65,8 +64,7 @@ export default async function CompetitionAdminPage({ searchParams }: { searchPar
   ]);
 
   return (
-    <>
-      <Navbar />
+    <AppShell wide>
       <CompetitionLayout>
         <CompetitionPageShell
           eyebrow="DarkLight EventOS"
@@ -181,8 +179,6 @@ export default async function CompetitionAdminPage({ searchParams }: { searchPar
           </div>
         </CompetitionPageShell>
       </CompetitionLayout>
-      <Footer />
-    </>
+    </AppShell>
   );
 }
-

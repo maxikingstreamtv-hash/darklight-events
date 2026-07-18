@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import AdminShell from "@/components/admin/AdminShell";
 import { AdminCard, Field, StatusBadge, fieldClassName } from "@/components/admin/AdminUi";
 import { prisma } from "@/lib/prisma";
@@ -14,6 +14,8 @@ type SearchParams = {
   q?: string | string[];
   owner?: string | string[];
   status?: string | string[];
+  vehicleClass?: string | string[];
+  eventCategory?: string | string[];
   inspectionStatus?: string | string[];
   ok?: string | string[];
   error?: string | string[];
@@ -24,6 +26,7 @@ type VehicleRow = {
   displayName: string;
   licensePlate: string | null;
   vehicleClass: string | null;
+  eventCategory: string | null;
   status: string;
   owner: { id: string; displayName: string; username: string };
   inspections: { status: string; createdAt: Date }[];
@@ -84,6 +87,8 @@ export default async function VehiclesPage({ searchParams }: { searchParams: Pro
   const q = param(params.q).trim();
   const owner = param(params.owner);
   const status = param(params.status);
+  const vehicleClass = param(params.vehicleClass).trim();
+  const eventCategory = param(params.eventCategory).trim();
   const inspectionStatus = param(params.inspectionStatus);
   const statusFilter = readVehicleStatus(status);
   const inspectionStatusFilter = readInspectionStatus(inspectionStatus);
@@ -96,13 +101,16 @@ export default async function VehiclesPage({ searchParams }: { searchParams: Pro
           OR: [
             { displayName: { contains: q, mode: "insensitive" as const } },
             { modelName: { contains: q, mode: "insensitive" as const } },
-            { spawnCode: { contains: q, mode: "insensitive" as const } },
             { licensePlate: { contains: q, mode: "insensitive" as const } },
+            { vehicleClass: { contains: q, mode: "insensitive" as const } },
+            { eventCategory: { contains: q, mode: "insensitive" as const } },
           ],
         }
       : {}),
     ...(owner ? { ownerId: owner } : {}),
     ...(statusFilter ? { status: statusFilter } : {}),
+    ...(vehicleClass ? { vehicleClass: { contains: vehicleClass, mode: "insensitive" as const } } : {}),
+    ...(eventCategory ? { eventCategory: { contains: eventCategory, mode: "insensitive" as const } } : {}),
     ...(inspectionStatusFilter ? { inspections: { some: { status: inspectionStatusFilter } } } : {}),
   };
 
@@ -115,6 +123,7 @@ export default async function VehiclesPage({ searchParams }: { searchParams: Pro
         displayName: true,
         licensePlate: true,
         vehicleClass: true,
+        eventCategory: true,
         status: true,
         owner: { select: { id: true, displayName: true, username: true } },
         inspections: { orderBy: { createdAt: "desc" }, take: 1, select: { status: true, createdAt: true } },
@@ -153,8 +162,8 @@ export default async function VehiclesPage({ searchParams }: { searchParams: Pro
         {error ? <Message tone="error" text={error} /> : null}
 
         <AdminCard>
-          <form action="/admin/vehicles" className="grid gap-4 lg:grid-cols-[1fr_220px_180px_220px_auto]">
-            <input name="q" defaultValue={q} className="field" placeholder="Søg efter navn, spawncode eller nummerplade" />
+          <form action="/admin/vehicles" className="grid gap-4 lg:grid-cols-[1fr_190px_150px_150px_160px_190px_auto]">
+            <input name="q" defaultValue={q} className="field" placeholder="Søg efter navn, model eller nummerplade" />
             <select name="owner" defaultValue={owner} className="field">
               <option value="">Alle ejere</option>
               {owners.map((item: { id: string; displayName: string; username: string }) => (
@@ -167,6 +176,8 @@ export default async function VehiclesPage({ searchParams }: { searchParams: Pro
               <option value="INACTIVE">Inaktiv</option>
               <option value="SUSPENDED">Suspenderet</option>
             </select>
+            <input name="vehicleClass" defaultValue={vehicleClass} className="field" placeholder="Køretøjsklasse" />
+            <input name="eventCategory" defaultValue={eventCategory} className="field" placeholder="Eventkategori" />
             <select name="inspectionStatus" defaultValue={inspectionStatus} className="field">
               <option value="">Alle inspektioner</option>
               <option value="PENDING">Afventer</option>
@@ -203,13 +214,12 @@ export default async function VehiclesPage({ searchParams }: { searchParams: Pro
                   </div>
                   <div className="mt-4 grid gap-3">
                     {template.items.map((item: TemplateItemRow) => (
-                      <form key={item.id} action={updateChecklistTemplateItemAction.bind(null, template.id, item.id)} className="grid gap-3 rounded-xl border border-white/10 p-3 lg:grid-cols-[160px_1fr_1fr_90px_120px_auto]">
+                      <form key={item.id} action={updateChecklistTemplateItemAction.bind(null, template.id, item.id)} className="grid gap-3 rounded-xl border border-white/10 p-3 lg:grid-cols-[160px_1fr_1fr_120px_auto]">
                         <select name="category" defaultValue={item.category} className="field">
                           <CategoryOptions />
                         </select>
                         <input name="label" defaultValue={item.label} className="field" placeholder="Punkt" />
                         <input name="description" defaultValue={item.description ?? ""} className="field" placeholder="Beskrivelse" />
-                        <input name="sortOrder" type="number" defaultValue={item.sortOrder} className="field" />
                         <label className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.14em] text-zinc-400">
                           <input name="required" type="checkbox" defaultChecked={item.required} /> Krævet
                         </label>
@@ -219,13 +229,12 @@ export default async function VehiclesPage({ searchParams }: { searchParams: Pro
                         </div>
                       </form>
                     ))}
-                    <form action={addChecklistTemplateItemAction.bind(null, template.id)} className="grid gap-3 rounded-xl border border-dashed border-white/15 p-3 lg:grid-cols-[160px_1fr_1fr_90px_120px_auto]">
+                    <form action={addChecklistTemplateItemAction.bind(null, template.id)} className="grid gap-3 rounded-xl border border-dashed border-white/15 p-3 lg:grid-cols-[160px_1fr_1fr_120px_auto]">
                       <select name="category" className="field">
                         <CategoryOptions />
                       </select>
                       <input name="label" className="field" placeholder="Nyt punkt" />
                       <input name="description" className="field" placeholder="Beskrivelse" />
-                      <input name="sortOrder" type="number" defaultValue={template.items.length * 10 + 10} className="field" />
                       <label className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.14em] text-zinc-400">
                         <input name="required" type="checkbox" defaultChecked /> Krævet
                       </label>
@@ -246,12 +255,13 @@ export default async function VehiclesPage({ searchParams }: { searchParams: Pro
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[900px] text-left text-sm">
+              <table className="w-full min-w-[1040px] text-left text-sm">
                 <thead className="text-xs uppercase tracking-[0.2em] text-zinc-500">
                   <tr className="border-b border-white/10">
                     <th className="pb-4">Køretøj</th>
                     <th className="pb-4">Ejer</th>
-                    <th className="pb-4">Klasse</th>
+                    <th className="pb-4">Køretøjsklasse</th>
+                    <th className="pb-4">Eventkategori</th>
                     <th className="pb-4">Status</th>
                     <th className="pb-4">Seneste inspektion</th>
                     <th className="pb-4 text-right">Handling</th>
@@ -267,7 +277,8 @@ export default async function VehiclesPage({ searchParams }: { searchParams: Pro
                           <p className="mt-1 text-xs text-zinc-500">{vehicle.licensePlate ?? "Ingen plade"}</p>
                         </td>
                         <td className="py-4 text-zinc-300">{vehicle.owner.displayName}</td>
-                        <td className="py-4 text-zinc-300">{vehicle.vehicleClass ?? "Ikke sat"}</td>
+                        <td className="py-4 text-zinc-300">{vehicle.vehicleClass ?? "Ikke angivet"}</td>
+                        <td className="py-4 text-zinc-300">{vehicle.eventCategory ?? "Ikke angivet"}</td>
                         <td className="py-4"><StatusBadge tone={vehicle.status === "ACTIVE" ? "strong" : "neutral"}>{vehicle.status}</StatusBadge></td>
                         <td className="py-4 text-zinc-300">{latest?.status ?? "Ingen inspektion"}</td>
                         <td className="py-4 text-right">

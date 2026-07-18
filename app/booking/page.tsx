@@ -1,7 +1,6 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import BookingExperience from "@/components/booking/BookingExperience";
 import Footer from "@/components/layout/Footer";
-import Navbar from "@/components/layout/Navbar";
 import { getCurrentUser } from "@/lib/auth/session";
 
 export const dynamic = "force-dynamic";
@@ -11,7 +10,6 @@ export default async function BookingPage() {
 
   return (
     <main className="min-h-screen bg-black text-white">
-      <Navbar />
       {user ? (
         <BookingExperience initialCharacterName={user.displayName} />
       ) : (

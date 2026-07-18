@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+﻿import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 
 const connectionString = process.env.DATABASE_URL;
@@ -17,9 +17,22 @@ function hasCurrentDelegates(client: PrismaClient) {
   const delegates = client as PrismaClient & {
     faqItem?: unknown;
     ruleSet?: unknown;
+    eventRegistration?: unknown;
+    heat?: unknown;
+    bracket?: unknown;
+    eventTask?: unknown;
+    eventAnnouncement?: unknown;
   };
 
-  return Boolean(delegates.faqItem && delegates.ruleSet);
+  return Boolean(
+    delegates.faqItem &&
+    delegates.ruleSet &&
+    delegates.eventRegistration &&
+    delegates.heat &&
+    delegates.bracket &&
+    delegates.eventTask &&
+    delegates.eventAnnouncement
+  );
 }
 
 export const prisma =

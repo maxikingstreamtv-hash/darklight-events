@@ -1,4 +1,4 @@
-# DarkLight Events V2 Roller og Permissions
+﻿# DarkLight Events V2 Roller og Permissions
 
 DarkLight Events V2 bruger roller til grundadgang og permissions til særlige ekstrarettigheder. Badges er kun visuel status og giver aldrig adgang.
 

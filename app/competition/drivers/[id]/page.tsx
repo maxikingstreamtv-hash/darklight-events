@@ -1,7 +1,6 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import type { ReactNode } from "react";
 import { notFound } from "next/navigation";
-import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import CompetitionLayout from "@/components/competition/CompetitionLayout";
 import { prisma } from "@/lib/prisma";
@@ -41,7 +40,6 @@ export default async function DriverProfilePage({ params }: { params: Promise<{ 
 
   return (
     <main className="min-h-screen bg-black text-white">
-      <Navbar />
       <CompetitionLayout>
         <section className="relative overflow-hidden px-6 py-32">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.12),transparent_45%)]" />
@@ -108,7 +106,9 @@ export default async function DriverProfilePage({ params }: { params: Promise<{ 
                   <article key={vehicle.id} className="rounded-2xl border border-white/10 bg-black p-5">
                     <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">{vehicle.status}</p>
                     <h3 className="mt-3 text-2xl font-black">{vehicle.displayName}</h3>
-                    <p className="mt-2 text-sm text-zinc-500">{vehicle.licensePlate ?? "Ingen plade"} · {vehicle.vehicleClass ?? "Ingen klasse"}</p>
+                    <p className="mt-2 text-sm text-zinc-500">
+                      {vehicle.licensePlate ?? "Ingen plade"} · {vehicle.vehicleClass ?? "Ikke angivet"} · {vehicle.eventCategory ?? "Ikke angivet"}
+                    </p>
                     <p className="mt-4 text-sm text-zinc-400">
                       Seneste inspektion: {vehicle.inspections[0]?.status ?? "Ingen"}
                     </p>

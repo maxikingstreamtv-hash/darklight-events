@@ -1,5 +1,4 @@
-import Navbar from "@/components/layout/Navbar";
-import Hero from "@/components/hero/Hero";
+﻿import Hero from "@/components/hero/Hero";
 import FeaturedEvents from "@/components/events/FeaturedEvents";
 import WhyChoose from "@/components/sections/WhyChoose";
 import Stats from "@/components/sections/Stats";
@@ -39,7 +38,6 @@ export default async function Home() {
 
   return (
     <main className="min-h-screen bg-black text-white">
-      <Navbar />
       <Hero sponsorSlot={mainSponsor ? <HomeMainSponsor sponsor={mainSponsor} /> : null} />
       <FeaturedEvents />
       <WhyChoose />

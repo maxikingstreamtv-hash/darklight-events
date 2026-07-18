@@ -1,7 +1,6 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
-import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { createContactMessageAction } from "./actions";
 
@@ -31,7 +30,6 @@ export default function ContactPage() {
 
   return (
     <main className="min-h-screen bg-black text-white">
-      <Navbar />
       <section className="relative overflow-hidden px-6 py-32">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.12),transparent_40%)]" />
         <div className="relative mx-auto grid max-w-7xl gap-12 lg:grid-cols-[1fr_520px] lg:items-start">

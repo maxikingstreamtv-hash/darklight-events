@@ -1,4 +1,4 @@
-# DarkLight Events Changelog
+﻿# DarkLight Events Changelog
 
 Dette changelog beskriver større projektændringer for DarkLight Events V2.
 

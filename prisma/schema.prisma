@@ -21,10 +21,14 @@ enum ProfileStatus {
 
 enum EventStatus {
   DRAFT
+  PUBLISHED
+  REGISTRATION_OPEN
+  REGISTRATION_CLOSED
   UPCOMING
   ACTIVE
   COMPLETED
   CANCELLED
+  ARCHIVED
 }
 
 enum BookingStatus {
@@ -112,6 +116,66 @@ enum ContentStatus {
   ARCHIVED
 }
 
+enum RegistrationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+  CHECKED_IN
+}
+
+enum HeatStatus {
+  DRAFT
+  READY
+  ACTIVE
+  COMPLETED
+  LOCKED
+}
+
+enum BracketStatus {
+  DRAFT
+  READY
+  ACTIVE
+  COMPLETED
+  LOCKED
+}
+
+enum MatchStatus {
+  PENDING
+  ACTIVE
+  COMPLETED
+  LOCKED
+}
+
+enum ResultStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  DNF
+  DNS
+  DISQUALIFIED
+}
+
+enum EventTaskStatus {
+  OPEN
+  IN_PROGRESS
+  DONE
+  DISMISSED
+}
+
+enum EventTaskPriority {
+  LOW
+  NORMAL
+  HIGH
+  CRITICAL
+}
+
+enum EventAnnouncementStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
 model User {
   id            String        @id @default(cuid())
   username      String        @unique
@@ -129,15 +193,20 @@ model User {
   updatedAt     DateTime      @updatedAt
   lastLoginAt   DateTime?
 
-  badges          UserBadge[]
-  permissions     UserPermission[]
-  events          Event[]             @relation("CreatedEvents")
-  bookings        Booking[]
-  results         Result[]            @relation("ResultCreatedBy")
-  auditLogs       AuditLog[]          @relation("AuditActor")
-  vehicles        Vehicle[]           @relation("VehicleOwner")
-  createdVehicles Vehicle[]           @relation("VehicleCreatedBy")
-  inspections     VehicleInspection[] @relation("VehicleInspectionInspector")
+  badges            UserBadge[]
+  permissions       UserPermission[]
+  events            Event[]             @relation("CreatedEvents")
+  bookings          Booking[]
+  results           Result[]            @relation("ResultCreatedBy")
+  auditLogs         AuditLog[]          @relation("AuditActor")
+  vehicles          Vehicle[]           @relation("VehicleOwner")
+  createdVehicles   Vehicle[]           @relation("VehicleCreatedBy")
+  inspections       VehicleInspection[] @relation("VehicleInspectionInspector")
+  registrations     EventRegistration[]
+  assignedTasks     EventTask[]         @relation("EventTaskAssignee")
+  createdTasks      EventTask[]         @relation("EventTaskCreator")
+  announcements     EventAnnouncement[] @relation("EventAnnouncementAuthor")
+  hallOfFameEntries HallOfFame[]        @relation("HallOfFameUser")
 }
 
 model Badge {
@@ -188,30 +257,35 @@ model UserPermission {
 }
 
 model Event {
-  id              String      @id @default(cuid())
-  title           String
-  slug            String      @unique
-  description     String
-  bannerUrl       String?
-  imageAlt        String?
-  thumbnailUrl    String?
-  location        String?
-  startsAt        DateTime
-  endsAt          DateTime?
-  maxParticipants Int?
-  status          EventStatus @default(DRAFT)
-  sortOrder       Int         @default(0)
-  active          Boolean     @default(true)
-  public          Boolean     @default(true)
-  createdById     String
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
+  id                  String      @id @default(cuid())
+  title               String
+  slug                String      @unique
+  description         String
+  bannerUrl           String?
+  imageAlt            String?
+  thumbnailUrl        String?
+  location            String?
+  startsAt            DateTime
+  endsAt              DateTime?
+  registrationOpenAt  DateTime?
+  registrationCloseAt DateTime?
+  maxParticipants     Int?
+  status              EventStatus @default(DRAFT)
+  sortOrder           Int         @default(0)
+  active              Boolean     @default(true)
+  public              Boolean     @default(true)
+  createdById         String
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
 
-  createdBy    User           @relation("CreatedEvents", fields: [createdById], references: [id])
-  bookings     Booking[]
-  competitions Competition[]
-  gallery      GalleryImage[]
-  hallOfFame   HallOfFame[]
+  createdBy     User                @relation("CreatedEvents", fields: [createdById], references: [id])
+  bookings      Booking[]
+  registrations EventRegistration[]
+  competitions  Competition[]
+  gallery       GalleryImage[]
+  hallOfFame    HallOfFame[]
+  tasks         EventTask[]
+  announcements EventAnnouncement[]
 }
 
 model Booking {
@@ -240,47 +314,180 @@ model Competition {
   event        Event         @relation(fields: [eventId], references: [id], onDelete: Cascade)
   participants Participant[]
   results      Result[]
+  heats        Heat[]
+  brackets     Bracket[]
+}
+
+model EventRegistration {
+  id                String             @id @default(cuid())
+  eventId           String
+  userId            String
+  vehicleId         String?
+  status            RegistrationStatus @default(PENDING)
+  competitionNumber String?
+  seed              Int?
+  internalNote      String?
+  checkedInAt       DateTime?
+  decidedAt         DateTime?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  event   Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vehicle Vehicle? @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
+
+  @@unique([eventId, userId])
+  @@index([eventId, status])
+  @@index([userId, status])
 }
 
 model Participant {
-  id            String   @id @default(cuid())
-  competitionId String
-  name          String
-  vehicle       String?
-  number        String?
-  team          String?
-  createdAt     DateTime @default(now())
+  id             String             @id @default(cuid())
+  competitionId  String
+  userId         String?
+  registrationId String?
+  name           String
+  vehicle        String?
+  number         String?
+  team           String?
+  seed           Int?
+  checkedInAt    DateTime?
+  status         RegistrationStatus @default(APPROVED)
+  createdAt      DateTime           @default(now())
 
-  competition Competition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
-  results     Result[]
+  competition      Competition    @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  results          Result[]
+  heatEntries      HeatEntry[]
+  bracketSlots     BracketMatch[] @relation("BracketMatchParticipant")
+  bracketOpponents BracketMatch[] @relation("BracketMatchOpponent")
+  winnerMatches    BracketMatch[] @relation("BracketMatchWinner")
+
+  @@unique([competitionId, userId])
+  @@index([competitionId, seed])
 }
 
 model Result {
-  id            String   @id @default(cuid())
-  competitionId String
-  participantId String
-  placement     Int
-  points        Int?
-  notes         String?
-  createdById   String
-  createdAt     DateTime @default(now())
+  id             String       @id @default(cuid())
+  competitionId  String
+  participantId  String
+  placement      Int
+  points         Int?
+  status         ResultStatus @default(APPROVED)
+  finishTimeMs   Int?
+  reactionTimeMs Int?
+  locked         Boolean      @default(false)
+  notes          String?
+  createdById    String
+  createdAt      DateTime     @default(now())
 
   competition Competition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
   participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
   createdBy   User        @relation("ResultCreatedBy", fields: [createdById], references: [id])
+
+  @@unique([competitionId, participantId])
+}
+
+model Heat {
+  id            String     @id @default(cuid())
+  competitionId String
+  title         String
+  round         Int        @default(1)
+  heatNumber    Int
+  status        HeatStatus @default(DRAFT)
+  locked        Boolean    @default(false)
+  startedAt     DateTime?
+  completedAt   DateTime?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  competition Competition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  entries     HeatEntry[]
+
+  @@unique([competitionId, round, heatNumber])
+  @@index([competitionId, status])
+}
+
+model HeatEntry {
+  id            String   @id @default(cuid())
+  heatId        String
+  participantId String
+  startPosition Int
+  lane          String?
+  createdAt     DateTime @default(now())
+
+  heat        Heat        @relation(fields: [heatId], references: [id], onDelete: Cascade)
+  participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+
+  @@unique([heatId, participantId])
+  @@index([heatId, startPosition])
+}
+
+model Bracket {
+  id            String          @id @default(cuid())
+  competitionId String
+  title         String
+  type          CompetitionType
+  size          Int
+  status        BracketStatus   @default(DRAFT)
+  locked        Boolean         @default(false)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  competition Competition    @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  matches     BracketMatch[]
+
+  @@index([competitionId, status])
+}
+
+model BracketMatch {
+  id             String      @id @default(cuid())
+  bracketId      String
+  round          Int
+  matchNumber    Int
+  participantAId String?
+  participantBId String?
+  winnerId       String?
+  status         MatchStatus @default(PENDING)
+  scoreA         Int?
+  scoreB         Int?
+  notes          String?
+  scheduledAt    DateTime?
+  completedAt    DateTime?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  bracket      Bracket      @relation(fields: [bracketId], references: [id], onDelete: Cascade)
+  participantA Participant? @relation("BracketMatchParticipant", fields: [participantAId], references: [id], onDelete: SetNull)
+  participantB Participant? @relation("BracketMatchOpponent", fields: [participantBId], references: [id], onDelete: SetNull)
+  winner       Participant? @relation("BracketMatchWinner", fields: [winnerId], references: [id], onDelete: SetNull)
+
+  @@unique([bracketId, round, matchNumber])
+  @@index([bracketId, status])
 }
 
 model HallOfFame {
-  id        String   @id @default(cuid())
-  eventId   String
-  title     String
-  winner    String
-  year      Int
-  imageUrl  String?
-  notes     String?
-  createdAt DateTime @default(now())
+  id          String    @id @default(cuid())
+  eventId     String
+  userId      String?
+  title       String
+  winner      String
+  description String?
+  category    String?
+  placement   Int?
+  points      Int?
+  year        Int
+  imageUrl    String?
+  notes       String?
+  achievedAt  DateTime?
+  sortOrder   Int       @default(0)
+  active      Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User? @relation("HallOfFameUser", fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([active, category, year])
 }
 
 model GalleryImage {
@@ -400,24 +607,66 @@ model AuditLog {
   actor User? @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
 }
 
-model Vehicle {
-  id           String        @id @default(cuid())
-  ownerId      String
-  displayName  String
-  modelName    String?
-  spawnCode    String?
-  licensePlate String?
-  vehicleClass String?
+model EventTask {
+  id           String            @id @default(cuid())
+  eventId      String?
+  title        String
   description  String?
-  imageUrl     String?
-  status       VehicleStatus @default(ACTIVE)
-  createdById  String
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  status       EventTaskStatus   @default(OPEN)
+  priority     EventTaskPriority @default(NORMAL)
+  entityType   String?
+  entityId     String?
+  assignedToId String?
+  createdById  String?
+  dueAt        DateTime?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
 
-  owner       User                @relation("VehicleOwner", fields: [ownerId], references: [id], onDelete: Cascade)
-  createdBy   User                @relation("VehicleCreatedBy", fields: [createdById], references: [id])
-  inspections VehicleInspection[]
+  event      Event? @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  assignedTo User?  @relation("EventTaskAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  createdBy  User?  @relation("EventTaskCreator", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([status, priority])
+  @@index([eventId, status])
+}
+
+model EventAnnouncement {
+  id          String                  @id @default(cuid())
+  eventId     String
+  authorId    String?
+  title       String
+  message     String
+  status      EventAnnouncementStatus @default(DRAFT)
+  publishedAt DateTime?
+  createdAt   DateTime                @default(now())
+  updatedAt   DateTime                @updatedAt
+
+  event  Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  author User? @relation("EventAnnouncementAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+
+  @@index([eventId, status])
+}
+
+model Vehicle {
+  id            String        @id @default(cuid())
+  ownerId       String
+  displayName   String
+  modelName     String?
+  spawnCode     String?
+  licensePlate  String?
+  vehicleClass  String?
+  eventCategory String?
+  description   String?
+  imageUrl      String?
+  status        VehicleStatus @default(ACTIVE)
+  createdById   String
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  owner              User                @relation("VehicleOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  createdBy          User                @relation("VehicleCreatedBy", fields: [createdById], references: [id])
+  inspections        VehicleInspection[]
+  eventRegistrations EventRegistration[]
 }
 
 model VehicleInspection {

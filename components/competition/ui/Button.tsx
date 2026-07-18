@@ -29,7 +29,7 @@ type LinkProps = BaseProps & AnchorHTMLAttributes<HTMLAnchorElement> & { href: s
 
 export default function Button(props: ButtonProps | LinkProps) {
   const { children, className = "", variant = "secondary", size = "md" } = props;
-  const classes = `inline-flex items-center justify-center gap-2 rounded-full border font-black transition duration-300 focus:outline-none focus:ring-2 focus:ring-white/40 focus:ring-offset-2 focus:ring-offset-black disabled:cursor-not-allowed disabled:translate-y-0 disabled:opacity-40 ${variants[variant]} ${sizes[size]} ${className}`;
+  const classes = `inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-full border font-black transition duration-300 focus:outline-none focus:ring-2 focus:ring-white/40 focus:ring-offset-2 focus:ring-offset-black disabled:cursor-not-allowed disabled:translate-y-0 disabled:opacity-40 ${variants[variant]} ${sizes[size]} ${className}`;
 
   if ("href" in props && props.href) {
     return (

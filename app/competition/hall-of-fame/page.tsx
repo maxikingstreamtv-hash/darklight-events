@@ -1,5 +1,4 @@
-import Link from "next/link";
-import Navbar from "@/components/layout/Navbar";
+﻿import Link from "next/link";
 import Footer from "@/components/layout/Footer";
 import CompetitionLayout from "@/components/competition/CompetitionLayout";
 import { prisma } from "@/lib/prisma";
@@ -8,12 +7,12 @@ export const dynamic = "force-dynamic";
 
 export default async function HallOfFamePage() {
   const winners = await prisma.hallOfFame.findMany({
-    orderBy: [{ year: "desc" }, { createdAt: "desc" }],
+    orderBy: [{ active: "desc" }, { sortOrder: "asc" }, { year: "desc" }, { createdAt: "desc" }],
     include: {
       event: {
         select: {
           title: true,
-          slug: true,
+          id: true,
         },
       },
     },
@@ -21,7 +20,6 @@ export default async function HallOfFamePage() {
 
   return (
     <>
-      <Navbar />
       <CompetitionLayout>
         <section className="relative overflow-hidden bg-black px-6 py-28 text-white">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.12),transparent_40%)]" />
@@ -46,6 +44,7 @@ export default async function HallOfFamePage() {
                     <p className="text-sm uppercase tracking-[0.3em] text-zinc-500">{winner.year}</p>
                     <h2 className="mt-4 text-3xl font-black">{winner.winner}</h2>
                     <p className="mt-3 text-zinc-400">{winner.title}</p>
+                    <p className="mt-2 text-sm text-zinc-500">{winner.active ? "Publiceret" : "Arkiveret"}</p>
                     <p className="mt-2 text-sm text-zinc-500">{winner.event.title}</p>
                     {winner.notes ? <p className="mt-4 text-sm leading-6 text-zinc-400">{winner.notes}</p> : null}
                   </article>

@@ -15,7 +15,7 @@ export default function Hero({ sponsorSlot }: { sponsorSlot?: ReactNode }) {
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.12),transparent_40%)]" />
       <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:90px_90px] opacity-25" />
 
-      <div className="absolute left-1/2 top-24 z-20 w-[min(92vw,500px)] -translate-x-1/2 lg:left-3 lg:translate-x-0 xl:left-6">
+      <div className="absolute left-1/2 top-6 z-20 w-[min(92vw,500px)] -translate-x-1/2 lg:left-6 lg:translate-x-0">
         <div className="rounded-xl border border-white/10 bg-black/75 px-4 py-3 shadow-[0_14px_38px_rgba(0,0,0,0.32)] backdrop-blur-xl">
           <div className="flex items-start gap-3">
             <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/[0.04]">

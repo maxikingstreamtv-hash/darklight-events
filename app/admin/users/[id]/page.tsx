@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { notFound } from "next/navigation";
 import AdminShell from "@/components/admin/AdminShell";
 import { AdminCard, Field, StatusBadge, fieldClassName } from "@/components/admin/AdminUi";
@@ -35,6 +35,7 @@ type UserVehicleSummary = {
   displayName: string;
   licensePlate: string | null;
   vehicleClass: string | null;
+  eventCategory: string | null;
   status: string;
   inspections: { status: string; createdAt: Date }[];
 };
@@ -107,6 +108,7 @@ export default async function UserDetailPage({
           displayName: true,
           licensePlate: true,
           vehicleClass: true,
+          eventCategory: true,
           status: true,
           inspections: { orderBy: { createdAt: "desc" }, take: 1, select: { status: true, createdAt: true } },
         },
@@ -246,7 +248,9 @@ export default async function UserDetailPage({
               user.vehicles.map((vehicle: UserVehicleSummary) => (
                 <Link key={vehicle.id} href={`/admin/vehicles/${vehicle.id}`} className="rounded-2xl border border-white/10 bg-black p-4 transition hover:border-white/30">
                   <p className="font-black">{vehicle.displayName}</p>
-                  <p className="mt-1 text-sm text-zinc-500">{vehicle.licensePlate ?? "Ingen plade"} · {vehicle.vehicleClass ?? "Klasse ikke sat"}</p>
+                  <p className="mt-1 text-sm text-zinc-500">
+                    {vehicle.licensePlate ?? "Ingen plade"} · {vehicle.vehicleClass ?? "Ikke angivet"} · {vehicle.eventCategory ?? "Ikke angivet"}
+                  </p>
                   <p className="mt-2 text-xs uppercase tracking-[0.18em] text-zinc-400">Status: {vehicle.status} · Inspektion: {vehicle.inspections[0]?.status ?? "Ingen"}</p>
                 </Link>
               ))

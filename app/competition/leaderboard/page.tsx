@@ -1,5 +1,4 @@
-import Link from "next/link";
-import Navbar from "@/components/layout/Navbar";
+﻿import Link from "next/link";
 import Footer from "@/components/layout/Footer";
 import CompetitionLayout from "@/components/competition/CompetitionLayout";
 import { prisma } from "@/lib/prisma";
@@ -23,7 +22,7 @@ export default async function CompetitionLeaderboardPage() {
           event: {
             select: {
               title: true,
-              slug: true,
+              id: true,
             },
           },
         },
@@ -33,7 +32,6 @@ export default async function CompetitionLeaderboardPage() {
 
   return (
     <>
-      <Navbar />
       <CompetitionLayout>
         <section className="relative overflow-hidden bg-black px-6 py-28 text-white">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.12),transparent_40%)]" />

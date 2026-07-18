@@ -1,4 +1,4 @@
-# DarkLight Events V2 User Management
+﻿# DarkLight Events V2 User Management
 
 Dette dokument beskriver noter for Sprint 2 user management.
 

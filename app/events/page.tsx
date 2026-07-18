@@ -1,6 +1,5 @@
-import Image from "next/image";
+﻿import Image from "next/image";
 import Link from "next/link";
-import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { prisma } from "@/lib/prisma";
 
@@ -44,7 +43,6 @@ export default async function EventsPage({ searchParams }: { searchParams: Promi
     orderBy: [{ sortOrder: "asc" }, { startsAt: "asc" }, { title: "asc" }],
     select: {
       id: true,
-      slug: true,
       title: true,
       description: true,
       bannerUrl: true,
@@ -54,14 +52,16 @@ export default async function EventsPage({ searchParams }: { searchParams: Promi
       startsAt: true,
       status: true,
       maxParticipants: true,
-      bookings: { select: { id: true } },
+      registrations: {
+        where: { status: { in: ["PENDING", "APPROVED", "CHECKED_IN"] } },
+        select: { id: true },
+      },
       competitions: { select: { type: true, title: true }, take: 1 },
     },
   });
 
   return (
     <main className="min-h-screen bg-black text-white">
-      <Navbar />
       <section className="relative overflow-hidden px-6 py-28">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.14),transparent_42%)]" />
         <div className="relative mx-auto max-w-7xl">
@@ -73,7 +73,7 @@ export default async function EventsPage({ searchParams }: { searchParams: Promi
                 Den centrale kalender for database-events, tilmeldinger og resultater på DreamLight.
               </p>
             </div>
-            <Link href="/booking" className="w-fit rounded-full bg-white px-6 py-3 font-black text-black shadow-[0_18px_45px_rgba(255,255,255,0.10)] transition hover:bg-zinc-300">
+            <Link href="/booking" className="inline-flex w-fit shrink-0 items-center justify-center whitespace-nowrap rounded-full bg-white px-6 py-3 font-black text-black shadow-[0_18px_45px_rgba(255,255,255,0.10)] transition hover:bg-zinc-300">
               Book DarkLight
             </Link>
           </div>
@@ -83,7 +83,7 @@ export default async function EventsPage({ searchParams }: { searchParams: Promi
               <span className="text-xs font-black uppercase tracking-[0.25em] text-zinc-500">Søgning</span>
               <input name="q" defaultValue={query} placeholder="Søg efter event, lokation eller beskrivelse" className="rounded-2xl border border-white/10 bg-black px-4 py-3 text-white outline-none transition focus:border-white" />
             </label>
-            <button className="self-end rounded-full bg-white px-6 py-3 font-black text-black transition hover:bg-zinc-300">
+            <button className="inline-flex shrink-0 items-center justify-center self-end whitespace-nowrap rounded-full bg-white px-6 py-3 font-black text-black transition hover:bg-zinc-300">
               Søg
             </button>
           </form>
@@ -98,7 +98,7 @@ export default async function EventsPage({ searchParams }: { searchParams: Promi
           ) : (
             <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
               {events.map((event) => (
-                <Link key={event.id} href={`/events/${event.slug}`} className="group rounded-[2rem] border border-white/10 bg-white/[0.04] p-5 transition hover:-translate-y-1 hover:border-white/30">
+                <Link key={event.id} href={`/events/${event.id}`} className="group rounded-[2rem] border border-white/10 bg-white/[0.04] p-5 transition hover:-translate-y-1 hover:border-white/30">
                   <div className="relative h-52 overflow-hidden rounded-[1.5rem] border border-white/10 bg-black">
                     {event.thumbnailUrl || event.bannerUrl ? (
                       <Image src={event.thumbnailUrl ?? event.bannerUrl ?? ""} alt={event.imageAlt ?? event.title} fill unoptimized className="object-cover opacity-85 transition duration-700 group-hover:scale-105" />
@@ -115,7 +115,7 @@ export default async function EventsPage({ searchParams }: { searchParams: Promi
                   <div className="mt-5 grid gap-2 text-sm text-zinc-500">
                     <p>{formatDate(event.startsAt)}</p>
                     <p>{event.location ?? "Lokation ikke sat"}</p>
-                    <p>{event.bookings.length}/{event.maxParticipants ?? "∞"} tilmeldinger</p>
+                    <p>{event.registrations.length}/{event.maxParticipants ?? "∞"} tilmeldinger</p>
                   </div>
                 </Link>
               ))}

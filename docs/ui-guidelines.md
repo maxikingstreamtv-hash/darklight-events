@@ -1,4 +1,4 @@
-# DarkLight Events V2 UI Guidelines
+﻿# DarkLight Events V2 UI Guidelines
 
 DarkLight Events V2 skal føles som et premium FiveM/DreamLight RP-eventunivers. Designet skal være mørkt, rent, skarpt og professionelt uden at ligne en IRL-virksomhed.
 

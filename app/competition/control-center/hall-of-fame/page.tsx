@@ -1,10 +1,5 @@
-import ControlCenterLayout from "@/components/competition/ControlCenterLayout";
-import HallOfFame from "@/components/competition/HallOfFame";
+import { redirect } from "next/navigation";
 
-export default function ControlCenterHallOfFamePage() {
-  return (
-    <ControlCenterLayout>
-      <HallOfFame />
-    </ControlCenterLayout>
-  );
+export default function ControlCenterHallOfFameRedirectPage() {
+  redirect("/competition/hall-of-fame");
 }

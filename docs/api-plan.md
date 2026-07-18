@@ -1,4 +1,4 @@
-# DarkLight Events V2 API-plan
+﻿# DarkLight Events V2 API-plan
 
 Dette dokument beskriver planlagte API-områder for DarkLight Events V2. Ruterne er kun planlagt her og skal ikke implementeres som del af dette dokument.
 

@@ -1,5 +1,4 @@
-import Link from "next/link";
-import Navbar from "@/components/layout/Navbar";
+﻿import Link from "next/link";
 import Footer from "@/components/layout/Footer";
 import CompetitionLayout from "@/components/competition/CompetitionLayout";
 import { prisma } from "@/lib/prisma";
@@ -13,7 +12,7 @@ export default async function EventsManagerPage() {
       _count: {
         select: {
           competitions: true,
-          bookings: true,
+          registrations: true,
           gallery: true,
         },
       },
@@ -22,7 +21,6 @@ export default async function EventsManagerPage() {
 
   return (
     <>
-      <Navbar />
       <CompetitionLayout>
         <section className="relative overflow-hidden bg-black px-6 py-28 text-white">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.12),transparent_40%)]" />
@@ -57,13 +55,13 @@ export default async function EventsManagerPage() {
                     <div className="mt-6 grid gap-4 md:grid-cols-3">
                       <MiniStat label="Dato" value={event.startsAt.toLocaleDateString("da-DK")} />
                       <MiniStat label="Konkurrencer" value={event._count.competitions} />
-                      <MiniStat label="Bookinger" value={event._count.bookings} />
+                      <MiniStat label="Tilmeldinger" value={event._count.registrations} />
                     </div>
-                    <div className="mt-6 flex flex-wrap gap-3">
-                      <Link href={`/competition/events/${event.id}`} className="rounded-full border border-white/10 px-5 py-3 font-black text-zinc-200 transition hover:bg-white hover:text-black">
-                        Åbn
+                    <div className="mt-6 flex flex-wrap items-center gap-3">
+                      <Link href={`/competition/events/${event.id}`} className="inline-flex min-w-32 shrink-0 items-center justify-center whitespace-nowrap rounded-full border border-white/10 px-6 py-3 font-black text-zinc-200 transition hover:bg-white hover:text-black">
+                        Åbn event
                       </Link>
-                      <Link href={`/events/${event.slug}`} className="rounded-full border border-white/10 px-5 py-3 font-black text-zinc-200 transition hover:bg-white hover:text-black">
+                      <Link href={`/events/${event.id}`} className="inline-flex min-w-28 shrink-0 items-center justify-center whitespace-nowrap rounded-full border border-white/10 px-6 py-3 font-black text-zinc-200 transition hover:bg-white hover:text-black">
                         Public
                       </Link>
                     </div>
