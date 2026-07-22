@@ -7,6 +7,7 @@
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "tsx --test lib/**/*.test.ts",
     "db:seed-admin": "prisma generate && tsx scripts/seed-initial-admin.ts",
     "seed": "tsx prisma/seed.ts"
   },

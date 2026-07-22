@@ -5,14 +5,13 @@ import Footer from "@/components/layout/Footer";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth/session";
 import { cancelEventRegistrationAction, registerForEventAction } from "@/app/competition/eventos-actions";
+import { COUNTED_REGISTRATION_STATUSES, getEventRegistrationLoginHref, getRegistrationState, type RegistrationState } from "@/lib/events/registration-state";
 
 export const dynamic = "force-dynamic";
 
 function formatDate(value: Date) {
   return new Intl.DateTimeFormat("da-DK", { dateStyle: "medium", timeStyle: "short" }).format(value);
 }
-
-const countedRegistrationStatuses = ["PENDING", "APPROVED", "CHECKED_IN"];
 
 export default async function EventDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -67,15 +66,16 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
     notFound();
   }
 
-  const activeRegistrations = event.registrations.filter((registration) => countedRegistrationStatuses.includes(registration.status)).length;
-  const available = event.maxParticipants === null ? "Ubegrænset" : Math.max(event.maxParticipants - activeRegistrations, 0);
+  const activeRegistrations = event.registrations.filter((registration) =>
+    COUNTED_REGISTRATION_STATUSES.some((status) => status === registration.status),
+  ).length;
   const userRegistration = currentUser ? event.registrations.find((registration) => registration.userId === currentUser.id) : null;
-  const now = new Date();
-  const registrationOpen =
-    event.status === "REGISTRATION_OPEN" &&
-    (!event.registrationOpenAt || event.registrationOpenAt <= now) &&
-    (!event.registrationCloseAt || event.registrationCloseAt >= now);
-  const eventFull = typeof available === "number" && available <= 0;
+  const registrationState = getRegistrationState({
+    ...event,
+    registeredParticipants: activeRegistrations,
+    userRegistrationStatus: userRegistration?.status,
+  });
+  const available = registrationState.remainingSpots ?? "Ubegrænset";
   const registerAction = registerForEventAction.bind(null, event.id);
   const cancelAction = cancelEventRegistrationAction.bind(null, event.id);
 
@@ -87,7 +87,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
           <div className="grid gap-8 xl:grid-cols-[1.05fr_0.95fr] xl:items-end">
             <div>
               <div className="mb-5 flex flex-wrap gap-3">
-                <span className="rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-zinc-300">{event.status}</span>
+                <span className="rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-zinc-300">{registrationState.label}</span>
                 <span className="rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-zinc-300">{event.competitions[0]?.type ?? "Event"}</span>
               </div>
               <p className="mb-4 text-sm uppercase tracking-[0.45em] text-zinc-500">DarkLight Event</p>
@@ -98,11 +98,10 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
                   Alle events
                 </Link>
                 <RegistrationCta
-                  registrationOpen={registrationOpen}
-                  eventFull={eventFull}
+                  registrationState={registrationState}
                   currentUserExists={Boolean(currentUser)}
                   userRegistrationStatus={userRegistration?.status}
-                  loginHref={`/login?callbackUrl=/events/${id}`}
+                  loginHref={getEventRegistrationLoginHref(id)}
                   registerAction={registerAction}
                   cancelAction={cancelAction}
                 />
@@ -126,7 +125,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
 
           <div className="mt-8 grid gap-8 xl:grid-cols-[1fr_420px]">
             <Panel title="Eventinfo">
-              <InfoLine label="Status" value={event.status} />
+              <InfoLine label="Status" value={registrationState.label} />
               <InfoLine label="Maks deltagere" value={event.maxParticipants ? String(event.maxParticipants) : "Ubegrænset"} />
               <InfoLine label="Slutter" value={event.endsAt ? formatDate(event.endsAt) : "Ikke sat"} />
               <InfoLine label="Kapacitet" value={`${activeRegistrations} af ${event.maxParticipants ?? "uendeligt"} pladser optaget`} />
@@ -191,16 +190,14 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
 }
 
 function RegistrationCta({
-  registrationOpen,
-  eventFull,
+  registrationState,
   currentUserExists,
   userRegistrationStatus,
   loginHref,
   registerAction,
   cancelAction,
 }: {
-  registrationOpen: boolean;
-  eventFull: boolean;
+  registrationState: RegistrationState;
   currentUserExists: boolean;
   userRegistrationStatus?: string;
   loginHref: string;
@@ -211,7 +208,7 @@ function RegistrationCta({
     return (
       <div className="flex flex-wrap gap-3">
         <DisabledCta>Tilmelding afventer godkendelse</DisabledCta>
-        {registrationOpen ? (
+        {registrationState.isOpen ? (
           <form action={cancelAction}>
             <SecondaryCta>Afmeld event</SecondaryCta>
           </form>
@@ -224,7 +221,7 @@ function RegistrationCta({
     return (
       <div className="flex flex-wrap gap-3">
         <DisabledCta>Du er tilmeldt</DisabledCta>
-        {registrationOpen ? (
+        {registrationState.isOpen ? (
           <form action={cancelAction}>
             <SecondaryCta>Afmeld event</SecondaryCta>
           </form>
@@ -237,12 +234,8 @@ function RegistrationCta({
     return <DisabledCta>Tilmelding afvist</DisabledCta>;
   }
 
-  if (!registrationOpen) {
-    return <DisabledCta>Tilmeldingen er lukket</DisabledCta>;
-  }
-
-  if (eventFull) {
-    return <DisabledCta>Eventet er fyldt</DisabledCta>;
+  if (!registrationState.isOpen) {
+    return <DisabledCta>{registrationState.label}</DisabledCta>;
   }
 
   if (!currentUserExists) {
