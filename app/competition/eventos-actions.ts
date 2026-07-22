@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { requireCurrentUser } from "@/lib/auth/session";
 import { writeAuditLog } from "@/lib/admin/audit";
 import { createBracketPlan, createHeatPlan } from "@/lib/eventos/engine";
+import { COUNTED_REGISTRATION_STATUSES, getRegistrationState } from "@/lib/events/registration-state";
 
 type StaffRole = "SUPER_ADMIN" | "ADMIN" | "EVENT_MANAGER";
 
@@ -104,8 +105,6 @@ async function getCompetitionForResultSave(competitionId: string) {
   return competition;
 }
 
-const countedRegistrationStatuses = ["PENDING", "APPROVED", "CHECKED_IN"] as const;
-
 export async function registerForEventAction(eventId: string, formData: FormData) {
   const user = await requireCurrentUser();
   const vehicleId = String(formData.get("vehicleId") ?? "").trim() || null;
@@ -118,11 +117,13 @@ export async function registerForEventAction(eventId: string, formData: FormData
       active: true,
       public: true,
       status: true,
+      startsAt: true,
+      endsAt: true,
       maxParticipants: true,
       registrationOpenAt: true,
       registrationCloseAt: true,
       registrations: {
-        where: { status: { in: [...countedRegistrationStatuses] } },
+        where: { status: { in: [...COUNTED_REGISTRATION_STATUSES] } },
         select: { id: true },
       },
     },
@@ -132,18 +133,13 @@ export async function registerForEventAction(eventId: string, formData: FormData
     throw new Error("Eventet kan ikke findes eller er ikke åbent.");
   }
 
-  const now = new Date();
-  const registrationOpen =
-    event.status === "REGISTRATION_OPEN" &&
-    (!event.registrationOpenAt || event.registrationOpenAt <= now) &&
-    (!event.registrationCloseAt || event.registrationCloseAt >= now);
+  const registrationState = getRegistrationState({
+    ...event,
+    registeredParticipants: event.registrations.length,
+  });
 
-  if (!registrationOpen) {
-    throw new Error("Tilmeldingen er ikke åben.");
-  }
-
-  if (event.maxParticipants && event.registrations.length >= event.maxParticipants) {
-    throw new Error("Eventet er fuldt booket.");
+  if (!registrationState.isOpen) {
+    throw new Error(registrationState.label);
   }
 
   const existingRegistration = await prisma.eventRegistration.findUnique({
