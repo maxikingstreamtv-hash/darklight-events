@@ -4,6 +4,7 @@ import AdminShell from "@/components/admin/AdminShell";
 import { AdminCard, Field, StatusBadge, fieldClassName } from "@/components/admin/AdminUi";
 import { prisma } from "@/lib/prisma";
 import { canAdminManageTarget, getAssignableRoles, requireAdminUser } from "@/lib/admin/access";
+import ImageUploadField from "@/components/images/ImageUploadField";
 import { isAppRole, type AppRole } from "@/lib/auth/types";
 import { deleteUserAction, grantBadgeAction, grantPermissionAction, removeBadgeAction, removePermissionAction, updateUserAction } from "../actions";
 
@@ -198,9 +199,18 @@ export default async function UserDetailPage({
                   ))}
                 </select>
               </Field>
-              <Field label="Avatar URL">
-                <input name="avatar" defaultValue={user.avatar ?? ""} className={fieldClassName} placeholder="Valgfrit" disabled={!canManage} />
-              </Field>
+              <ImageUploadField
+                name="avatar"
+                scope="profile"
+                ownerId={user.id}
+                initialUrl={user.avatar ?? ""}
+                label="Profilbillede"
+                chooseLabel="Vælg profilbillede"
+                helpText="Anbefalet: kvadratisk billede, mindst 500 × 500 px."
+                variant="avatar"
+                allowExternalUrl
+                disabled={!canManage}
+              />
               <Field label="Bio">
                 <textarea name="bio" defaultValue={user.bio ?? ""} className={fieldClassName} rows={4} placeholder="Valgfrit" disabled={!canManage} />
               </Field>

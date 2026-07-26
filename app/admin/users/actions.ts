@@ -8,6 +8,8 @@ import { isAppRole } from "@/lib/auth/types";
 import { canAdminManageTarget, getAssignableRoles, requireAdminUser } from "@/lib/admin/access";
 import { writeAuditLog } from "@/lib/admin/audit";
 import { isValidId, readUserForm, validateCreateUser, validateUpdateUser } from "@/lib/admin/user-validation";
+import { deleteNewBlobAfterFailedSave, deleteReplacedBlobImage } from "@/lib/images/blob-cleanup";
+import { isPermanentImageUrl } from "@/lib/images/image-upload";
 
 function redirectWithMessage(path: string, key: "error" | "ok", message: string): never {
   redirect(`${path}?${key}=${encodeURIComponent(message)}`);
@@ -22,6 +24,9 @@ export async function createUserAction(formData: FormData) {
   if (error) {
     redirectWithMessage("/admin/users/create", "error", error);
   }
+  if (!isPermanentImageUrl(values.avatar)) {
+    redirectWithMessage("/admin/users/create", "error", "Profilbilledet skal være uploadet permanent.");
+  }
 
   const existing = await prisma.user.findUnique({
     where: { username: values.username },
@@ -32,21 +37,27 @@ export async function createUserAction(formData: FormData) {
     redirectWithMessage("/admin/users/create", "error", "Brugernavnet findes allerede.");
   }
 
-  const user = await prisma.user.create({
-    data: {
-      username: values.username,
-      displayName: values.displayName,
-      passwordHash: await hashPassword(values.password),
-      role: values.role,
-      avatar: values.avatar || null,
-      bio: values.bio || null,
-    },
-    select: {
-      id: true,
-      username: true,
-      role: true,
-    },
-  });
+  let user: { id: string; username: string; role: string };
+  try {
+    user = await prisma.user.create({
+      data: {
+        username: values.username,
+        displayName: values.displayName,
+        passwordHash: await hashPassword(values.password),
+        role: values.role,
+        avatar: values.avatar || null,
+        bio: values.bio || null,
+      },
+      select: {
+        id: true,
+        username: true,
+        role: true,
+      },
+    });
+  } catch {
+    await deleteNewBlobAfterFailedSave(values.avatar, null);
+    redirectWithMessage("/admin/users/create", "error", "Brugeren kunne ikke oprettes. Et nyt uploadet profilbillede er ryddet op.");
+  }
 
   await writeAuditLog({
     actorId: actor.id,
@@ -69,10 +80,13 @@ export async function updateUserAction(userId: string, formData: FormData) {
   if (error) {
     redirectWithMessage(pagePath, "error", error);
   }
+  if (!isPermanentImageUrl(values.avatar)) {
+    redirectWithMessage(pagePath, "error", "Profilbilledet skal være uploadet permanent.");
+  }
 
   const target = await prisma.user.findUnique({
     where: { id: userId },
-    select: { id: true, username: true, displayName: true, role: true },
+    select: { id: true, username: true, displayName: true, role: true, avatar: true },
   });
 
   if (!target || !isAppRole(target.role)) {
@@ -85,21 +99,28 @@ export async function updateUserAction(userId: string, formData: FormData) {
 
   const passwordHash = values.password ? await hashPassword(values.password) : undefined;
 
-  const updated = await prisma.user.update({
-    where: { id: userId },
-    data: {
-      displayName: values.displayName,
-      role: values.role,
-      avatar: values.avatar || null,
-      bio: values.bio || null,
-      ...(passwordHash ? { passwordHash } : {}),
-    },
-    select: {
-      id: true,
-      username: true,
-      role: true,
-    },
-  });
+  let updated: { id: string; username: string; role: string };
+  try {
+    updated = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        displayName: values.displayName,
+        role: values.role,
+        avatar: values.avatar || null,
+        bio: values.bio || null,
+        ...(passwordHash ? { passwordHash } : {}),
+      },
+      select: {
+        id: true,
+        username: true,
+        role: true,
+      },
+    });
+  } catch {
+    await deleteNewBlobAfterFailedSave(values.avatar, target.avatar);
+    redirectWithMessage(pagePath, "error", "Brugeren kunne ikke gemmes. Et nyt uploadet profilbillede er ryddet op.");
+  }
+  await deleteReplacedBlobImage(target.avatar, values.avatar || null);
 
   await writeAuditLog({
     actorId: actor.id,

@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireCurrentUser } from "@/lib/auth/session";
 import { writeAuditLog } from "@/lib/admin/audit";
+import { deleteNewBlobAfterFailedSave, deleteReplacedBlobImage } from "@/lib/images/blob-cleanup";
+import { isPermanentImageUrl } from "@/lib/images/image-upload";
 
 type SponsorLevelValue = "PLATINUM" | "GOLD" | "SILVER" | "PARTNER";
 type SponsorStatusValue = "ACTIVE" | "PENDING" | "ARCHIVED";
@@ -83,7 +85,7 @@ export async function saveSponsorAction(formData: FormData) {
   const slug = slugify(text(formData, "slug") || name);
   const logoUrlInput = text(formData, "logoUrl");
   const websiteUrlInput = text(formData, "websiteUrl");
-  const logoUrl = safeUrl(logoUrlInput);
+  const logoUrl = logoUrlInput && isPermanentImageUrl(logoUrlInput) ? safeUrl(logoUrlInput) : null;
   const websiteUrl = safeUrl(websiteUrlInput);
 
   if (logoUrlInput && !logoUrl) {
@@ -112,20 +114,28 @@ export async function saveSponsorAction(formData: FormData) {
     status,
   };
 
-  const sponsor = await prisma.$transaction(async (tx) => {
-    if (isMainSponsor && status === "ACTIVE") {
-      await tx.sponsor.updateMany({
-        where: { id: id ? { not: id } : undefined, isMainSponsor: true, status: "ACTIVE" },
-        data: { isMainSponsor: false, sponsorType: "SPONSOR" },
-      });
-    }
+  const previous = id ? await prisma.sponsor.findUnique({ where: { id }, select: { logoUrl: true } }) : null;
+  let sponsor: { id: string; slug: string; name: string };
+  try {
+    sponsor = await prisma.$transaction(async (tx) => {
+      if (isMainSponsor && status === "ACTIVE") {
+        await tx.sponsor.updateMany({
+          where: { id: id ? { not: id } : undefined, isMainSponsor: true, status: "ACTIVE" },
+          data: { isMainSponsor: false, sponsorType: "SPONSOR" },
+        });
+      }
 
-    if (id) {
-      return tx.sponsor.update({ where: { id }, data: payload, select: { id: true, slug: true, name: true } });
-    }
+      if (id) {
+        return tx.sponsor.update({ where: { id }, data: payload, select: { id: true, slug: true, name: true } });
+      }
 
-    return tx.sponsor.create({ data: payload, select: { id: true, slug: true, name: true } });
-  });
+      return tx.sponsor.create({ data: payload, select: { id: true, slug: true, name: true } });
+    });
+  } catch {
+    await deleteNewBlobAfterFailedSave(logoUrl, previous?.logoUrl);
+    redirectAdmin("contentError", "Sponsor kunne ikke gemmes. Et nyt uploadet logo er ryddet op.");
+  }
+  await deleteReplacedBlobImage(previous?.logoUrl, logoUrl);
 
   await writeAuditLog({
     actorId: actor.id,
@@ -166,7 +176,7 @@ export async function archiveSponsorAction(id: string) {
 
 export async function deleteSponsorAction(id: string, formData: FormData) {
   const actor = await requireSponsorSuperAdmin();
-  const sponsor = await prisma.sponsor.findUnique({ where: { id }, select: { id: true, slug: true, name: true } });
+  const sponsor = await prisma.sponsor.findUnique({ where: { id }, select: { id: true, slug: true, name: true, logoUrl: true } });
 
   if (!sponsor) {
     redirectAdmin("contentError", "Sponsor blev ikke fundet.");
@@ -178,6 +188,7 @@ export async function deleteSponsorAction(id: string, formData: FormData) {
   }
 
   await prisma.sponsor.delete({ where: { id } });
+  await deleteReplacedBlobImage(sponsor.logoUrl, null);
   await writeAuditLog({
     actorId: actor.id,
     action: "sponsor_deleted",

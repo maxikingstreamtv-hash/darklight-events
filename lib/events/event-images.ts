@@ -1,5 +1,13 @@
-export const EVENT_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
-export const MAX_EVENT_IMAGE_SIZE = 8 * 1024 * 1024;
+import {
+  IMAGE_MIME_TYPES,
+  IMAGE_SIZE_LIMITS,
+  isOwnedBlobImage,
+  isPermanentImageUrl,
+  safeImageName,
+} from "@/lib/images/image-upload";
+
+export const EVENT_IMAGE_TYPES = IMAGE_MIME_TYPES;
+export const MAX_EVENT_IMAGE_SIZE = IMAGE_SIZE_LIMITS.event;
 
 export function isBlobStorageConfigured(token: string | undefined) {
   return Boolean(token?.trim());
@@ -30,27 +38,15 @@ export function validateEventImage(file: Pick<File, "type" | "size">) {
 }
 
 export function safeEventImageName(name: string) {
-  const cleaned = name.toLowerCase().replace(/[^a-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "");
-  return cleaned || "event-image";
+  return safeImageName(name);
 }
 
 export function isPermanentEventImageUrl(value: string) {
-  if (!value) return true;
-  try {
-    const url = new URL(value);
-    return url.protocol === "https:" || (url.protocol === "http:" && ["localhost", "127.0.0.1"].includes(url.hostname));
-  } catch {
-    return value.startsWith("/");
-  }
+  return isPermanentImageUrl(value);
 }
 
 export function isVercelBlobUrl(value: string | null | undefined) {
-  if (!value) return false;
-  try {
-    return new URL(value).hostname.endsWith(".blob.vercel-storage.com");
-  } catch {
-    return false;
-  }
+  return isOwnedBlobImage(value);
 }
 
 export function getRenderableEventImageUrl(value: string | null | undefined) {

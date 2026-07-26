@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireVehicleManager } from "@/lib/admin/vehicle-access";
 import { writeAuditLog } from "@/lib/admin/audit";
+import { deleteNewBlobAfterFailedSave, deleteReplacedBlobImage } from "@/lib/images/blob-cleanup";
+import { isPermanentImageUrl } from "@/lib/images/image-upload";
 
 type VehicleStatusValue = "ACTIVE" | "INACTIVE" | "SUSPENDED";
 type InspectionStatusValue = "PENDING" | "IN_PROGRESS" | "APPROVED" | "REJECTED";
@@ -58,7 +60,7 @@ function readChecklistResult(value: string): ChecklistResultValue {
 async function ensureVehicle(vehicleId: string) {
   const vehicle = await prisma.vehicle.findUnique({
     where: { id: vehicleId },
-    select: { id: true, displayName: true },
+    select: { id: true, displayName: true, imageUrl: true },
   });
 
   if (!vehicle) {
@@ -170,22 +172,32 @@ export async function createVehicleAction(formData: FormData) {
   if (!ownerId || !displayName) {
     redirectWithMessage("/admin/vehicles/create", "error", "Ejer og køretøjsnavn er påkrævet.");
   }
+  const imageUrl = optionalText(formData, "imageUrl");
+  if (!isPermanentImageUrl(imageUrl)) {
+    redirectWithMessage("/admin/vehicles/create", "error", "Køretøjsbilledet skal være uploadet permanent.");
+  }
 
-  const vehicle = await prisma.vehicle.create({
-    data: {
-      ownerId,
-      displayName,
-      modelName: optionalText(formData, "modelName"),
-      licensePlate: optionalText(formData, "licensePlate"),
-      vehicleClass: optionalText(formData, "vehicleClass"),
-      eventCategory: optionalText(formData, "eventCategory"),
-      description: optionalText(formData, "description"),
-      imageUrl: optionalText(formData, "imageUrl"),
-      status: readVehicleStatus(text(formData, "status")),
-      createdById: actor.id,
-    },
-    select: { id: true, displayName: true, ownerId: true },
-  });
+  let vehicle: { id: string; displayName: string; ownerId: string };
+  try {
+    vehicle = await prisma.vehicle.create({
+      data: {
+        ownerId,
+        displayName,
+        modelName: optionalText(formData, "modelName"),
+        licensePlate: optionalText(formData, "licensePlate"),
+        vehicleClass: optionalText(formData, "vehicleClass"),
+        eventCategory: optionalText(formData, "eventCategory"),
+        description: optionalText(formData, "description"),
+        imageUrl,
+        status: readVehicleStatus(text(formData, "status")),
+        createdById: actor.id,
+      },
+      select: { id: true, displayName: true, ownerId: true },
+    });
+  } catch {
+    await deleteNewBlobAfterFailedSave(imageUrl, null);
+    redirectWithMessage("/admin/vehicles/create", "error", "Køretøjet kunne ikke oprettes. Et nyt uploadet billede er ryddet op.");
+  }
 
   await writeAuditLog({
     actorId: actor.id,
@@ -207,21 +219,32 @@ export async function updateVehicleAction(vehicleId: string, formData: FormData)
   if (!displayName) {
     redirectWithMessage(`/admin/vehicles/${vehicleId}`, "error", "Køretøjsnavn er påkrævet.");
   }
+  const imageUrl = optionalText(formData, "imageUrl");
+  if (!isPermanentImageUrl(imageUrl)) {
+    redirectWithMessage(`/admin/vehicles/${vehicleId}`, "error", "Køretøjsbilledet skal være uploadet permanent.");
+  }
 
-  const updated = await prisma.vehicle.update({
-    where: { id: vehicleId },
-    data: {
-      displayName,
-      modelName: optionalText(formData, "modelName"),
-      licensePlate: optionalText(formData, "licensePlate"),
-      vehicleClass: optionalText(formData, "vehicleClass"),
-      eventCategory: optionalText(formData, "eventCategory"),
-      description: optionalText(formData, "description"),
-      imageUrl: optionalText(formData, "imageUrl"),
-      status: readVehicleStatus(text(formData, "status")),
-    },
-    select: { id: true, displayName: true },
-  });
+  let updated: { id: string; displayName: string };
+  try {
+    updated = await prisma.vehicle.update({
+      where: { id: vehicleId },
+      data: {
+        displayName,
+        modelName: optionalText(formData, "modelName"),
+        licensePlate: optionalText(formData, "licensePlate"),
+        vehicleClass: optionalText(formData, "vehicleClass"),
+        eventCategory: optionalText(formData, "eventCategory"),
+        description: optionalText(formData, "description"),
+        imageUrl,
+        status: readVehicleStatus(text(formData, "status")),
+      },
+      select: { id: true, displayName: true },
+    });
+  } catch {
+    await deleteNewBlobAfterFailedSave(imageUrl, vehicle.imageUrl);
+    redirectWithMessage(`/admin/vehicles/${vehicleId}`, "error", "Køretøjet kunne ikke gemmes. Et nyt uploadet billede er ryddet op.");
+  }
+  await deleteReplacedBlobImage(vehicle.imageUrl, imageUrl);
 
   await writeAuditLog({
     actorId: actor.id,
