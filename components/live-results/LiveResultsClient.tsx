@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import { useEffect, useState } from "react";
+import { formatResultTime } from "@/lib/events/result-time";
 
 type LivePayload = {
   generatedAt: string;
@@ -19,6 +20,7 @@ type LivePayload = {
       id: string;
       placement: number;
       points: number | null;
+      finishTimeMs: number | null;
       participant: { name: string; vehicle: string | null; number: string | null; team: string | null };
     }[];
     heats?: {
@@ -117,13 +119,16 @@ export default function LiveResultsClient({ initialPayload }: { initialPayload: 
           ) : (
             <div className="mt-5 grid gap-3">
               {competition.results.map((result) => (
-                <div key={result.id} className="grid gap-3 rounded-2xl border border-white/10 bg-black p-4 sm:grid-cols-[80px_1fr_120px] sm:items-center">
-                  <p className="text-2xl font-black">#{result.placement}</p>
+                <div key={result.id} className="grid gap-3 rounded-2xl border border-white/10 bg-black p-4 sm:grid-cols-[80px_1fr_minmax(120px,auto)] sm:items-center">
+                  <p className="text-2xl font-black">{result.placement > 0 ? `#${result.placement}` : "—"}</p>
                   <div>
                     <p className="font-black">{result.participant.name}</p>
                     <p className="mt-1 text-sm text-zinc-500">{result.participant.vehicle ?? "Køretøj ikke sat"}{result.participant.team ? ` · ${result.participant.team}` : ""}</p>
                   </div>
-                  <p className="font-black text-zinc-300">{result.points ?? 0} point</p>
+                  <div className="grid gap-1 text-sm font-black text-zinc-300">
+                    {result.finishTimeMs != null ? <p>Tid: {formatResultTime(result.finishTimeMs)}</p> : null}
+                    {result.points != null ? <p>Point: {result.points}</p> : null}
+                  </div>
                 </div>
               ))}
             </div>

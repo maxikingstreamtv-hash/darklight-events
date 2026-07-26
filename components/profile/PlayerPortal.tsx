@@ -80,6 +80,7 @@ type PortalStats = {
   currentRanking: number | null;
   hallOfFameEntries: number;
   badgesEarned: number;
+  prizesWon: number;
 };
 
 type PlayerPortalProps = {
@@ -179,12 +180,13 @@ export default function PlayerPortal({ profile, stats, badges, vehicles, eventHi
         </div>
       </motion.section>
 
-      <section className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-7">
+      <section className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-8">
         <StatCard label="Events" value={stats.eventsParticipated} text="deltaget" icon={<CalendarDays />} />
         <StatCard label="Wins" value={stats.wins} text="sejre" icon={<Trophy />} />
         <StatCard label="Podiums" value={stats.podiums} text="top 3" icon={<Medal />} />
         <StatCard label="Vehicles" value={stats.approvedVehicles} text="godkendte" icon={<Car />} />
         <StatCard label="Ranking" value={stats.currentRanking ? `#${stats.currentRanking}` : "-"} text="nuværende" icon={<Gauge />} />
+        <StatCard label="Præmier" value={stats.prizesWon} text="vundet" icon={<Star />} />
         <StatCard label="Hall of Fame" value={stats.hallOfFameEntries} text="entries" icon={<Crown />} />
         <StatCard label="Badges" value={stats.badgesEarned} text="earned" icon={<BadgeCheck />} />
       </section>

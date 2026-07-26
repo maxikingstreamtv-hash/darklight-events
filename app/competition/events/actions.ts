@@ -5,6 +5,10 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireCurrentUser } from "@/lib/auth/session";
 import { writeAuditLog } from "@/lib/admin/audit";
+import { del } from "@vercel/blob";
+import { readEventFeatures } from "@/lib/events/event-features";
+import { clampEventImageFocus, isPermanentEventImageUrl, isVercelBlobUrl } from "@/lib/events/event-images";
+import { syncApprovedParticipantsToCompetition } from "@/lib/events/result-sync";
 
 function slugify(value: string) {
   return value
@@ -37,9 +41,16 @@ export async function createCompetitionEventAction(formData: FormData) {
   const imageUrl = String(formData.get("imageUrl") ?? "").trim();
   const imageAlt = String(formData.get("imageAlt") ?? "").trim();
   const sortOrder = Number(formData.get("sortOrder") ?? 0);
+  const imageFocusX = clampEventImageFocus(Number(formData.get("imageFocusX") ?? 50));
+  const imageFocusY = clampEventImageFocus(Number(formData.get("imageFocusY") ?? 50));
+  const disciplineId = String(formData.get("disciplineId") ?? "").trim();
+  const features = readEventFeatures(formData);
 
   if (!title || !description || !startsAtValue) {
     throw new Error("Titel, beskrivelse og dato er påkrævet.");
+  }
+  if (!isPermanentEventImageUrl(imageUrl)) {
+    throw new Error("Eventbilledet skal være uploadet permanent, før eventet gemmes.");
   }
 
   const startsAt = new Date(startsAtValue);
@@ -48,6 +59,10 @@ export async function createCompetitionEventAction(formData: FormData) {
   }
 
   const legacySlug = `${slugify(title) || "event"}-${Date.now()}`;
+  if (disciplineId) {
+    const discipline = await prisma.discipline.findFirst({ where: { id: disciplineId, active: true }, select: { id: true } });
+    if (!discipline) throw new Error("Den valgte disciplin findes ikke eller er inaktiv.");
+  }
 
   const event = await prisma.event.create({
     data: {
@@ -61,10 +76,16 @@ export async function createCompetitionEventAction(formData: FormData) {
       active,
       bannerUrl: imageUrl || null,
       imageAlt: imageAlt || null,
+      thumbnailUrl: imageUrl || null,
+      imageFocusX,
+      imageFocusY,
+      disciplineId: disciplineId || null,
+      ...features,
       sortOrder: Number.isFinite(sortOrder) ? sortOrder : 0,
       createdById: user.id,
     },
   });
+  await syncApprovedParticipantsToCompetition(event.id);
 
   await writeAuditLog({
     actorId: user.id,
@@ -75,8 +96,9 @@ export async function createCompetitionEventAction(formData: FormData) {
 
   revalidatePath("/competition/events");
   revalidatePath("/events");
+  revalidatePath("/upcoming");
   revalidatePath("/");
-  redirect(`/competition/events/${event.id}?tab=settings#indstillinger`);
+  redirect(`/competition/events/${event.id}?tab=overview#oversigt`);
 }
 
 export async function updateCompetitionEventAction(id: string, formData: FormData) {
@@ -95,12 +117,18 @@ export async function updateCompetitionEventAction(id: string, formData: FormDat
   const active = formData.get("active") === "on";
   const imageUrl = String(formData.get("imageUrl") ?? "").trim();
   const imageAlt = String(formData.get("imageAlt") ?? "").trim();
-  const thumbnailUrl = String(formData.get("thumbnailUrl") ?? "").trim();
   const maxParticipants = Number(formData.get("maxParticipants") ?? "");
   const sortOrder = Number(formData.get("sortOrder") ?? 0);
+  const imageFocusX = clampEventImageFocus(Number(formData.get("imageFocusX") ?? 50));
+  const imageFocusY = clampEventImageFocus(Number(formData.get("imageFocusY") ?? 50));
+  const features = readEventFeatures(formData);
+  const disciplineId = String(formData.get("disciplineId") ?? "").trim();
 
   if (!title || !description || !startsAtValue) {
     throw new Error("Titel, beskrivelse og dato er påkrævet.");
+  }
+  if (!isPermanentEventImageUrl(imageUrl)) {
+    throw new Error("Eventbilledet skal være uploadet permanent, før eventet gemmes.");
   }
 
   const startsAt = new Date(startsAtValue);
@@ -108,6 +136,11 @@ export async function updateCompetitionEventAction(id: string, formData: FormDat
     throw new Error("Datoen er ugyldig.");
   }
 
+  const previousEvent = await prisma.event.findUnique({ where: { id }, select: { bannerUrl: true, thumbnailUrl: true } });
+  if (disciplineId) {
+    const discipline = await prisma.discipline.findFirst({ where: { id: disciplineId, active: true }, select: { id: true } });
+    if (!discipline) throw new Error("Den valgte disciplin findes ikke eller er inaktiv.");
+  }
   const event = await prisma.event.update({
     where: { id },
     data: {
@@ -133,11 +166,26 @@ export async function updateCompetitionEventAction(id: string, formData: FormDat
       public: publicValue,
       active,
       bannerUrl: imageUrl || null,
-      thumbnailUrl: thumbnailUrl || null,
+      thumbnailUrl: imageUrl || null,
       imageAlt: imageAlt || null,
+      imageFocusX,
+      imageFocusY,
+      disciplineId: disciplineId || null,
+      ...features,
       sortOrder: Number.isFinite(sortOrder) ? sortOrder : 0,
     },
   });
+  await syncApprovedParticipantsToCompetition(event.id);
+
+  const oldBlobUrls = [previousEvent?.bannerUrl, previousEvent?.thumbnailUrl]
+    .filter((url): url is string => Boolean(url && url !== imageUrl && isVercelBlobUrl(url)));
+  if (oldBlobUrls.length > 0) {
+    try {
+      await del([...new Set(oldBlobUrls)]);
+    } catch {
+      // The database now points at the new permanent image. Blob cleanup can safely be retried later.
+    }
+  }
 
   await writeAuditLog({
     actorId: user.id,
@@ -149,9 +197,63 @@ export async function updateCompetitionEventAction(id: string, formData: FormDat
   revalidatePath("/competition/events");
   revalidatePath(`/competition/events/${event.id}`);
   revalidatePath("/events");
+  revalidatePath("/upcoming");
   revalidatePath(`/events/${event.id}`);
   revalidatePath("/");
-  redirect(`/competition/events/${event.id}?saved=1`);
+  redirect(`/competition/events/${event.id}?tab=details&saved=1#eventoplysninger`);
+}
+
+export async function updateCompetitionEventImageAction(id: string, formData: FormData) {
+  const user = await requireCurrentUser();
+  requireEventAccess(user.role);
+  const imageUrl = String(formData.get("imageUrl") ?? "").trim();
+  const imageFocusX = clampEventImageFocus(Number(formData.get("imageFocusX") ?? 50));
+  const imageFocusY = clampEventImageFocus(Number(formData.get("imageFocusY") ?? 50));
+  if (!isPermanentEventImageUrl(imageUrl)) throw new Error("Eventbilledet skal være en permanent URL.");
+  const previous = await prisma.event.findUnique({ where: { id }, select: { bannerUrl: true, thumbnailUrl: true } });
+  if (!previous) throw new Error("Eventet findes ikke.");
+  await prisma.event.update({ where: { id }, data: { bannerUrl: imageUrl || null, thumbnailUrl: imageUrl || null, imageFocusX, imageFocusY } });
+  const obsolete = [previous.bannerUrl, previous.thumbnailUrl].filter((url): url is string => Boolean(url && url !== imageUrl && isVercelBlobUrl(url)));
+  if (obsolete.length) {
+    try {
+      await del([...new Set(obsolete)]);
+    } catch (error) {
+      console.error("Kunne ikke rydde gammelt eventbillede i Blob.", error instanceof Error ? error.message : "Ukendt fejl");
+    }
+  }
+  await writeAuditLog({ actorId: user.id, action: imageUrl ? "EVENT_IMAGE_UPDATED" : "EVENT_IMAGE_REMOVED", target: `Event:${id}` });
+  revalidatePath(`/competition/events/${id}`);
+  revalidatePath(`/events/${id}`);
+  revalidatePath("/events");
+  revalidatePath("/upcoming");
+  revalidatePath("/");
+  redirect(`/competition/events/${id}?tab=media&saved=media#medier`);
+}
+
+export async function setEventRegistrationStatusAction(id: string, state: "open" | "closed") {
+  const user = await requireCurrentUser();
+  requireEventAccess(user.role);
+  const event = await prisma.event.update({
+    where: { id },
+    data: state === "open"
+      ? { status: "REGISTRATION_OPEN", registrationOpenAt: new Date() }
+      : { status: "REGISTRATION_CLOSED", registrationCloseAt: new Date() },
+    select: { id: true, title: true, status: true },
+  });
+  await writeAuditLog({
+    actorId: user.id,
+    action: state === "open" ? "EVENT_REGISTRATION_OPENED" : "EVENT_REGISTRATION_CLOSED",
+    target: `Event:${event.id}`,
+    details: { title: event.title, status: event.status },
+  });
+  revalidatePath("/competition/events");
+  revalidatePath("/competition");
+  revalidatePath(`/competition/events/${event.id}`);
+  revalidatePath("/events");
+  revalidatePath("/upcoming");
+  revalidatePath(`/events/${event.id}`);
+  revalidatePath("/");
+  redirect(`/competition/events/${event.id}?tab=overview#oversigt`);
 }
 
 export async function archiveCompetitionEventAction(id: string) {
@@ -171,7 +273,9 @@ export async function archiveCompetitionEventAction(id: string) {
   });
 
   revalidatePath("/competition/events");
+  revalidatePath("/competition");
   revalidatePath("/events");
+  revalidatePath("/upcoming");
   revalidatePath("/");
   redirect("/competition/events");
 }
@@ -212,6 +316,7 @@ export async function deleteCompetitionEventAction(id: string, formData: FormDat
 
   revalidatePath("/competition/events");
   revalidatePath("/events");
+  revalidatePath("/upcoming");
   revalidatePath("/");
   redirect("/competition/events");
 }

@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 
-export default function CompetitionHero() {
+export default function CompetitionHero({ labels }: { labels: string[] }) {
   return (
     <section className="relative overflow-hidden border-b border-white/10 bg-black px-6 py-28 text-white">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.12),transparent_40%)]" />
@@ -43,7 +43,7 @@ export default function CompetitionHero() {
           transition={{ delay: 0.5 }}
           className="mt-12 flex flex-wrap justify-center gap-4"
         >
-          {["Drift", "Race", "Drag", "Car Show"].map((label) => (
+          {labels.map((label) => (
             <span key={label} className="rounded-full border border-white/10 bg-white/5 px-5 py-2 text-sm">
               {label}
             </span>

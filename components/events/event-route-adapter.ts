@@ -3,7 +3,6 @@ import { managedEvents } from "@/data/event-manager";
 import { eventTemplates } from "@/data/event-templates";
 import { permissions } from "@/data/permissions";
 import { sponsors } from "@/data/sponsors";
-import { upcomingEvents } from "@/data/upcoming-events";
 
 export type PublicEventStatus = "Åben" | "Få pladser" | "Fuld" | "Afsluttet";
 
@@ -190,37 +189,8 @@ export function getPublicEventRoutes(): PublicEventRoute[] {
     });
   });
 
-  const upcoming = upcomingEvents.map((event) => {
-    const id = slugifyEvent(event.title);
-    const category = normalizeCategory(`${event.title} ${event.status}`);
-
-    return buildRoute({
-      id,
-      title: event.title,
-      type: event.status,
-      category,
-      date: event.date,
-      time: "RP-tid annonceres",
-      location: event.location,
-      organizer: "DarkLight Events",
-      status: getEventStatus({ ...event, participants: 0, maxParticipants: 40 }),
-      image: event.image,
-      description: "Offentligt event fra DarkLight kalenderen. Detaljer styres manuelt af staff.",
-      participants: 0,
-      maxParticipants: 40,
-      popularity: 0,
-      managed: false,
-      rules: defaultRules(category),
-      prizes: defaultPrizes(category),
-      gallery: [],
-      permission: getMatchingPermission(event.title, category),
-      sponsors: getMatchingSponsors(category),
-      template: undefined,
-    });
-  });
-
   const byId = new Map<string, PublicEventRoute>();
-  [...managed, ...publicCatalog, ...upcoming].forEach((event) => {
+  [...managed, ...publicCatalog].forEach((event) => {
     if (!byId.has(event.id)) {
       byId.set(event.id, event);
     }

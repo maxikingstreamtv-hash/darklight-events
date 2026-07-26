@@ -86,7 +86,7 @@ export default async function DriverPortalPage({
   const ok = readParam(query.ok);
   const error = readParam(query.error);
 
-  const [profile, vehicles, allBadges, allResults, hallOfFame] = await Promise.all([
+  const [profile, vehicles, allBadges, allResults, hallOfFame, prizeAwards] = await Promise.all([
     prisma.user.findUnique({
       where: { id: sessionUser.id },
       select: {
@@ -179,6 +179,20 @@ export default async function DriverPortalPage({
         notes: true,
       },
     }),
+    prisma.eventPrizeWinner.findMany({
+      where: { userId: sessionUser.id },
+      select: {
+        id: true,
+        prize: {
+          select: {
+            title: true,
+            placement: true,
+            awardLabel: true,
+            event: { select: { title: true } },
+          },
+        },
+      },
+    }),
   ]);
 
   if (!profile) {
@@ -209,6 +223,7 @@ export default async function DriverPortalPage({
     currentRanking: buildRanking(allResults, ownNames),
     hallOfFameEntries: userHallOfFame.length,
     badgesEarned: earnedBadgeIds.size,
+    prizesWon: prizeAwards.length,
   };
 
   return (

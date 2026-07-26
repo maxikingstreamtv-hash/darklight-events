@@ -16,6 +16,7 @@ export type RegistrationStateInput = {
   endsAt?: Date | null;
   registrationOpenAt?: Date | null;
   registrationCloseAt?: Date | null;
+  usesParticipantRegistration?: boolean;
   maxParticipants?: number | null;
   registeredParticipants: number;
   userRegistrationStatus?: string | null;
@@ -32,6 +33,7 @@ export type RegistrationState = {
   hasStarted: boolean;
   hasEnded: boolean;
   isAlreadyRegistered: boolean;
+  registrationPeriodState: RegistrationPeriodState;
 };
 
 export function getEventRegistrationLoginHref(eventId: string) {
@@ -51,6 +53,11 @@ const labels: Record<RegistrationReason, string> = {
 
 export function getRegistrationState(input: RegistrationStateInput): RegistrationState {
   const now = input.now ?? new Date();
+  const registrationPeriodState = getRegistrationPeriodState({
+    usesParticipantRegistration: input.usesParticipantRegistration ?? true,
+    registrationOpenAt: input.registrationOpenAt ?? null,
+    registrationCloseAt: input.registrationCloseAt ?? null,
+  }, now);
   const remainingSpots = input.maxParticipants == null
     ? null
     : Math.max(input.maxParticipants - input.registeredParticipants, 0);
@@ -82,5 +89,7 @@ export function getRegistrationState(input: RegistrationStateInput): Registratio
     hasStarted,
     hasEnded,
     isAlreadyRegistered,
+    registrationPeriodState,
   };
 }
+import { getRegistrationPeriodState, type RegistrationPeriodState } from "@/lib/events/registration-period";

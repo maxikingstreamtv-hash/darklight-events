@@ -53,6 +53,7 @@ async function getPayload() {
           id: result.id,
           placement: result.placement,
           points: result.points,
+          finishTimeMs: result.finishTimeMs,
           participant: result.participant,
         })),
         heats: competition.heats.map((heat) => ({

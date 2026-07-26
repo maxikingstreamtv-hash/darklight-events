@@ -2,13 +2,12 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { competitions } from "@/data/competition";
 import { useEventOSStore } from "@/components/competition/eventos-store";
 import Card from "@/components/competition/ui/Card";
 import SectionHeader from "@/components/competition/ui/SectionHeader";
 import StatCard from "@/components/competition/ui/StatCard";
 
-export default function EventControlTabs() {
+export default function EventControlTabs({ disciplineCount = 0 }: { disciplineCount?: number }) {
   return (
     <section className="relative overflow-hidden bg-black px-6 py-28 text-white">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.12),transparent_40%)]" />
@@ -21,14 +20,14 @@ export default function EventControlTabs() {
         />
 
         <motion.div initial={{ opacity: 0, y: 25 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
-          <DashboardTab />
+          <DashboardTab disciplineCount={disciplineCount} />
         </motion.div>
       </div>
     </section>
   );
 }
 
-function DashboardTab() {
+function DashboardTab({ disciplineCount }: { disciplineCount: number }) {
   const { events, participants } = useEventOSStore();
   const checkedIn = participants.filter((p) => p.checkedIn).length;
 
@@ -38,7 +37,7 @@ function DashboardTab() {
         <StatCard title="Events" value={events.length} text="Planlagte events" />
         <StatCard title="Deltagere" value={participants.length} text="Tilmeldte deltagere" />
         <StatCard title="Check-in" value={checkedIn} text="Deltagere checket ind" />
-        <StatCard title="Turneringer" value={competitions.length} text="Aktive discipliner" />
+        <StatCard title="Turneringer" value={disciplineCount} text="Aktive discipliner" />
       </div>
 
       <Card padded="lg">

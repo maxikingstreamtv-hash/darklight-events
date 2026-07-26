@@ -4,6 +4,7 @@ import WhyChoose from "@/components/sections/WhyChoose";
 import Stats from "@/components/sections/Stats";
 import Footer from "@/components/layout/Footer";
 import { prisma } from "@/lib/prisma";
+import { getPublicUpcomingEvents } from "@/lib/events/public-events";
 
 type HomeSponsor = {
   slug: string;
@@ -18,7 +19,7 @@ type HomeSponsor = {
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const mainSponsor = await prisma.sponsor.findFirst({
+  const [mainSponsor, upcomingEvents] = await Promise.all([prisma.sponsor.findFirst({
     where: {
       active: true,
       status: "ACTIVE",
@@ -34,12 +35,12 @@ export default async function Home() {
       websiteUrl: true,
       ctaLabel: true,
     },
-  });
+  }), getPublicUpcomingEvents({ take: 3 })]);
 
   return (
     <main className="min-h-screen bg-black text-white">
       <Hero sponsorSlot={mainSponsor ? <HomeMainSponsor sponsor={mainSponsor} /> : null} />
-      <FeaturedEvents />
+      <FeaturedEvents events={upcomingEvents} />
       <WhyChoose />
       <Stats />
       <Footer />

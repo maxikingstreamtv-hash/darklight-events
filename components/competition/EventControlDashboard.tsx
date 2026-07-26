@@ -2,17 +2,15 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { competitions } from "@/data/competition";
+type DashboardDiscipline = { id: string; name: string; description: string; abbreviation: string };
 
-const overview = [
-  { label: "Aktive events", value: "0", text: "Klar til første live event" },
-  { label: "Discipliner", value: "4", text: "Aktive scoreboards og turneringer" },
-  { label: "Hall of Fame", value: "Aktiv", text: "Vindere publiceres manuelt" },
-  { label: "Livecenter", value: "Online", text: "Live event-overblik" },
-];
-
-export default function EventControlDashboard() {
-  const activeCompetitions = competitions.filter((competition) => competition.status === "Klar");
+export default function EventControlDashboard({ disciplines = [], activeEventCount = 0 }: { disciplines?: DashboardDiscipline[]; activeEventCount?: number }) {
+  const overview = [
+    { label: "Aktive events", value: String(activeEventCount), text: "Databasedrevne events" },
+    { label: "Discipliner", value: String(disciplines.length), text: "Aktive EventOS-discipliner" },
+    { label: "Hall of Fame", value: "Aktiv", text: "Vindere publiceres manuelt" },
+    { label: "Livecenter", value: "Online", text: "Live event-overblik" },
+  ];
 
   return (
     <section className="relative overflow-hidden bg-black px-6 py-28 text-white">
@@ -56,17 +54,14 @@ export default function EventControlDashboard() {
           </div>
 
           <div className="rounded-full border border-white/10 bg-white/[0.04] px-5 py-3 text-sm text-zinc-400">
-            Manuelle eventdata
+            Data fra EventOS
           </div>
         </div>
 
         <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-          {activeCompetitions.map((competition, index) => {
-            const isReady = competition.status === "Klar";
-
-            return (
+          {disciplines.map((discipline, index) => (
               <motion.article
-                key={competition.id}
+                key={discipline.id}
                 initial={{ opacity: 0, y: 35 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
@@ -76,40 +71,31 @@ export default function EventControlDashboard() {
               >
                 <div className="mb-8 flex items-center justify-between gap-4">
                   <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-white/10 bg-black text-3xl">
-                    {competition.icon}
+                    {discipline.abbreviation}
                   </div>
 
                   <span className="rounded-full border border-white/20 px-3 py-2 text-xs font-black uppercase tracking-[0.2em]">
-                    {competition.status}
+                    Aktiv
                   </span>
                 </div>
 
                 <p className="mb-3 text-xs uppercase tracking-[0.3em] text-zinc-500">
-                  {competition.subtitle}
+                  Disciplin
                 </p>
-                <h3 className="text-2xl font-black">{competition.title}</h3>
+                <h3 className="text-2xl font-black">{discipline.name}</h3>
                 <p className="mt-4 min-h-24 text-sm leading-7 text-zinc-400">
-                  {competition.description}
+                  {discipline.description}
                 </p>
 
-                {isReady ? (
                   <Link
-                    href={competition.href}
+                    href={`/competition?discipline=${discipline.id}`}
                     className="mt-8 inline-flex rounded-full bg-white px-6 py-3 font-black text-black transition hover:scale-105 hover:bg-zinc-300"
                   >
                     Åbn
                   </Link>
-                ) : (
-                  <button
-                    disabled
-                    className="mt-8 inline-flex cursor-not-allowed rounded-full border border-white/10 px-6 py-3 font-black text-zinc-600"
-                  >
-                    Ikke aktiv endnu
-                  </button>
-                )}
               </motion.article>
-            );
-          })}
+          ))}
+          {disciplines.length === 0 ? <p className="text-zinc-500">Ingen discipliner er oprettet endnu.</p> : null}
         </div>
       </div>
     </section>

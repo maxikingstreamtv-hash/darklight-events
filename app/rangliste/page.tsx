@@ -1,6 +1,7 @@
 ﻿import Link from "next/link";
 import Footer from "@/components/layout/Footer";
 import { prisma } from "@/lib/prisma";
+import { formatResultTime } from "@/lib/events/result-time";
 
 export const dynamic = "force-dynamic";
 
@@ -28,7 +29,7 @@ function buildLeaderboard(results: Array<{
 
   for (const result of results) {
     const existing = rows.get(result.participantId);
-    const points = result.points ?? Math.max(1000 - result.placement, 0);
+    const points = result.points ?? 0;
 
     if (!existing) {
       rows.set(result.participantId, {
@@ -137,9 +138,11 @@ export default async function PublicLeaderboardPage() {
                       <p className="mt-1 text-sm text-zinc-500">
                         {result.competition.event.title} / {result.competition.title}
                       </p>
-                      <p className="mt-3 text-sm font-black text-zinc-300">
-                        P{result.placement} · {result.points ?? Math.max(1000 - result.placement, 0)} point
-                      </p>
+                      <div className="mt-3 flex flex-wrap gap-3 text-sm font-black text-zinc-300">
+                        {result.placement > 0 ? <span>P{result.placement}</span> : null}
+                        {result.finishTimeMs != null ? <span>Tid {formatResultTime(result.finishTimeMs)}</span> : null}
+                        {result.points != null ? <span>{result.points} point</span> : null}
+                      </div>
                     </div>
                   ))}
                 </div>

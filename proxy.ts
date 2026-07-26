@@ -5,6 +5,7 @@ import { isAppRole } from "@/lib/auth/types";
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  if (pathname === "/competition") return NextResponse.next();
   const token = await getToken({
     req: request,
     secret: process.env.NEXTAUTH_SECRET ?? process.env.AUTH_SECRET,

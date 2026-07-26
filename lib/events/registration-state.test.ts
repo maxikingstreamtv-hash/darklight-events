@@ -34,6 +34,10 @@ test("a passed registration deadline closes registration", () => {
   const result = state({ registrationCloseAt: new Date("2026-07-21T12:00:00.000Z") });
   assert.equal(result.reason, "DEADLINE_PASSED");
 });
+test("registration state uses the shared period helper", () => {
+  const result = state({ registrationOpenAt: null, registrationCloseAt: new Date("2026-07-30T12:00:00.000Z") });
+  assert.equal(result.registrationPeriodState, "configured");
+});
 
 test("DRAFT is not open", () => assert.equal(state({ status: "DRAFT" }).reason, "NOT_OPEN"));
 test("COMPLETED is completed", () => assert.equal(state({ status: "COMPLETED" }).reason, "COMPLETED"));

@@ -123,7 +123,7 @@ export default async function EventTabletPage() {
                         ))}
                         {competition.heats.length === 0 ? <p className="text-zinc-500">Ingen køreliste endnu.</p> : null}
                       </div>
-                      <form action={saveResultAction.bind(null, competition.id)} className="mt-6 grid gap-3 md:grid-cols-[1fr_120px_120px_120px_150px_auto]">
+                      <form action={saveResultAction.bind(null, competition.id, null)} className="mt-6 grid gap-3 md:grid-cols-[1fr_120px_120px_120px_150px_auto]">
                         <select name="participantId" className="rounded-2xl border border-white/10 bg-black px-4 py-4 text-white">
                           <option value="">Vælg deltager</option>
                           {competition.participants.map((participant) => (
@@ -132,7 +132,7 @@ export default async function EventTabletPage() {
                         </select>
                         <input name="placement" type="number" min="1" placeholder="Plads" className="rounded-2xl border border-white/10 bg-black px-4 py-4 text-white" />
                         <input name="points" type="number" min="0" placeholder="Point" className="rounded-2xl border border-white/10 bg-black px-4 py-4 text-white" />
-                        <input name="finishTimeMs" type="number" min="0" placeholder="Tid ms" className="rounded-2xl border border-white/10 bg-black px-4 py-4 text-white" />
+                        <input name="finishTimeMs" type="text" inputMode="decimal" placeholder="Tid MM:SS" className="rounded-2xl border border-white/10 bg-black px-4 py-4 text-white" />
                         <select name="status" defaultValue="APPROVED" className="rounded-2xl border border-white/10 bg-black px-4 py-4 text-white">
                           <option value="APPROVED">Godkendt</option>
                           <option value="DNF">DNF</option>
