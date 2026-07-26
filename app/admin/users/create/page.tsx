@@ -4,6 +4,7 @@ import { AdminCard, Field, fieldClassName } from "@/components/admin/AdminUi";
 import { getAssignableRoles, requireAdminUser } from "@/lib/admin/access";
 import type { AppRole } from "@/lib/auth/types";
 import { createUserAction } from "../actions";
+import ImageUploadField from "@/components/images/ImageUploadField";
 
 function readParam(value?: string | string[]) {
   return Array.isArray(value) ? value[0] : value;
@@ -50,9 +51,16 @@ export default async function CreateUserPage({
               ))}
             </select>
           </Field>
-          <Field label="Avatar URL">
-            <input name="avatar" className={fieldClassName} placeholder="Valgfrit" />
-          </Field>
+          <ImageUploadField
+            name="avatar"
+            scope="profile"
+            ownerId="draft"
+            label="Profilbillede"
+            chooseLabel="Vælg profilbillede"
+            helpText="Anbefalet: kvadratisk billede, mindst 500 × 500 px."
+            variant="avatar"
+            allowExternalUrl
+          />
           <Field label="Bio">
             <textarea name="bio" className={fieldClassName} rows={4} placeholder="Valgfrit" />
           </Field>

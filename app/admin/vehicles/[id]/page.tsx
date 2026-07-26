@@ -18,6 +18,7 @@ import {
 import AdminShell from "@/components/admin/AdminShell";
 import { AdminCard, Field, fieldClassName } from "@/components/admin/AdminUi";
 import InspectionReportPreview from "@/components/vehicles/InspectionReportPreview";
+import ImageUploadField from "@/components/images/ImageUploadField";
 import { prisma } from "@/lib/prisma";
 import { canManageVehicles, requireVehicleReader } from "@/lib/admin/vehicle-access";
 import {
@@ -216,9 +217,17 @@ export default async function VehicleDetailPage({ params, searchParams }: { para
                     <option value="SUSPENDED">Afvist</option>
                   </select>
                 </Field>
-                <Field label="Køretøjsbillede URL">
-                  <input name="imageUrl" defaultValue={vehicle.imageUrl ?? ""} className={fieldClassName} placeholder="https://..." />
-                </Field>
+                <ImageUploadField
+                  name="imageUrl"
+                  scope="vehicle"
+                  ownerId={vehicle.id}
+                  initialUrl={vehicle.imageUrl ?? ""}
+                  label="Køretøjsbillede"
+                  chooseLabel="Vælg køretøjsbillede"
+                  helpText="Anbefalet: liggende JPG eller WebP."
+                  variant="cover"
+                  allowExternalUrl
+                />
                 <Field label="Beskrivelse"><textarea name="description" defaultValue={vehicle.description ?? ""} className={fieldClassName} rows={4} /></Field>
                 <div className="flex flex-wrap gap-3 lg:col-span-2">
                   <button className="rounded-full bg-white px-7 py-4 font-black text-black transition hover:bg-zinc-300">Gem køretøj</button>

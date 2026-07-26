@@ -1,5 +1,6 @@
 ﻿import { archiveSponsorAction, deleteSponsorAction, saveSponsorAction } from "@/app/competition/admin/sponsor-actions";
 import Card from "@/components/competition/ui/Card";
+import ImageUploadField from "@/components/images/ImageUploadField";
 
 type SponsorManagerItem = {
   id: string;
@@ -99,9 +100,17 @@ function SponsorForm({ sponsor }: { sponsor?: SponsorManagerItem }) {
         <input name="isMainSponsor" type="checkbox" defaultChecked={sponsor?.isMainSponsor ?? false} />
         Hovedsponsor
       </label>
-      <Label text="Logo URL">
-        <input name="logoUrl" className={field} defaultValue={sponsor?.logoUrl ?? ""} />
-      </Label>
+      <ImageUploadField
+        name="logoUrl"
+        scope="sponsor"
+        ownerId={sponsor?.id ?? "draft"}
+        initialUrl={sponsor?.logoUrl ?? ""}
+        label="Sponsorlogo"
+        chooseLabel="Vælg sponsorlogo"
+        helpText="Anbefalet: transparent PNG eller WebP med god luft omkring logoet."
+        variant="logo"
+        allowExternalUrl
+      />
       <Label text="Initialer">
         <input name="logoInitials" className={field} defaultValue={sponsor?.logoInitials ?? ""} />
       </Label>

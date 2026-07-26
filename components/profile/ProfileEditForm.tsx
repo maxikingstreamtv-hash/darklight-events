@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { updateOwnProfileAction } from "@/app/profile/actions";
+import ImageUploadField from "@/components/images/ImageUploadField";
 
 export default function ProfileEditForm({
   initialBio,
@@ -24,23 +25,17 @@ export default function ProfileEditForm({
             <h2 className="mt-3 text-3xl font-black">Bio og avatar</h2>
             <p className="mt-2 text-sm text-zinc-400">Du kan kun ændre bio og avatar her. Roller, badges og DarkLight ID styres af staff.</p>
           </div>
-          <label className="grid gap-2">
-            <span className="text-xs font-black uppercase tracking-[0.22em] text-zinc-500">Avatar URL</span>
-            <input
-              name="avatar"
-              value={avatar}
-              onChange={(event) => setAvatar(event.target.value)}
-              placeholder="https://..."
-              className="field"
-            />
-          </label>
-          <button
-            type="button"
-            onClick={() => setAvatar("")}
-            className="w-fit rounded-full border border-white/10 px-4 py-2 text-sm font-black text-zinc-200 transition hover:bg-white hover:text-black"
-          >
-            Fjern avatar
-          </button>
+          <ImageUploadField
+            name="avatar"
+            scope="profile"
+            value={avatar}
+            onValueChange={setAvatar}
+            initialUrl={initialAvatar}
+            label="Profilbillede"
+            chooseLabel="Vælg profilbillede"
+            helpText="Anbefalet: kvadratisk billede, mindst 500 × 500 px."
+            variant="avatar"
+          />
           <label className="grid gap-2">
             <span className="text-xs font-black uppercase tracking-[0.22em] text-zinc-500">Bio</span>
             <textarea

@@ -4,6 +4,7 @@ import { AdminCard, Field, fieldClassName } from "@/components/admin/AdminUi";
 import { prisma } from "@/lib/prisma";
 import { requireVehicleManager } from "@/lib/admin/vehicle-access";
 import { createVehicleAction } from "../actions";
+import ImageUploadField from "@/components/images/ImageUploadField";
 
 function param(value?: string | string[]) {
   return Array.isArray(value) ? value[0] : value ?? "";
@@ -49,9 +50,16 @@ export default async function CreateVehiclePage({ searchParams }: { searchParams
               <option value="SUSPENDED">Suspenderet</option>
             </select>
           </Field>
-          <Field label="Billede URL">
-            <input name="imageUrl" className={fieldClassName} placeholder="Valgfrit" />
-          </Field>
+          <ImageUploadField
+            name="imageUrl"
+            scope="vehicle"
+            ownerId="draft"
+            label="Køretøjsbillede"
+            chooseLabel="Vælg køretøjsbillede"
+            helpText="Anbefalet: liggende JPG eller WebP."
+            variant="cover"
+            allowExternalUrl
+          />
           <Field label="Beskrivelse">
             <textarea name="description" className={fieldClassName} rows={4} placeholder="RP-note om køretøjet" />
           </Field>

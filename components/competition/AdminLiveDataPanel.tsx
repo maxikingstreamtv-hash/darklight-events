@@ -17,6 +17,7 @@ import { drivers } from "@/data/drivers";
 import { galleryItems, type GalleryItem } from "@/data/gallery";
 import { permissions, type PermissionItem, type PermissionStatus } from "@/data/permissions";
 import { sponsors, type Sponsor, type SponsorLevel } from "@/data/sponsors";
+import ImageUploadField from "@/components/images/ImageUploadField";
 
 type AdminTab = "overview" | "events" | "drivers" | "results" | "inbox" | "partners" | "media" | "logs" | "io";
 type BookingStatus = "Afventer" | "Godkendt" | "Afvist" | "Arkiveret";
@@ -498,7 +499,19 @@ export default function AdminLiveDataPanel() {
                 {(["Aktiv", "Afventer", "Arkiveret"] as Sponsor["status"][]).map((status) => <option key={status}>{status}</option>)}
               </Select>
               <Input label="Initialer" value={sponsorDraft.logoInitials} onChange={(value) => setSponsorDraft((current) => ({ ...current, logoInitials: value }))} />
-              <Input label="Logo URL" value={sponsorDraft.logoUrl ?? ""} onChange={(value) => setSponsorDraft((current) => ({ ...current, logoUrl: value }))} />
+              <ImageUploadField
+                key={sponsorDraft.id || "new-sponsor"}
+                scope="sponsor"
+                ownerId={sponsorDraft.id || "draft"}
+                initialUrl={sponsorDraft.logoUrl ?? ""}
+                value={sponsorDraft.logoUrl ?? ""}
+                onValueChange={(value) => setSponsorDraft((current) => ({ ...current, logoUrl: value }))}
+                label="Sponsorlogo"
+                chooseLabel="Vælg sponsorlogo"
+                helpText="Anbefalet: transparent PNG eller WebP med god luft omkring logoet."
+                variant="logo"
+                allowExternalUrl
+              />
               <Input label="RP kontaktperson" value={sponsorDraft.contactPerson} onChange={(value) => setSponsorDraft((current) => ({ ...current, contactPerson: value }))} />
               <Input label="Events" value={sponsorDraft.eventsSupported.join(", ")} onChange={(value) => setSponsorDraft((current) => ({ ...current, eventsSupported: value.split(",").map((item) => item.trim()).filter(Boolean) }))} />
             </div>
@@ -547,7 +560,19 @@ export default function AdminLiveDataPanel() {
               <Input label="Kategori" value={galleryDraft.category} onChange={(value) => setGalleryDraft((current) => ({ ...current, category: value as GalleryItem["category"] }))} />
               <Input label="Event" value={galleryDraft.eventRef} onChange={(value) => setGalleryDraft((current) => ({ ...current, eventRef: value }))} />
               <Input label="Dato" type="date" value={galleryDraft.date} onChange={(value) => setGalleryDraft((current) => ({ ...current, date: value }))} />
-              <Input label="Billede URL" value={galleryDraft.image} onChange={(value) => setGalleryDraft((current) => ({ ...current, image: value }))} />
+            <ImageUploadField
+              key={galleryDraft.id || "new-gallery-image"}
+              scope="gallery"
+              ownerId={galleryDraft.id || "draft"}
+              initialUrl={galleryDraft.image}
+              value={galleryDraft.image}
+              onValueChange={(value) => setGalleryDraft((current) => ({ ...current, image: value }))}
+              label="Galleribillede"
+              chooseLabel="Vælg galleribillede"
+              helpText="Anbefalet: et skarpt JPG- eller WebP-billede i liggende format."
+              variant="cover"
+              allowExternalUrl
+            />
             </div>
             <Input label="Beskrivelse" value={galleryDraft.description} onChange={(value) => setGalleryDraft((current) => ({ ...current, description: value }))} />
             <button type="button" onClick={saveGalleryItem} className="rounded-full bg-white px-5 py-3 text-sm font-black text-black transition hover:bg-zinc-300">Gem billede</button>
