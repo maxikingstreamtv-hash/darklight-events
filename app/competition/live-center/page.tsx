@@ -3,6 +3,8 @@ import type { ReactNode } from "react";
 import Footer from "@/components/layout/Footer";
 import CompetitionLayout from "@/components/competition/CompetitionLayout";
 import { prisma } from "@/lib/prisma";
+import { formatPrizeCurrency } from "@/lib/events/prize-currency";
+import { formatResultTime } from "@/lib/events/result-time";
 
 export const dynamic = "force-dynamic";
 
@@ -35,6 +37,21 @@ export default async function LiveEventCenterPage() {
         where: { status: "PUBLISHED" },
         orderBy: { publishedAt: "desc" },
         take: 6,
+      },
+      prizes: {
+        where: { active: true },
+        orderBy: [{ sortOrder: "asc" }, { placement: "asc" }, { createdAt: "asc" }],
+        select: {
+          id: true,
+          title: true,
+          prizeType: true,
+          placement: true,
+          amount: true,
+          currency: true,
+          itemName: true,
+          sponsorName: true,
+          awardLabel: true,
+        },
       },
     },
   });
@@ -93,15 +110,32 @@ export default async function LiveEventCenterPage() {
 
               <Panel title="Næste handlinger">
                 <div className="grid gap-4">
-                  <ControlLink text="Åbn check-in" href="/competition/check-in" />
+                  {activeEvent?.usesParticipantRegistration ? <ControlLink text="Åbn check-in" href="/competition/check-in" /> : null}
                   <ControlLink text="Event Tablet" href="/competition/tablet" />
-                  <ControlLink text="Lav køreliste" href="/competition/heat-manager" />
-                  <ControlLink text="Resultater" href="/competition/results" />
+                  {activeEvent?.usesHeats ? <ControlLink text="Lav køreliste" href="/competition/heat-manager" /> : null}
+                  {activeEvent?.usesResults ? <ControlLink text="Resultater" href="/competition/results" /> : null}
                   <ControlLink text="Public live-resultater" href="/live-resultater" />
                   <ControlLink text="Public rangliste" href="/rangliste" />
                 </div>
               </Panel>
             </div>
+
+            <section className="mt-8 rounded-[2.5rem] border border-white/10 bg-white/[0.04] p-7 backdrop-blur-xl">
+              <h2 className="mb-7 text-3xl font-black">Præmiepulje</h2>
+              {activeEvent?.usesPrizes && activeEvent.prizes.length > 0 ? (
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                  {activeEvent.prizes.map((prize) => (
+                    <div key={prize.id} className="rounded-2xl border border-white/10 bg-black p-5">
+                      <p className="text-xs font-black uppercase tracking-[0.22em] text-zinc-500">{livePrizeLabel(prize)}</p>
+                      <h3 className="mt-3 text-lg font-black">{prize.title}</h3>
+                      <p className="mt-2 text-sm leading-6 text-zinc-500">{livePrizeSummary(prize)}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-zinc-500">Ingen præmier er offentliggjort for det aktive event endnu.</p>
+              )}
+            </section>
 
             <div className="mt-8 grid gap-8 xl:grid-cols-3">
               <Panel title="Deltagere">
@@ -115,9 +149,13 @@ export default async function LiveEventCenterPage() {
 
               <Panel title="Seneste resultater">
                 <div className="grid gap-4">
-                  {results.slice(0, 8).map((result) => (
-                    <DriverRow key={result.id} name={`Placering ${result.placement}`} meta={`${result.points ?? Math.max(1000 - result.placement, 0)} point`} status="Resultat" />
-                  ))}
+                  {results.slice(0, 8).map((result) => {
+                    const values = [
+                      ...(result.finishTimeMs != null ? [`Tid ${formatResultTime(result.finishTimeMs)}`] : []),
+                      ...(result.points != null ? [`${result.points} point`] : []),
+                    ];
+                    return <DriverRow key={result.id} name={result.placement > 0 ? `Placering ${result.placement}` : "Resultat"} meta={values.join(" · ") || result.status} status="Resultat" />;
+                  })}
                   {results.length === 0 ? <p className="text-zinc-500">Ingen resultater på det aktive event.</p> : null}
                 </div>
               </Panel>
@@ -216,4 +254,46 @@ function ControlLink({ text, href }: { text: string; href: string }) {
       {text}
     </Link>
   );
+}
+
+type LivePrize = {
+  placement: number | null;
+  awardLabel: string | null;
+  prizeType: string;
+  amount: unknown;
+  currency: string | null;
+  itemName: string | null;
+  sponsorName: string | null;
+};
+
+function livePrizeLabel(prize: LivePrize) {
+  if (prize.placement === 1) return "1. plads";
+  if (prize.placement === 2) return "2. plads";
+  if (prize.placement === 3) return "3. plads";
+  if (prize.placement) return `${prize.placement}. plads`;
+  return prize.awardLabel ?? livePrizeTypeLabel(prize.prizeType);
+}
+
+function livePrizeSummary(prize: LivePrize) {
+  const parts = [
+    prize.amount ? formatPrizeCurrency(Number(prize.amount), prize.currency) : null,
+    prize.itemName,
+    prize.sponsorName ? `Sponsor: ${prize.sponsorName}` : null,
+    livePrizeTypeLabel(prize.prizeType),
+  ].filter(Boolean);
+  return parts.join(" · ") || "Præmie";
+}
+
+function livePrizeTypeLabel(type: string) {
+  const labels: Record<string, string> = {
+    CASH: "Kontant",
+    VEHICLE: "Køretøj",
+    TROPHY: "Trofæ",
+    SPONSOR: "Sponsorpræmie",
+    VIP: "VIP",
+    ITEM: "Item",
+    SPECIAL: "Special award",
+    OTHER: "Andet",
+  };
+  return labels[type] ?? type;
 }

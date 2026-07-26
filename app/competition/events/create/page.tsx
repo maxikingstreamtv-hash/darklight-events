@@ -1,8 +1,18 @@
 ﻿import Footer from "@/components/layout/Footer";
 import CompetitionLayout from "@/components/competition/CompetitionLayout";
 import { createCompetitionEventAction } from "@/app/competition/events/actions";
+import EventImageUpload from "@/components/events/EventImageUpload";
+import EventFeatureFields from "@/components/events/EventFeatureFields";
+import { NEW_EVENT_FEATURE_DEFAULTS } from "@/lib/events/event-features";
+import { prisma } from "@/lib/prisma";
 
-export default function CreateEventPage() {
+export const dynamic = "force-dynamic";
+
+export default async function CreateEventPage() {
+  const disciplines = await prisma.discipline.findMany({
+    where: { active: true },
+    orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+  });
   return (
     <>
       <CompetitionLayout>
@@ -37,10 +47,9 @@ export default function CreateEventPage() {
                 </label>
                 <TextInput name="sortOrder" label="Sortering" type="number" defaultValue="0" />
               </div>
-              <div className="grid gap-5 md:grid-cols-2">
-                <TextInput name="imageUrl" label="Billed-URL" />
-                <TextInput name="imageAlt" label="Alt-tekst" />
-              </div>
+              <EventImageUpload />
+              <TextInput name="imageAlt" label="Alt-tekst" />
+              <EventFeatureFields initial={NEW_EVENT_FEATURE_DEFAULTS} disciplines={disciplines} />
               <div className="flex flex-wrap gap-4">
                 <label className="flex items-center gap-3 rounded-2xl border border-white/10 bg-black px-4 py-3">
                   <input name="active" type="checkbox" defaultChecked />
@@ -52,7 +61,7 @@ export default function CreateEventPage() {
                 </label>
               </div>
               <button className="w-fit rounded-full bg-white px-7 py-3 font-black text-black transition hover:bg-zinc-300">
-                Gem event
+                Opret event og åbn Event Center
               </button>
             </form>
           </div>

@@ -162,12 +162,6 @@
     description: "Vildt derby-event med kaos, action, publikum og præmier.",
   },
   {
-    title: "Fight Night",
-    category: "Shows & Konkurrencer",
-    image: "/images/events/fight-night.png",
-    description: "Kamp-event med ring, spotlight, publikum og dramatisk produktion.",
-  },
-  {
     title: "Golf Cart / Lawnmower Race",
     category: "Motorsport",
     image: "/images/events/golf-cart-race.png",

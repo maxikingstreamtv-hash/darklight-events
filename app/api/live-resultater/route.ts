@@ -51,6 +51,7 @@ export async function GET() {
         id: result.id,
         placement: result.placement,
         points: result.points,
+        finishTimeMs: result.finishTimeMs,
         notes: result.notes,
         createdAt: result.createdAt,
         participant: result.participant,

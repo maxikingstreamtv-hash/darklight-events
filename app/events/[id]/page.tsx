@@ -1,11 +1,13 @@
-﻿import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import Footer from "@/components/layout/Footer";
+import EventImage from "@/components/events/EventImage";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth/session";
-import { cancelEventRegistrationAction, registerForEventAction } from "@/app/competition/eventos-actions";
+import { assignEventRegistrationVehicleAction, cancelEventRegistrationAction, registerForEventAction } from "@/app/competition/eventos-actions";
 import { COUNTED_REGISTRATION_STATUSES, getEventRegistrationLoginHref, getRegistrationState, type RegistrationState } from "@/lib/events/registration-state";
+import { getPublicPrizeGroups } from "@/lib/events/prize-rules";
+import { formatPrizeCurrency } from "@/lib/events/prize-currency";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +26,8 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
       description: true,
       bannerUrl: true,
       imageAlt: true,
+      imageFocusX: true,
+      imageFocusY: true,
       location: true,
       startsAt: true,
       endsAt: true,
@@ -33,11 +37,15 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
       maxParticipants: true,
       registrationOpenAt: true,
       registrationCloseAt: true,
+      usesParticipantRegistration: true,
+      usesVehicles: true,
+      usesPrizes: true,
       registrations: {
         orderBy: [{ createdAt: "asc" }],
         select: {
           id: true,
           userId: true,
+          vehicleId: true,
           status: true,
           checkedInAt: true,
           createdAt: true,
@@ -59,6 +67,32 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
           participants: { select: { id: true } },
         },
       },
+      prizes: {
+        where: { active: true },
+        orderBy: [{ sortOrder: "asc" }, { placement: "asc" }, { createdAt: "asc" }],
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          prizeType: true,
+          placement: true,
+          amount: true,
+          currency: true,
+          itemName: true,
+          sponsorName: true,
+          awardLabel: true,
+          sortOrder: true,
+          createdAt: true,
+          active: true,
+          winners: {
+            select: {
+              id: true,
+              participant: { select: { name: true } },
+              user: { select: { displayName: true } },
+            },
+          },
+        },
+      },
     },
   });
 
@@ -69,6 +103,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
   const activeRegistrations = event.registrations.filter((registration) =>
     COUNTED_REGISTRATION_STATUSES.some((status) => status === registration.status),
   ).length;
+  const publicPrizeGroups = getPublicPrizeGroups(event.prizes, event.usesPrizes);
   const userRegistration = currentUser ? event.registrations.find((registration) => registration.userId === currentUser.id) : null;
   const registrationState = getRegistrationState({
     ...event,
@@ -78,6 +113,10 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
   const available = registrationState.remainingSpots ?? "Ubegrænset";
   const registerAction = registerForEventAction.bind(null, event.id);
   const cancelAction = cancelEventRegistrationAction.bind(null, event.id);
+  const vehicleAction = assignEventRegistrationVehicleAction.bind(null, event.id);
+  const userVehicles = currentUser && event.usesVehicles
+    ? await prisma.vehicle.findMany({ where: { ownerId: currentUser.id, status: "ACTIVE" }, orderBy: { displayName: "asc" }, select: { id: true, displayName: true, licensePlate: true } })
+    : [];
 
   return (
     <main className="min-h-screen bg-black text-white">
@@ -93,26 +132,27 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
               <p className="mb-4 text-sm uppercase tracking-[0.45em] text-zinc-500">DarkLight Event</p>
               <h1 className="text-5xl font-black md:text-7xl">{event.title}</h1>
               <p className="mt-5 max-w-3xl text-zinc-400">{event.description}</p>
-              <div className="mt-8 flex flex-wrap gap-3">
+              <div id="registration" className="mt-8 flex scroll-mt-8 flex-wrap gap-3">
                 <Link href="/events" className="inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-full border border-white/15 bg-white/[0.03] px-6 py-3 font-black text-zinc-200 transition hover:bg-white hover:text-black">
                   Alle events
                 </Link>
-                <RegistrationCta
+                {event.usesParticipantRegistration ? <RegistrationCta
                   registrationState={registrationState}
                   currentUserExists={Boolean(currentUser)}
                   userRegistrationStatus={userRegistration?.status}
                   loginHref={getEventRegistrationLoginHref(id)}
                   registerAction={registerAction}
                   cancelAction={cancelAction}
-                />
+                /> : null}
+                {event.usesPrizes && event.prizes.length > 0 ? (
+                  <Link href="#prizes" className="inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-full border border-amber-300/30 bg-amber-300/10 px-6 py-3 font-black text-amber-100 transition hover:bg-amber-300 hover:text-black">
+                    Se alle {event.prizes.length} præmier
+                  </Link>
+                ) : null}
               </div>
             </div>
-            <div className="group relative h-80 overflow-hidden rounded-[2.5rem] border border-white/10 bg-white/[0.04] shadow-[0_24px_80px_rgba(0,0,0,0.4)] md:h-[460px]">
-              {event.bannerUrl ? (
-                <Image src={event.bannerUrl} alt={event.imageAlt ?? event.title} fill unoptimized className="object-cover opacity-85 transition duration-700 group-hover:scale-105" sizes="(min-width: 1280px) 44vw, 100vw" />
-              ) : (
-                <div className="flex h-full items-center justify-center p-8 text-center text-zinc-500">Intet eventbillede</div>
-              )}
+            <div className="group relative aspect-[21/9] min-h-64 overflow-hidden rounded-[2.5rem] border border-white/10 bg-black shadow-[0_24px_80px_rgba(0,0,0,0.4)]">
+              <EventImage src={event.bannerUrl} alt={event.imageAlt ?? event.title} variant="banner" className="opacity-95" />
             </div>
           </div>
 
@@ -142,6 +182,72 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
               ))}
             </Panel>
           </div>
+
+          <section className="mt-8 rounded-[2.5rem] border border-white/10 bg-white/[0.04] p-7">
+            <h2 className="text-3xl font-black">Regler og praktisk information</h2>
+            <p className="mt-4 leading-7 text-zinc-400">{event.description}</p>
+            <div className="mt-6 grid gap-4 md:grid-cols-2">
+              <InfoLine label="Mødetidspunkt" value={formatDate(event.startsAt)} />
+              <InfoLine label="Lokation" value={event.location ?? "Ikke sat"} />
+            </div>
+            {event.competitions.some((competition) => competition.description) ? (
+              <div className="mt-5 grid gap-3">
+                {event.competitions.filter((competition) => competition.description).map((competition) => (
+                  <div key={competition.id} className="rounded-2xl border border-white/10 bg-black p-4">
+                    <p className="font-black">{competition.title}</p>
+                    <p className="mt-2 text-sm leading-6 text-zinc-500">{competition.description}</p>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </section>
+
+          {event.usesVehicles && userRegistration && ["PENDING", "APPROVED", "CHECKED_IN"].includes(userRegistration.status) ? (
+            <section className="mt-8 rounded-[2rem] border border-white/10 bg-white/[0.04] p-6">
+              <h2 className="text-2xl font-black">Køretøj til eventet</h2>
+              <p className="mt-2 text-sm text-zinc-500">Tilmeldingen er gemt separat. Vælg kun et køretøj, fordi dette event bruger køretøjsregistrering.</p>
+              <form action={vehicleAction} className="mt-5 flex flex-col gap-3 sm:flex-row">
+                <select name="vehicleId" defaultValue={userRegistration.vehicleId ?? ""} className="min-w-64 rounded-2xl border border-white/10 bg-black px-4 py-3 text-white">
+                  <option value="" disabled>Vælg køretøj</option>
+                  {userVehicles.map((vehicle) => <option key={vehicle.id} value={vehicle.id}>{vehicle.displayName}{vehicle.licensePlate ? ` · ${vehicle.licensePlate}` : ""}</option>)}
+                </select>
+                <button type="submit" disabled={userVehicles.length === 0} className="rounded-full bg-white px-6 py-3 font-black text-black disabled:cursor-not-allowed disabled:opacity-40">Gem køretøj</button>
+              </form>
+              {userVehicles.length === 0 ? <p className="mt-3 text-sm text-yellow-200">Du har ingen aktive køretøjer på din profil.</p> : null}
+            </section>
+          ) : null}
+
+          {event.usesPrizes && event.prizes.length > 0 ? (
+            <section id="prizes" className="mt-8 scroll-mt-8 rounded-[2.5rem] border border-amber-300/20 bg-white/[0.04] p-7 shadow-[0_24px_80px_rgba(0,0,0,0.35)] ring-1 ring-amber-300/[0.05] backdrop-blur-xl">
+              <div className="mb-7">
+                <h2 className="text-3xl font-black">Præmier</h2>
+                <p className="mt-2 text-sm text-zinc-500">{event.prizes.length} aktive præmiedele offentliggjort for dette event.</p>
+              </div>
+              <div className="grid gap-6">
+                {publicPrizeGroups.map((group) => (
+                  <section key={group.key}>
+                    <h3 className="mb-3 text-sm font-black uppercase tracking-[0.22em] text-zinc-300">{group.label}</h3>
+                    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                      {group.prizes.map((prize) => (
+                        <article key={prize.id} className="min-w-0 rounded-2xl border border-white/10 bg-black p-5">
+                          <span className="inline-flex rounded-full border border-white/10 px-3 py-1 text-xs font-black text-zinc-400">{publicPrizeTypeLabel(prize.prizeType)}</span>
+                          <h4 className="mt-3 break-words text-xl font-black">{prize.title}</h4>
+                          <p className="mt-2 break-words text-sm leading-6 text-zinc-400">{publicPrizeSummary(prize)}</p>
+                          {prize.awardLabel ? <p className="mt-3 text-sm font-bold text-amber-100">{prize.awardLabel}</p> : null}
+                          {prize.description ? <p className="mt-3 break-words text-sm leading-6 text-zinc-500">{prize.description}</p> : null}
+                          {event.status === "COMPLETED" && prize.winners.length > 0 ? (
+                            <p className="mt-4 border-t border-white/10 pt-4 text-sm font-black text-emerald-200">
+                              Vinder: {prize.winners.map((winner) => winner.participant?.name ?? winner.user?.displayName ?? "Ukendt").join(", ")}
+                            </p>
+                          ) : null}
+                        </article>
+                      ))}
+                    </div>
+                  </section>
+                ))}
+              </div>
+            </section>
+          ) : null}
 
           <section className="mt-8 rounded-[2.5rem] border border-white/10 bg-white/[0.04] p-7 shadow-[0_24px_80px_rgba(0,0,0,0.35)] ring-1 ring-white/[0.02] backdrop-blur-xl">
             <div className="mb-7 flex flex-col justify-between gap-3 md:flex-row md:items-end">
@@ -253,6 +359,40 @@ function RegistrationCta({
       </button>
     </form>
   );
+}
+
+type PublicPrize = {
+  placement: number | null;
+  prizeType: string;
+  amount: unknown;
+  currency: string | null;
+  itemName: string | null;
+  sponsorName: string | null;
+  awardLabel: string | null;
+};
+
+function publicPrizeSummary(prize: PublicPrize) {
+  const parts = [
+    prize.amount ? formatPrizeCurrency(Number(prize.amount), prize.currency) : null,
+    prize.itemName,
+    prize.sponsorName ? `Sponsorpræmie fra ${prize.sponsorName}` : null,
+    publicPrizeTypeLabel(prize.prizeType),
+  ].filter(Boolean);
+  return parts.join(" · ");
+}
+
+function publicPrizeTypeLabel(type: string) {
+  const labels: Record<string, string> = {
+    CASH: "Kontantpræmie",
+    VEHICLE: "Køretøjspræmie",
+    TROPHY: "Trofæ",
+    SPONSOR: "Sponsorpræmie",
+    VIP: "VIP-præmie",
+    ITEM: "Item-præmie",
+    SPECIAL: "Special award",
+    OTHER: "Præmie",
+  };
+  return labels[type] ?? "Præmie";
 }
 
 function DisabledCta({ children }: { children: React.ReactNode }) {

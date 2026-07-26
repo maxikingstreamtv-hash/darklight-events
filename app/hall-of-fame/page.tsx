@@ -16,6 +16,11 @@ export default async function PublicHallOfFamePage() {
           startsAt: true,
           active: true,
           public: true,
+          prizes: {
+            where: { active: true },
+            orderBy: [{ sortOrder: "asc" }],
+            select: { title: true, placement: true, awardLabel: true },
+          },
         },
       },
     },
@@ -54,6 +59,11 @@ export default async function PublicHallOfFamePage() {
                     <h2 className="mt-4 text-3xl font-black">{winner.winner}</h2>
                     <p className="mt-3 text-zinc-400">{winner.title}</p>
                     <p className="mt-2 text-sm text-zinc-500">{winner.event.title}</p>
+                    {winner.event.prizes.length > 0 ? (
+                      <p className="mt-3 text-xs font-bold uppercase tracking-[0.18em] text-zinc-500">
+                        Eventpræmier: {winner.event.prizes.map((prize) => prize.awardLabel ?? (prize.placement ? `${prize.placement}. plads` : prize.title)).join(" · ")}
+                      </p>
+                    ) : null}
                     {winner.notes ? <p className="mt-4 text-sm leading-6 text-zinc-400">{winner.notes}</p> : null}
                   </div>
                 </article>

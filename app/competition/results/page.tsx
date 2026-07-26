@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import Footer from "@/components/layout/Footer";
 import CompetitionLayout from "@/components/competition/CompetitionLayout";
 import { prisma } from "@/lib/prisma";
+import { getResultDisplayValues } from "@/lib/events/result-time";
 
 export const dynamic = "force-dynamic";
 
@@ -72,7 +73,7 @@ export default async function ResultsPage() {
                         <div className="mb-4 flex flex-wrap items-center gap-3">
                           <Badge>PostgreSQL</Badge>
                           <Badge>{result.competition.type}</Badge>
-                          <Badge>P{result.placement}</Badge>
+                          {result.placement > 0 ? <Badge>P{result.placement}</Badge> : null}
                         </div>
                         <h3 className="text-2xl font-black">{result.participant.name}</h3>
                         <p className="mt-2 text-sm leading-6 text-zinc-500">
@@ -80,9 +81,13 @@ export default async function ResultsPage() {
                         </p>
                         {result.notes ? <p className="mt-3 text-sm leading-6 text-zinc-400">{result.notes}</p> : null}
                       </div>
-                      <div className="rounded-2xl border border-white/10 bg-black px-6 py-4 text-center">
-                        <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">Point</p>
-                        <p className="mt-2 text-4xl font-black">{result.points ?? Math.max(1000 - result.placement, 0)}</p>
+                      <div className="grid min-w-0 gap-3 sm:grid-cols-2">
+                        {getResultDisplayValues(result).map((value) => (
+                          <div key={value.label} className="rounded-2xl border border-white/10 bg-black px-6 py-4 text-center">
+                            <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">{value.label}</p>
+                            <p className="mt-2 text-3xl font-black">{value.value}</p>
+                          </div>
+                        ))}
                       </div>
                     </div>
                     <div className="mt-6 grid gap-4 md:grid-cols-3">

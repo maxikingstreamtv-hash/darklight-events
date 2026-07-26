@@ -33,9 +33,10 @@ export default async function EventsManagerPage() {
                   Event Manager læser nu direkte fra PostgreSQL. Ingen events hentes fra den gamle EventOS-store.
                 </p>
               </div>
-              <Link href="/competition/events/create" className="w-fit rounded-full bg-white px-6 py-3 font-black text-black transition hover:bg-zinc-300">
-                Opret event
-              </Link>
+              <div className="flex flex-wrap gap-3">
+                <Link href="/competition/disciplines" className="w-fit rounded-full border border-white/15 px-6 py-3 font-black text-white transition hover:bg-white hover:text-black">Discipliner</Link>
+                <Link href="/competition/events/create" className="w-fit rounded-full bg-white px-6 py-3 font-black text-black transition hover:bg-zinc-300">Opret event</Link>
+              </div>
             </div>
 
             {events.length > 0 ? (
@@ -56,6 +57,14 @@ export default async function EventsManagerPage() {
                       <MiniStat label="Dato" value={event.startsAt.toLocaleDateString("da-DK")} />
                       <MiniStat label="Konkurrencer" value={event._count.competitions} />
                       <MiniStat label="Tilmeldinger" value={event._count.registrations} />
+                    </div>
+                    <div className="mt-4 flex flex-wrap gap-2 text-xs font-black text-zinc-400">
+                      {event.usesParticipantRegistration ? <span className="rounded-full border border-white/10 px-3 py-1">Deltagere</span> : null}
+                      {event.usesVehicles ? <span className="rounded-full border border-white/10 px-3 py-1">Køretøjer</span> : null}
+                      {event.usesHeats ? <span className="rounded-full border border-white/10 px-3 py-1">Heats</span> : null}
+                      {event.usesBracket ? <span className="rounded-full border border-white/10 px-3 py-1">Bracket</span> : null}
+                      {event.usesResults ? <span className="rounded-full border border-white/10 px-3 py-1">Resultater</span> : null}
+                      {event.usesPrizes ? <span className="rounded-full border border-white/10 px-3 py-1">Præmier</span> : null}
                     </div>
                     <div className="mt-6 flex flex-wrap items-center gap-3">
                       <Link href={`/competition/events/${event.id}`} className="inline-flex min-w-32 shrink-0 items-center justify-center whitespace-nowrap rounded-full border border-white/10 px-6 py-3 font-black text-zinc-200 transition hover:bg-white hover:text-black">
