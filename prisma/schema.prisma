@@ -624,10 +624,28 @@ model TeamMember {
   skills         String[]
   active         Boolean  @default(true)
   sortOrder      Int      @default(0)
+  sectionId      String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
+  section TeamSection? @relation(fields: [sectionId], references: [id], onDelete: SetNull)
+
   @@index([active, sortOrder])
+  @@index([sectionId, sortOrder])
+}
+
+model TeamSection {
+  id          String       @id @default(cuid())
+  name        String
+  slug        String       @unique
+  description String?
+  sortOrder   Int          @default(0)
+  isPublic    Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  members     TeamMember[]
+
+  @@index([isPublic, sortOrder])
 }
 
 model Sponsor {
