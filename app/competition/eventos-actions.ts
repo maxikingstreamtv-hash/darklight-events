@@ -9,7 +9,7 @@ import { createBracketPlan, createHeatPlan } from "@/lib/eventos/engine";
 import { assertEventFeature } from "@/lib/events/event-features";
 import { COUNTED_REGISTRATION_STATUSES, getRegistrationState } from "@/lib/events/registration-state";
 import { normalizeInternalNote } from "@/lib/events/command-center-operations";
-import { canUnlockResults, validateResultRows as validateResultRuleRows } from "@/lib/events/result-rules";
+import { canMutateResultForEventStatus, canUnlockResults, validateResultRows as validateResultRuleRows } from "@/lib/events/result-rules";
 import { parseResultTime } from "@/lib/events/result-time";
 import { resultHistoryChanged, resultHistorySnapshot } from "@/lib/events/result-history";
 import { assertPrizePartLimit, canDeletePrize, prizeIdentity } from "@/lib/events/prize-rules";
@@ -208,7 +208,7 @@ async function getCompetitionForResultSave(competitionId: string) {
   });
   if (!competition) throw new Error("Konkurrencen findes ikke.");
   assertEventFeature(competition.event.usesResults, "Resultater er ikke aktiveret for dette event.");
-  if (competition.event.status === "COMPLETED" || competition.event.status === "ARCHIVED" || competition.event.status === "CANCELLED") throw new Error("Resultater kan ikke ændres på et afsluttet, arkiveret eller aflyst event.");
+  if (competition.event.status === "ARCHIVED" || competition.event.status === "CANCELLED") throw new Error("Resultater kan ikke ændres på et arkiveret eller aflyst event.");
   return competition;
 }
 
@@ -978,6 +978,9 @@ export async function saveResultAction(competitionId: string, rowParticipantId: 
     select: { id: true, placement: true, points: true, finishTimeMs: true, reactionTimeMs: true, notes: true, status: true, locked: true },
   });
 
+  if (!canMutateResultForEventStatus(competition.event.status, Boolean(existingResult))) {
+    throw new Error("Nye resultater kan ikke oprettes på et afsluttet event. Eksisterende, ulåste resultater kan rettes.");
+  }
   if (existingResult?.locked) throw new Error("Resultatet er låst og kan ikke ændres.");
   if (row.status === "APPROVED" && row.placementProvided && row.placement > 0) {
     const duplicatePlacement = await prisma.result.findFirst({ where: { competitionId, placement: row.placement, participantId: { not: row.participantId }, status: "APPROVED" } });
@@ -1062,6 +1065,9 @@ export async function saveAllResultsAction(competitionId: string, formData: Form
     where: { competitionId, participantId: { in: participantIds } },
     select: { participantId: true, placement: true, points: true, finishTimeMs: true, reactionTimeMs: true, notes: true, status: true },
   });
+  if (competition.event.status === "COMPLETED" && previousResults.length !== participantIds.length) {
+    throw new Error("Nye resultater kan ikke oprettes på et afsluttet event. Eksisterende, ulåste resultater kan rettes.");
+  }
   const previousByParticipant = new Map(previousResults.map((result) => [result.participantId, result]));
 
   await prisma.$transaction(

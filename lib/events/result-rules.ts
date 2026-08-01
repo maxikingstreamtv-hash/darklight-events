@@ -27,3 +27,9 @@ export function validateResultRows(rows: ResultRuleRow[]) {
 export function canUnlockResults(role: string) {
   return role === "SUPER_ADMIN" || role === "ADMIN";
 }
+
+export function canMutateResultForEventStatus(eventStatus: string, resultExists: boolean) {
+  if (eventStatus === "ARCHIVED" || eventStatus === "CANCELLED") return false;
+  if (eventStatus === "COMPLETED") return resultExists;
+  return true;
+}
