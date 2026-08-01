@@ -17,6 +17,7 @@ import { serializeEventPrizeForClient } from "@/lib/events/prize-serialization";
 import { getRegistrationPeriodState, isRegistrationPeriodConfigured } from "@/lib/events/registration-period";
 import { getResultProgress } from "@/lib/events/result-sync";
 import { formatResultTime } from "@/lib/events/result-time";
+import { hasPrizePlacementMismatch } from "@/lib/events/result-history";
 import {
   archiveCompetitionEventAction,
   deleteCompetitionEventAction,
@@ -1089,6 +1090,7 @@ export default async function EventDetailsPage({ params, searchParams }: { param
                   <p className="mt-3 max-w-3xl text-sm leading-6 text-zinc-400">
                     Indtast point, placeringer og tider direkte på dette event. Resultater gemmes i PostgreSQL og bruges af livevisning, rangliste og spillerstatistik.
                   </p>
+                  <p className="mt-2 max-w-3xl text-sm font-bold text-zinc-300">Gemte resultater kan rettes direkte i felterne herunder. Brug “Gem ændringer” på den relevante deltager.</p>
                 </div>
                 <Link href="/competition/tablet" className="inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-full border border-white/10 px-5 py-3 font-black text-zinc-200 transition hover:bg-white hover:text-black">
                   Åbn Event Tablet
@@ -1439,6 +1441,7 @@ function ResultEntryPanel({ competition, prizes, role, query, filter }: { compet
   const lockAction = lockCompetitionResultsAction.bind(null, competition.id);
   const saveAllAction = saveAllResultsAction.bind(null, competition.id);
   const resultsLocked = competition.results.length > 0 && competition.results.every((result) => result.locked);
+  const hasLockedResults = competition.results.some((result) => result.locked);
   const eligibleParticipants = competition.participants.filter((participant) => participant.status === "APPROVED" || participant.status === "CHECKED_IN");
   const visibleParticipants = eligibleParticipants.filter((participant) => {
     const result = resultsByParticipant.get(participant.id);
@@ -1478,6 +1481,8 @@ function ResultEntryPanel({ competition, prizes, role, query, filter }: { compet
             const result = resultsByParticipant.get(participant.id);
             const placementPrizes = result?.placement ? prizesByPlacement.get(result.placement) ?? [] : [];
             const saveOneAction = saveResultAction.bind(null, competition.id, participant.id);
+            const rowLocked = Boolean(result?.locked);
+            const prizeMismatch = result ? hasPrizePlacementMismatch({ participantId: participant.id, placement: result.placement }, prizes) : false;
             return (
               <div key={participant.id} className="rounded-2xl border border-white/10 bg-white/[0.035] p-5">
                 <input type="hidden" name="participantId" value={participant.id} />
@@ -1498,16 +1503,17 @@ function ResultEntryPanel({ competition, prizes, role, query, filter }: { compet
                     <p className="mt-2 text-sm font-bold text-emerald-100">{placementPrizes.map((prize) => `${prize.title} (${prizeSummary(prize)})`).join(" · ")}</p>
                   </div>
                 ) : null}
+                {prizeMismatch ? <div className="mb-4 rounded-2xl border border-amber-400/30 bg-amber-400/10 p-4 text-sm font-bold text-amber-100">Placeringen matcher ikke længere en manuelt tildelt placeringspræmie. Tildelingen er bevaret og skal gennemgås under Præmier.</div> : null}
 
-                <div className="grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-6">
-                  <ResultInput label="Placering" name="placement" defaultValue={result && result.status !== "DNF" && result.status !== "DNS" && result.placement > 0 ? result.placement : null} disabled={resultsLocked} />
-                  <ResultInput label="Tid" name="finishTimeMs" defaultValue={formatResultTime(result?.finishTimeMs)} text placeholder="MM:SS.fff" disabled={resultsLocked} />
-                  <ResultInput label="Point" name="points" defaultValue={result?.points} disabled={resultsLocked} />
-                  {competition.type === "DRAG" ? <ResultInput label="Reaktionstid (ms)" name="reactionTimeMs" defaultValue={result?.reactionTimeMs} disabled={resultsLocked} /> : <input type="hidden" name="reactionTimeMs" value={result?.reactionTimeMs ?? ""} />}
-                  {competition.type === "CAR_SHOW" ? <ResultInput label="Kategori/noter" name="notes" defaultValue={result?.notes ?? ""} text disabled={resultsLocked} /> : <input type="hidden" name="notes" value={result?.notes ?? ""} />}
+                <div className="grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-7">
+                  <ResultInput label="Placering" name="placement" defaultValue={result && result.status !== "DNF" && result.status !== "DNS" && result.placement > 0 ? result.placement : null} disabled={rowLocked} />
+                  <ResultInput label="Tid" name="finishTimeMs" defaultValue={formatResultTime(result?.finishTimeMs)} text placeholder="MM:SS.fff" disabled={rowLocked} />
+                  <ResultInput label="Point" name="points" defaultValue={result?.points} disabled={rowLocked} />
+                  {competition.type === "DRAG" ? <ResultInput label="Reaktionstid (ms)" name="reactionTimeMs" defaultValue={result?.reactionTimeMs} disabled={rowLocked} /> : <input type="hidden" name="reactionTimeMs" value={result?.reactionTimeMs ?? ""} />}
+                  <ResultInput label="Noter" name="notes" defaultValue={result?.notes ?? ""} text disabled={rowLocked} />
                   <label className="grid min-w-0 gap-2 text-sm font-bold text-zinc-300">
                     Status
-                    <select name="status" disabled={resultsLocked} defaultValue={result?.status ?? "APPROVED"} className="rounded-2xl border border-white/10 bg-black px-4 py-3 text-white outline-none disabled:opacity-50">
+                    <select name="status" disabled={rowLocked} defaultValue={result?.status ?? "APPROVED"} className="rounded-2xl border border-white/10 bg-black px-4 py-3 text-white outline-none disabled:opacity-50">
                       <option value="APPROVED">Godkendt</option>
                       <option value="DNF">DNF</option>
                       <option value="DNS">DNS</option>
@@ -1516,12 +1522,12 @@ function ResultEntryPanel({ competition, prizes, role, query, filter }: { compet
                     </select>
                   </label>
                   <button
-                    disabled={resultsLocked}
+                    disabled={rowLocked}
                     className="inline-flex shrink-0 items-center justify-center self-end whitespace-nowrap rounded-full bg-white px-5 py-3 text-sm font-black text-black transition hover:bg-zinc-300"
                     formAction={saveOneAction}
                     type="submit"
                   >
-                    {result ? "Ret resultat" : "Gem resultat"}
+                    {result ? "Gem ændringer" : "Gem resultat"}
                   </button>
                 </div>
               </div>
@@ -1535,7 +1541,7 @@ function ResultEntryPanel({ competition, prizes, role, query, filter }: { compet
                 Validerer alle rækker og gemmer dem samlet. Hvis én række fejler, gemmes ingen delvise resultater.
               </p>
             </div>
-            <button disabled={resultsLocked} className="inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-full bg-white px-6 py-3 text-sm font-black text-black transition hover:bg-zinc-300 disabled:opacity-40" type="submit">
+            <button disabled={hasLockedResults} className="inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-full bg-white px-6 py-3 text-sm font-black text-black transition hover:bg-zinc-300 disabled:opacity-40" type="submit">
               Gem alle resultater
             </button>
           </div>
