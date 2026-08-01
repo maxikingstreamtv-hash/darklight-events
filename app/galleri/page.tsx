@@ -1,46 +1,22 @@
-﻿import Image from "next/image";
+/* eslint-disable @next/next/no-img-element */
 import Footer from "@/components/layout/Footer";
+import ImageUploadField from "@/components/images/ImageUploadField";
+import { getCurrentUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/prisma";
+import { deleteGalleryItemAction, saveGalleryItemAction } from "./actions";
 
-export default async function GalleriPage() {
-  const publicGalleryItems = await prisma.galleryImage.findMany({
-    orderBy: { createdAt: "desc" },
-    include: { event: { select: { title: true } } },
-  });
+export const dynamic = "force-dynamic";
+const field = "w-full min-w-0 rounded-2xl border border-white/10 bg-black px-4 py-3 text-white outline-none focus:border-white";
 
-  return (
-    <main className="min-h-screen bg-black text-white">
-      <section className="px-6 py-32">
-        <div className="mx-auto max-w-7xl">
-          <p className="mb-4 text-sm font-black uppercase tracking-[0.4em] text-zinc-500">DarkLight moments</p>
-          <h1 className="text-5xl font-black md:text-7xl">Galleri</h1>
-          <p className="mt-5 max-w-3xl text-zinc-400">Billeder og stemning fra DarkLight Events i DreamLight.</p>
+export default async function GalleryPage({ searchParams }: { searchParams: Promise<{ ok?: string; error?: string }> }) {
+  const [items, events, actor, params] = await Promise.all([prisma.galleryImage.findMany({ orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }], include: { event: { select: { title: true } } } }), prisma.event.findMany({ orderBy: { startsAt: "desc" }, select: { id: true, title: true } }), getCurrentUser(), searchParams]);
+  const canManage = Boolean(actor && ["SUPER_ADMIN", "ADMIN", "EVENT_MANAGER"].includes(actor.role));
+  const visible = canManage ? items : items.filter((item) => item.active && item.public);
+  return <main className="min-h-screen bg-black text-white"><section className="px-6 py-28"><div className="mx-auto max-w-7xl"><p className="text-sm font-black uppercase tracking-[0.4em] text-zinc-500">DarkLight mediecenter</p><h1 className="mt-4 text-5xl font-black md:text-7xl">Galleri</h1><p className="mt-5 max-w-3xl text-zinc-400">Billeder fra Vercel Blob og kuraterede videolinks samlet ét sted.</p>{params.ok ? <p className="mt-6 rounded-2xl bg-emerald-500/10 p-4 text-emerald-200">{params.ok}</p> : null}{params.error ? <p className="mt-6 rounded-2xl bg-red-500/10 p-4 text-red-200">{params.error}</p> : null}
+  {visible.length ? <div className="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-3">{visible.map((item) => <article key={item.id} className="min-w-0 overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.04]"><div className="aspect-video overflow-hidden bg-zinc-950">{(item.mediaType === "IMAGE" ? item.imageUrl : item.thumbnailUrl) ? <img src={(item.mediaType === "IMAGE" ? item.imageUrl : item.thumbnailUrl)!} alt={item.title} className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center text-5xl">▶</div>}</div><div className="p-6"><div className="flex flex-wrap gap-2 text-xs font-black uppercase tracking-wider text-zinc-500"><span>{item.mediaType === "VIDEO" ? "Video" : "Billede"}</span>{item.album ? <span>· {item.album}</span> : null}{canManage && (!item.active || !item.public) ? <span>· Skjult</span> : null}</div><h2 className="mt-3 text-2xl font-black">{item.title}</h2><p className="mt-2 text-sm text-zinc-500">{item.event?.title ?? "DarkLight"}</p>{item.description ? <p className="mt-4 leading-6 text-zinc-400">{item.description}</p> : null}{item.mediaType === "VIDEO" && item.videoUrl ? <a href={item.videoUrl} target="_blank" rel="noreferrer" className="mt-5 inline-flex rounded-full bg-white px-5 py-2.5 font-black text-black">Afspil video</a> : null}</div>{canManage ? <MediaForm item={item} events={events} /> : null}</article>)}</div> : <div className="mt-10 rounded-[2rem] border border-white/10 p-10 text-center"><h2 className="text-3xl font-black">Galleriet er tomt</h2><p className="mt-3 text-zinc-500">Der er endnu ingen offentlige medier.</p></div>}
+  {canManage ? <section id="media-admin" className="mt-14 rounded-[2rem] border border-white/10 bg-white/[0.04] p-6"><h2 className="text-3xl font-black">Tilføj medie</h2><p className="mt-3 text-zinc-500">Billeder uploades til Blob. Videoer bruger eksterne streaminglinks for stabil afspilning og forudsigelig lagerplads.</p><MediaForm events={events} /></section> : null}</div></section><Footer /></main>;
+}
 
-          {publicGalleryItems.length === 0 ? (
-            <div className="mt-10 rounded-[2rem] border border-white/10 bg-white/[0.04] p-8 text-center">
-              <h2 className="text-3xl font-black">Galleriet er tomt</h2>
-              <p className="mx-auto mt-4 max-w-2xl text-zinc-400">Når DarkLight staff gemmer billeder i databasen, vises de her.</p>
-            </div>
-          ) : (
-            <div className="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-              {publicGalleryItems.map((item) => (
-                <article key={item.id} className="overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.04] transition hover:-translate-y-1 hover:border-white/30">
-                  <div className="relative aspect-[16/11]">
-                    <Image src={item.imageUrl} alt="" fill className="object-cover opacity-85" />
-                  </div>
-                  <div className="p-6">
-                    <p className="text-xs font-black uppercase tracking-[0.25em] text-zinc-500">{item.event?.title ?? "DarkLight"}</p>
-                    <h2 className="mt-3 text-2xl font-black">{item.title}</h2>
-                    <p className="mt-2 text-sm text-zinc-500">{item.photographer ?? "DarkLight staff"}</p>
-                    <p className="mt-4 text-sm leading-6 text-zinc-400">{item.description ?? "Ingen beskrivelse."}</p>
-                  </div>
-                </article>
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
-      <Footer />
-    </main>
-  );
+function MediaForm({ item, events }: { item?: { id: string; title: string; description: string | null; mediaType: string; imageUrl: string | null; videoUrl: string | null; thumbnailUrl: string | null; album: string | null; eventId: string | null; photographer: string | null; active: boolean; public: boolean; sortOrder: number }; events: { id: string; title: string }[] }) {
+  return <div className={item ? "border-t border-white/10 p-6" : "mt-6"}><form action={saveGalleryItemAction} className="grid min-w-0 gap-4 sm:grid-cols-2"><input type="hidden" name="id" value={item?.id ?? ""} /><select name="mediaType" defaultValue={item?.mediaType ?? "IMAGE"} className={field}><option value="IMAGE">Billede</option><option value="VIDEO">Video</option></select><input name="title" defaultValue={item?.title} placeholder="Titel" className={field} /><input name="videoUrl" defaultValue={item?.videoUrl ?? ""} placeholder="Video-URL (YouTube/Vimeo/Twitch/Streamable)" className={`${field} sm:col-span-2`} /><div className="sm:col-span-2"><ImageUploadField name="imageUrl" scope="gallery" ownerId={item?.id ?? "draft"} initialUrl={item?.imageUrl ?? ""} label="Galleribillede" chooseLabel="Tilføj billede" helpText="Anbefalet: 16:9 eller liggende format." variant="cover" /></div><div className="sm:col-span-2"><ImageUploadField name="thumbnailUrl" scope="gallery" ownerId={item?.id ?? "draft"} initialUrl={item?.thumbnailUrl ?? ""} label="Video-thumbnail" chooseLabel="Vælg thumbnail" helpText="Bruges til videoer." variant="cover" /></div><select name="eventId" defaultValue={item?.eventId ?? ""} className={field}><option value="">Intet event</option>{events.map((event) => <option key={event.id} value={event.id}>{event.title}</option>)}</select><input name="album" defaultValue={item?.album ?? ""} placeholder="Album" className={field} /><input name="photographer" defaultValue={item?.photographer ?? ""} placeholder="Fotograf" className={field} /><input name="sortOrder" type="number" defaultValue={item?.sortOrder ?? 0} className={field} /><textarea name="description" defaultValue={item?.description ?? ""} placeholder="Beskrivelse" className={`${field} sm:col-span-2`} /><label><input name="active" type="checkbox" defaultChecked={item?.active ?? true} /> Aktiv</label><label><input name="public" type="checkbox" defaultChecked={item?.public ?? true} /> Offentlig</label><button className="rounded-full bg-white px-6 py-3 font-black text-black">{item ? "Gem medie" : "Tilføj medie"}</button></form>{item ? <form action={deleteGalleryItemAction.bind(null, item.id)} className="mt-3"><button className="text-sm font-black text-red-300">Slet medie</button></form> : null}</div>;
 }

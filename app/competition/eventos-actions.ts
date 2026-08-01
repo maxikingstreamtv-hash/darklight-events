@@ -31,6 +31,8 @@ function revalidateEventOS() {
   revalidatePath("/competition/results");
   revalidatePath("/live-resultater");
   revalidatePath("/rangliste");
+  revalidatePath("/hall-of-fame");
+  revalidatePath("/competition/leaderboard");
   revalidatePath("/events");
   revalidatePath("/upcoming");
   revalidatePath("/competition/events/[id]", "page");

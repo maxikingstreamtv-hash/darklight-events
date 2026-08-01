@@ -85,6 +85,10 @@ const navGroups: NavGroup[] = [
     items: [
       { href: "/competition/control-center", label: "Kontrolcenter", icon: Gauge, roles: ["SUPER_ADMIN", "ADMIN", "EVENT_MANAGER"] },
       { href: "/competition/admin", label: "EventOS", icon: CalendarDays, roles: ["SUPER_ADMIN", "ADMIN", "EVENT_MANAGER"] },
+      { href: "/competition/events", label: "Events", icon: CalendarDays, roles: ["SUPER_ADMIN", "ADMIN", "EVENT_MANAGER"] },
+      { href: "/competition/disciplines", label: "Discipliner", icon: Trophy, roles: ["SUPER_ADMIN", "ADMIN", "EVENT_MANAGER"] },
+      { href: "/competition/sponsors", label: "Sponsorer", icon: Shield, roles: ["SUPER_ADMIN", "ADMIN", "EVENT_MANAGER"] },
+      { href: "/galleri", label: "Galleri / Medier", icon: GalleryHorizontal, roles: ["SUPER_ADMIN", "ADMIN", "EVENT_MANAGER"] },
       { href: "/admin/vehicles", label: "VehicleOS", icon: Car, roles: ["SUPER_ADMIN", "ADMIN", "EVENT_MANAGER"] },
       { href: "/admin/users", label: "Brugere", icon: Users, roles: ["SUPER_ADMIN", "ADMIN"] },
       { href: "/admin", label: "Roller", icon: Lock, roles: ["SUPER_ADMIN", "ADMIN"] },
