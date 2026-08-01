@@ -42,6 +42,13 @@ test("individual updates audit previous and next values without duplicating resu
   assert.match(actionsSource, /prizeAssignmentsPreserved: true/);
 });
 
+test("existing results on completed events reach update, audit and redirect flow", () => {
+  assert.match(actionsSource, /canMutateResultForEventStatus\(competition\.event\.status, Boolean\(existingResult\)\)/);
+  assert.match(actionsSource, /action: existingResult \? "RESULT_UPDATED" : "RESULT_CREATED"/);
+  assert.match(actionsSource, /redirect\(`\/competition\/events\/\$\{competition\.event\.id\}\?tab=results&saved=results#resultater`\)/);
+  assert.doesNotMatch(actionsSource, /status === "COMPLETED" \|\| competition\.event\.status === "ARCHIVED"/);
+});
+
 test("result updates revalidate public ranking, podium, live and event pages", () => {
   for (const route of ["/rangliste", "/hall-of-fame", "/live-resultater", "/competition/live-center", "/events/[id]"]) {
     assert.match(actionsSource, new RegExp(route.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));

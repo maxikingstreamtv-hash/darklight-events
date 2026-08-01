@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { canUnlockResults, validateResultRows } from "./result-rules";
+import { canMutateResultForEventStatus, canUnlockResults, validateResultRows } from "./result-rules";
 
 const valid = { participantId: "p1", placement: 1, placementProvided: true, points: 100, finishTimeMs: null, status: "APPROVED" };
 test("valid results are accepted", () => assert.doesNotThrow(() => validateResultRows([valid])));
@@ -22,4 +22,17 @@ test("result unlocking respects RBAC", () => {
   assert.equal(canUnlockResults("SUPER_ADMIN"), true);
   assert.equal(canUnlockResults("ADMIN"), true);
   assert.equal(canUnlockResults("EVENT_MANAGER"), false);
+});
+
+test("completed events allow corrections but not new results", () => {
+  assert.equal(canMutateResultForEventStatus("COMPLETED", true), true);
+  assert.equal(canMutateResultForEventStatus("COMPLETED", false), false);
+  assert.equal(canMutateResultForEventStatus("REGISTRATION_OPEN", false), true);
+});
+
+test("archived and cancelled events reject both result creation and correction", () => {
+  for (const status of ["ARCHIVED", "CANCELLED"]) {
+    assert.equal(canMutateResultForEventStatus(status, true), false);
+    assert.equal(canMutateResultForEventStatus(status, false), false);
+  }
 });
