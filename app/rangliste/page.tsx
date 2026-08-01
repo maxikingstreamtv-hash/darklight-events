@@ -2,62 +2,9 @@
 import Footer from "@/components/layout/Footer";
 import { prisma } from "@/lib/prisma";
 import { formatResultTime } from "@/lib/events/result-time";
+import { buildLeaderboard, leaderboardTime, resultStatusLabel } from "@/lib/results/leaderboard";
 
 export const dynamic = "force-dynamic";
-
-type LeaderboardRow = {
-  participantId: string;
-  name: string;
-  vehicle: string | null;
-  competitions: number;
-  bestPlacement: number;
-  totalPoints: number;
-  latestResultAt: Date;
-};
-
-function buildLeaderboard(results: Array<{
-  participantId: string;
-  placement: number;
-  points: number | null;
-  createdAt: Date;
-  participant: {
-    name: string;
-    vehicle: string | null;
-  };
-}>) {
-  const rows = new Map<string, LeaderboardRow>();
-
-  for (const result of results) {
-    const existing = rows.get(result.participantId);
-    const points = result.points ?? 0;
-
-    if (!existing) {
-      rows.set(result.participantId, {
-        participantId: result.participantId,
-        name: result.participant.name,
-        vehicle: result.participant.vehicle,
-        competitions: 1,
-        bestPlacement: result.placement,
-        totalPoints: points,
-        latestResultAt: result.createdAt,
-      });
-      continue;
-    }
-
-    existing.competitions += 1;
-    existing.bestPlacement = Math.min(existing.bestPlacement, result.placement);
-    existing.totalPoints += points;
-    if (result.createdAt > existing.latestResultAt) {
-      existing.latestResultAt = result.createdAt;
-    }
-  }
-
-  return [...rows.values()].sort((a, b) => {
-    if (b.totalPoints !== a.totalPoints) return b.totalPoints - a.totalPoints;
-    if (a.bestPlacement !== b.bestPlacement) return a.bestPlacement - b.bestPlacement;
-    return b.latestResultAt.getTime() - a.latestResultAt.getTime();
-  });
-}
 
 export default async function PublicLeaderboardPage() {
   const results = await prisma.result.findMany({
@@ -67,6 +14,7 @@ export default async function PublicLeaderboardPage() {
         select: {
           name: true,
           vehicle: true,
+          userId: true,
         },
       },
       competition: {
@@ -105,24 +53,26 @@ export default async function PublicLeaderboardPage() {
           {leaderboard.length > 0 ? (
             <div className="grid gap-8 xl:grid-cols-[1fr_360px]">
               <section className="overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.04] shadow-[0_24px_80px_rgba(0,0,0,0.35)]">
-                <div className="hidden grid-cols-[90px_1fr_150px_150px_150px] gap-4 border-b border-white/10 bg-white/[0.06] px-6 py-4 text-xs font-black uppercase tracking-[0.2em] text-zinc-500 xl:grid">
+                <div className="hidden grid-cols-[90px_1fr_150px_120px_120px_1fr] gap-4 border-b border-white/10 bg-white/[0.06] px-6 py-4 text-xs font-black uppercase tracking-[0.2em] text-zinc-500 xl:grid">
                   <span>Plads</span>
                   <span>Deltager</span>
+                  <span>Bedste tid</span>
                   <span>Point</span>
-                  <span>Bedst</span>
                   <span>Resultater</span>
+                  <span>Seneste event</span>
                 </div>
                 <div className="divide-y divide-white/10">
                   {leaderboard.map((row, index) => (
-                    <article key={row.participantId} className="grid gap-3 bg-black/70 px-6 py-5 transition hover:bg-white/[0.04] xl:grid-cols-[90px_1fr_150px_150px_150px] xl:items-center">
+                    <article key={row.key} className="grid gap-3 bg-black/70 px-6 py-5 transition hover:bg-white/[0.04] xl:grid-cols-[90px_1fr_150px_120px_120px_1fr] xl:items-center">
                       <p className="text-3xl font-black">#{index + 1}</p>
                       <div>
                         <h2 className="text-xl font-black">{row.name}</h2>
                         <p className="mt-1 text-sm text-zinc-500">{row.vehicle ?? "Køretøj ikke angivet"}</p>
                       </div>
-                      <p className="text-lg font-black">{row.totalPoints}</p>
-                      <p className="text-zinc-300">P{row.bestPlacement}</p>
-                      <p className="text-zinc-400">{row.competitions}</p>
+                      <p className="text-lg font-black">{leaderboardTime(row.bestTimeMs) ?? "—"}</p>
+                      <p className="text-zinc-300">{row.totalPoints}</p>
+                      <p className="text-zinc-400">{row.resultCount}</p>
+                      <p className="text-zinc-400">{row.latestResult.competition.event.title}</p>
                     </article>
                   ))}
                 </div>
@@ -142,6 +92,7 @@ export default async function PublicLeaderboardPage() {
                         {result.placement > 0 ? <span>P{result.placement}</span> : null}
                         {result.finishTimeMs != null ? <span>Tid {formatResultTime(result.finishTimeMs)}</span> : null}
                         {result.points != null ? <span>{result.points} point</span> : null}
+                        {result.status !== "APPROVED" ? <span>{resultStatusLabel(result.status)}</span> : null}
                       </div>
                     </div>
                   ))}

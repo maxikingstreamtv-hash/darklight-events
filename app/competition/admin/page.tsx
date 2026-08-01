@@ -2,7 +2,6 @@
 import CompetitionLayout from "@/components/competition/CompetitionLayout";
 import AdminDataControl from "@/components/competition/AdminDataControl";
 import { FaqManagerPanel, RulesManagerPanel } from "@/components/competition/ContentManagerPanel";
-import SponsorDbManagerPanel from "@/components/competition/SponsorDbManagerPanel";
 import CompetitionPageShell from "@/components/competition/layout/CompetitionPageShell";
 import Badge from "@/components/competition/ui/Badge";
 import Button from "@/components/competition/ui/Button";
@@ -10,7 +9,6 @@ import Card from "@/components/competition/ui/Card";
 import StatCard from "@/components/competition/ui/StatCard";
 import { dataModeCopy, eventOSDataMode } from "@/data/eventos-mode";
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/auth/session";
 
 const modules = [
   ["Eventkontrol", "Online", "/competition/control-center"],
@@ -41,11 +39,9 @@ function param(value?: string | string[]) {
 export default async function CompetitionAdminPage({ searchParams }: { searchParams: Promise<AdminSearchParams> }) {
   const params = await searchParams;
   const modeCopy = dataModeCopy[eventOSDataMode];
-  const currentUser = await getCurrentUser();
-  const [faqItems, ruleSets, dbSponsors, staffUsers] = await Promise.all([
+  const [faqItems, ruleSets, staffUsers] = await Promise.all([
     prisma.faqItem.findMany({ orderBy: [{ sortOrder: "asc" }, { question: "asc" }] }),
     prisma.ruleSet.findMany({ orderBy: [{ sortOrder: "asc" }, { title: "asc" }] }),
-    prisma.sponsor.findMany({ orderBy: [{ isMainSponsor: "desc" }, { sponsorType: "asc" }, { sortOrder: "asc" }, { name: "asc" }] }),
     prisma.user.findMany({
       where: {
         role: { in: ["SUPER_ADMIN", "ADMIN", "EVENT_MANAGER"] },
@@ -100,8 +96,6 @@ export default async function CompetitionAdminPage({ searchParams }: { searchPar
           <div className="mt-8">
             <AdminDataControl resetOk={param(params.resetOk)} resetError={param(params.resetError)} />
           </div>
-
-          <SponsorDbManagerPanel sponsors={dbSponsors} canDelete={currentUser?.role === "SUPER_ADMIN"} />
 
           {param(params.contentOk) ? (
             <p className="mt-8 rounded-2xl border border-green-400/20 bg-green-400/10 px-5 py-4 text-sm font-black text-green-300">

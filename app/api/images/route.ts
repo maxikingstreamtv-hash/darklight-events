@@ -11,7 +11,7 @@ import {
 } from "@/lib/images/image-upload";
 import { isBlobStorageConfigured } from "@/lib/events/event-images";
 
-const scopes: ImageUploadScope[] = ["event", "profile", "sponsor", "vehicle", "gallery"];
+const scopes: ImageUploadScope[] = ["event", "profile", "sponsor", "vehicle", "gallery", "team"];
 
 export async function POST(request: Request) {
   const actor = await getCurrentUser();
@@ -54,6 +54,8 @@ export async function POST(request: Request) {
       if (!["SUPER_ADMIN", "ADMIN"].includes(actor.role)) {
         return NextResponse.json({ error: "Du har ikke adgang til sponsorlogoer." }, { status: 403 });
       }
+    } else if (scope === "team" && actor.role !== "SUPER_ADMIN") {
+      return NextResponse.json({ error: "Kun Super Admin kan ændre teambilleder." }, { status: 403 });
     } else if (!["SUPER_ADMIN", "ADMIN", "EVENT_MANAGER"].includes(actor.role)) {
       return NextResponse.json({ error: "Du har ikke adgang til at uploade dette billede." }, { status: 403 });
     }

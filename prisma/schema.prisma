@@ -187,6 +187,11 @@ enum PrizeType {
   OTHER
 }
 
+enum GalleryMediaType {
+  IMAGE
+  VIDEO
+}
+
 model User {
   id            String        @id @default(cuid())
   username      String        @unique
@@ -219,6 +224,7 @@ model User {
   announcements     EventAnnouncement[] @relation("EventAnnouncementAuthor")
   hallOfFameEntries HallOfFame[]        @relation("HallOfFameUser")
   prizeAwards       EventPrizeWinner[]  @relation("EventPrizeWinnerUser")
+  galleryUploads    GalleryImage[]       @relation("GalleryUploadedBy")
 }
 
 model Badge {
@@ -583,15 +589,45 @@ model HallOfFame {
 }
 
 model GalleryImage {
-  id           String   @id @default(cuid())
+  id           String           @id @default(cuid())
   eventId      String?
   title        String
-  imageUrl     String
+  imageUrl     String?
+  mediaType    GalleryMediaType @default(IMAGE)
+  videoUrl     String?
+  thumbnailUrl String?
+  album        String?
   description  String?
   photographer String?
-  createdAt    DateTime @default(now())
+  active       Boolean          @default(true)
+  public       Boolean          @default(true)
+  sortOrder    Int              @default(0)
+  createdById  String?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
 
-  event Event? @relation(fields: [eventId], references: [id], onDelete: SetNull)
+  event      Event? @relation(fields: [eventId], references: [id], onDelete: SetNull)
+  uploadedBy User?  @relation("GalleryUploadedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([active, public, sortOrder])
+  @@index([eventId])
+}
+
+model TeamMember {
+  id             String   @id @default(cuid())
+  name           String
+  roleTitle      String
+  secondaryTitle String?
+  quote          String?
+  bio            String?
+  imageUrl       String?
+  skills         String[]
+  active         Boolean  @default(true)
+  sortOrder      Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([active, sortOrder])
 }
 
 model Sponsor {

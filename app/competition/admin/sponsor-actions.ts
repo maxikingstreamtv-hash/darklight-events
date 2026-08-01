@@ -40,12 +40,12 @@ function readEnum<T extends string>(value: string, allowed: T[], fallback: T) {
 }
 
 function redirectAdmin(key: "contentOk" | "contentError", message: string): never {
-  redirect(`/competition/admin?${key}=${encodeURIComponent(message)}#sponsor-manager`);
+  redirect(`/competition/sponsors?${key}=${encodeURIComponent(message)}#sponsor-manager`);
 }
 
 function revalidateSponsorRoutes(slug?: string) {
   revalidatePath("/");
-  revalidatePath("/competition/admin");
+  revalidatePath("/competition/sponsors");
   revalidatePath("/sponsorer");
   if (slug) revalidatePath(`/sponsorer/${slug}`);
 }
