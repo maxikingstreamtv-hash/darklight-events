@@ -11,6 +11,7 @@ import { COUNTED_REGISTRATION_STATUSES, getRegistrationState } from "@/lib/event
 import { normalizeInternalNote } from "@/lib/events/command-center-operations";
 import { canUnlockResults, validateResultRows as validateResultRuleRows } from "@/lib/events/result-rules";
 import { parseResultTime } from "@/lib/events/result-time";
+import { resultHistoryChanged, resultHistorySnapshot } from "@/lib/events/result-history";
 import { assertPrizePartLimit, canDeletePrize, prizeIdentity } from "@/lib/events/prize-rules";
 import { normalizePrizeCurrencyForType } from "@/lib/events/prize-currency";
 import { isResultEligibleStatus, syncApprovedParticipantsToCompetition } from "@/lib/events/result-sync";
@@ -23,7 +24,7 @@ function assertStaff(role: string): asserts role is StaffRole {
   }
 }
 
-function revalidateEventOS() {
+function revalidateEventOS(eventId?: string) {
   revalidatePath("/competition/control-center");
   revalidatePath("/competition/heat-manager");
   revalidatePath("/competition/live-center");
@@ -33,10 +34,16 @@ function revalidateEventOS() {
   revalidatePath("/rangliste");
   revalidatePath("/hall-of-fame");
   revalidatePath("/competition/leaderboard");
+  revalidatePath("/dashboard");
+  revalidatePath("/competition");
   revalidatePath("/events");
   revalidatePath("/upcoming");
   revalidatePath("/competition/events/[id]", "page");
   revalidatePath("/events/[id]", "page");
+  if (eventId) {
+    revalidatePath(`/competition/events/${eventId}`);
+    revalidatePath(`/events/${eventId}`);
+  }
 }
 
 function readInt(value: FormDataEntryValue | null, fallback: number) {
@@ -968,7 +975,7 @@ export async function saveResultAction(competitionId: string, rowParticipantId: 
 
   const existingResult = await prisma.result.findUnique({
     where: { competitionId_participantId: { competitionId, participantId: row.participantId } },
-    select: { locked: true },
+    select: { id: true, placement: true, points: true, finishTimeMs: true, reactionTimeMs: true, notes: true, status: true, locked: true },
   });
 
   if (existingResult?.locked) throw new Error("Resultatet er låst og kan ikke ændres.");
@@ -1001,14 +1008,24 @@ export async function saveResultAction(competitionId: string, rowParticipantId: 
     },
   });
 
+  const nextSnapshot = resultHistorySnapshot(result);
   await writeAuditLog({
     actorId: user.id,
-    action: "RESULT_SAVED",
+    action: existingResult ? "RESULT_UPDATED" : "RESULT_CREATED",
     target: `Result:${result.id}`,
-    details: { event: competition.event.title, placement: row.placement, status: row.status },
+    details: {
+      eventId: competition.event.id,
+      event: competition.event.title,
+      competitionId,
+      participantId: row.participantId,
+      previous: resultHistorySnapshot(existingResult),
+      next: nextSnapshot,
+      changed: resultHistoryChanged(existingResult, result),
+      prizeAssignmentsPreserved: true,
+    },
   });
 
-  revalidateEventOS();
+  revalidateEventOS(competition.event.id);
   redirect(`/competition/events/${competition.event.id}?tab=results&saved=results#resultater`);
 }
 
@@ -1040,6 +1057,12 @@ export async function saveAllResultsAction(competitionId: string, formData: Form
   });
 
   if (lockedResults.length > 0) throw new Error("Et eller flere resultater er låst og kan ikke ændres.");
+
+  const previousResults = await prisma.result.findMany({
+    where: { competitionId, participantId: { in: participantIds } },
+    select: { participantId: true, placement: true, points: true, finishTimeMs: true, reactionTimeMs: true, notes: true, status: true },
+  });
+  const previousByParticipant = new Map(previousResults.map((result) => [result.participantId, result]));
 
   await prisma.$transaction(
     rows.map((row) =>
@@ -1073,10 +1096,17 @@ export async function saveAllResultsAction(competitionId: string, formData: Form
     actorId: user.id,
     action: "RESULTS_BULK_SAVED",
     target: `Competition:${competitionId}`,
-    details: { event: competition.event.title, results: rows.length },
+    details: {
+      eventId: competition.event.id,
+      event: competition.event.title,
+      competitionId,
+      results: rows.length,
+      changes: rows.map((row) => ({ participantId: row.participantId, previous: resultHistorySnapshot(previousByParticipant.get(row.participantId)), next: resultHistorySnapshot(row) })),
+      prizeAssignmentsPreserved: true,
+    },
   });
 
-  revalidateEventOS();
+  revalidateEventOS(competition.event.id);
   redirect(`/competition/events/${competition.event.id}?tab=results&saved=results#resultater`);
 }
 
@@ -1102,10 +1132,10 @@ export async function lockCompetitionResultsAction(competitionId: string) {
     actorId: user.id,
     action: "RESULTS_LOCKED",
     target: `Competition:${competitionId}`,
-    details: { event: competition.event.title, results: competition.results.length },
+    details: { eventId: competition.event.id, event: competition.event.title, competitionId, results: competition.results.length },
   });
 
-  revalidateEventOS();
+  revalidateEventOS(competition.event.id);
   redirect(`/competition/events/${competition.event.id}?tab=results&saved=locked#resultater`);
 }
 
@@ -1117,8 +1147,8 @@ export async function unlockCompetitionResultsAction(competitionId: string, form
   if (!competition) throw new Error("Konkurrencen findes ikke.");
   assertEventFeature(competition.event.usesResults, "Resultater er ikke aktiveret for dette event.");
   await prisma.result.updateMany({ where: { competitionId }, data: { locked: false } });
-  await writeAuditLog({ actorId: user.id, action: "RESULTS_UNLOCKED", target: `Competition:${competitionId}`, details: { event: competition.event.title } });
-  revalidateEventOS();
+  await writeAuditLog({ actorId: user.id, action: "RESULTS_UNLOCKED", target: `Competition:${competitionId}`, details: { eventId: competition.event.id, event: competition.event.title, competitionId } });
+  revalidateEventOS(competition.event.id);
   redirect(`/competition/events/${competition.event.id}?tab=results&saved=unlocked#resultater`);
 }
 
