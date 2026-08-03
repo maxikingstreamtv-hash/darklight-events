@@ -6,6 +6,7 @@ import EventImageUpload from "@/components/events/EventImageUpload";
 import EventFeatureFields from "@/components/events/EventFeatureFields";
 import EventImage from "@/components/events/EventImage";
 import EventPrizeForm from "@/components/events/EventPrizeForm";
+import PermanentDeleteEventForm from "@/components/events/PermanentDeleteEventForm";
 import { prisma } from "@/lib/prisma";
 import { requireCurrentUser } from "@/lib/auth/session";
 import { canManageEventCommandCenter, canUseDangerousEventActions, commandCenterHref, getCommandCenterTabs, resolveCommandCenterTab } from "@/lib/events/command-center";
@@ -82,6 +83,7 @@ type EventDetailsSearchParams = {
   resultQ?: string | string[];
   resultFilter?: string | string[];
   prizePlacement?: string | string[];
+  deleteError?: string | string[];
 };
 
 function readParam(value?: string | string[]) {
@@ -180,7 +182,7 @@ export default async function EventDetailsPage({ params, searchParams }: { param
       },
       announcements: { orderBy: { createdAt: "desc" } },
       tasks: { orderBy: [{ priority: "desc" }, { createdAt: "desc" }] },
-      _count: { select: { gallery: true } },
+      _count: { select: { gallery: true, hallOfFame: true, timingSessions: true, bookings: true } },
     },
   });
 
@@ -222,6 +224,16 @@ export default async function EventDetailsPage({ params, searchParams }: { param
   const closeRegistrationAction = setEventRegistrationStatusAction.bind(null, event.id, "closed");
   const duplicateAction = duplicateEventAction.bind(null, event.id);
   const canUseDangerousActions = canUseDangerousEventActions(currentUser.role);
+  const deleteError = readParam(query.deleteError);
+  const hasHistoricData = event.registrations.length > 0
+    || event.competitions.some((competition) => competition.participants.length > 0 || competition.results.length > 0)
+    || event.prizes.length > 0
+    || event.announcements.length > 0
+    || event.tasks.length > 0
+    || event._count.gallery > 0
+    || event._count.hallOfFame > 0
+    || event._count.timingSessions > 0
+    || event._count.bookings > 0;
   const blobConfigured = Boolean(process.env.BLOB_READ_WRITE_TOKEN);
   const approvedRegistrationItems = event.registrations.filter((registration) => registration.status === "APPROVED" || registration.status === "CHECKED_IN");
   const pendingRegistrationItems = event.registrations.filter((registration) => registration.status === "PENDING");
@@ -625,11 +637,8 @@ export default async function EventDetailsPage({ params, searchParams }: { param
               {canUseDangerousActions ? (
                 <div className="mt-8 rounded-[2rem] border border-red-500/20 bg-red-500/10 p-6">
                   <h3 className="text-2xl font-black text-red-100">Permanent sletning</h3>
-                  <p className="mt-3 text-sm text-red-100/75">Kun Super Admin. Historiske resultater og Hall of Fame beskytter eventet mod sletning.</p>
-                  <form action={deleteAction} className="mt-5 grid gap-3 sm:grid-cols-[1fr_auto]">
-                    <input name="confirmation" placeholder={`Skriv: SLET ${event.title}`} className="rounded-2xl border border-red-500/30 bg-black px-4 py-3 text-white outline-none" />
-                    <button className="rounded-full bg-red-500 px-6 py-3 font-black text-white" type="submit">Slet permanent</button>
-                  </form>
+                  <p className="mt-3 text-sm leading-6 text-red-100/75">Kun Super Admin. Handlingen sletter eventets egne registreringer, konkurrencer, resultater, tidstagning, præmier og legacy-historik. Globale brugere, køretøjer, sponsorer og discipliner bevares.</p>
+                  <PermanentDeleteEventForm title={event.title} action={deleteAction} error={deleteError || undefined} hasHistoricData={hasHistoricData} />
                 </div>
               ) : null}
             </section> : null}
@@ -1092,9 +1101,12 @@ export default async function EventDetailsPage({ params, searchParams }: { param
                   </p>
                   <p className="mt-2 max-w-3xl text-sm font-bold text-zinc-300">Gemte resultater kan rettes direkte i felterne herunder. Brug “Gem ændringer” på den relevante deltager.</p>
                 </div>
-                <Link href="/competition/tablet" className="inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-full border border-white/10 px-5 py-3 font-black text-zinc-200 transition hover:bg-white hover:text-black">
-                  Åbn Event Tablet
-                </Link>
+                <div className="flex flex-wrap gap-3">
+                  {approvedRegistrations > 0 ? <Link href={`/competition/timing?eventId=${event.id}`} className="inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-full bg-white px-5 py-3 font-black text-black transition hover:bg-zinc-300">Åbn tidstagning</Link> : null}
+                  <Link href="/competition/tablet" className="inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-full border border-white/10 px-5 py-3 font-black text-zinc-200 transition hover:bg-white hover:text-black">
+                    Åbn Event Tablet
+                  </Link>
+                </div>
               </div>
 
               {savedState === "results" ? (

@@ -5,7 +5,9 @@ import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
-export default async function EventsManagerPage() {
+export default async function EventsManagerPage({ searchParams }: { searchParams: Promise<{ deleteError?: string | string[] }> }) {
+  const query = await searchParams;
+  const deleteError = Array.isArray(query.deleteError) ? query.deleteError[0] : query.deleteError;
   const events = await prisma.event.findMany({
     orderBy: [{ sortOrder: "asc" }, { startsAt: "desc" }, { title: "asc" }],
     include: {
@@ -25,6 +27,7 @@ export default async function EventsManagerPage() {
         <section className="relative overflow-hidden bg-black px-6 py-28 text-white">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.12),transparent_40%)]" />
           <div className="relative mx-auto max-w-7xl">
+            {deleteError ? <p role="alert" className="mb-6 rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm font-bold text-red-100">{deleteError}</p> : null}
             <div className="mb-10 flex flex-col justify-between gap-5 xl:flex-row xl:items-end">
               <div>
                 <p className="mb-4 text-sm uppercase tracking-[0.45em] text-zinc-500">DarkLight EventOS</p>
