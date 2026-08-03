@@ -1,0 +1,5 @@
+ALTER TABLE "GalleryImage"
+ALTER COLUMN "updatedAt" DROP DEFAULT;
+
+ALTER TABLE "HallOfFame"
+ALTER COLUMN "updatedAt" DROP DEFAULT;

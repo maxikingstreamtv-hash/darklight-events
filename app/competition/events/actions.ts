@@ -6,9 +6,11 @@ import { prisma } from "@/lib/prisma";
 import { requireCurrentUser } from "@/lib/auth/session";
 import { writeAuditLog } from "@/lib/admin/audit";
 import { del } from "@vercel/blob";
+import { Prisma } from "@prisma/client";
 import { readEventFeatures } from "@/lib/events/event-features";
 import { clampEventImageFocus, isPermanentEventImageUrl, isVercelBlobUrl } from "@/lib/events/event-images";
 import { syncApprovedParticipantsToCompetition } from "@/lib/events/result-sync";
+import { canPermanentlyDeleteEvent, eventDeletionConfirmation, isValidEventDeletionConfirmation, uniqueOwnedEventBlobUrls } from "@/lib/events/event-deletion";
 
 function slugify(value: string) {
   return value
@@ -282,41 +284,56 @@ export async function archiveCompetitionEventAction(id: string) {
 
 export async function deleteCompetitionEventAction(id: string, formData: FormData) {
   const user = await requireCurrentUser();
-  if (user.role !== "SUPER_ADMIN") {
-    throw new Error("Kun Super Admin kan slette events permanent.");
-  }
+  if (!canPermanentlyDeleteEvent(user.role)) redirect(eventDeleteErrorPath(id, "Kun Super Admin kan slette events permanent."));
 
   const event = await prisma.event.findUnique({
     where: { id },
-    include: {
-      competitions: { include: { results: true, participants: true } },
-      hallOfFame: true,
-    },
+    select: { id: true, title: true, bannerUrl: true, thumbnailUrl: true },
   });
 
-  if (!event) throw new Error("Eventet findes ikke.");
+  if (!event) redirect("/competition/events?deleteError=Eventet+findes+ikke+eller+er+allerede+slettet.");
 
   const confirmation = String(formData.get("confirmation") ?? "").trim();
-  if (confirmation !== `SLET ${event.title}`) {
-    throw new Error(`Skriv SLET ${event.title} for at bekræfte.`);
+  if (!isValidEventDeletionConfirmation(event.title, confirmation)) redirect(eventDeleteErrorPath(id, `Skriv ${eventDeletionConfirmation(event.title)} for at bekræfte.`));
+  if (formData.get("confirmPermanentDeletion") !== "on") redirect(eventDeleteErrorPath(id, "Bekræft, at alle eventets data må slettes permanent."));
+
+  const ownedBlobUrls = uniqueOwnedEventBlobUrls([event.bannerUrl, event.thumbnailUrl]);
+  try {
+    await prisma.$transaction(async (transaction) => {
+      const linkedSponsors = await transaction.sponsor.findMany({ where: { eventsSupported: { has: event.title } }, select: { id: true, eventsSupported: true } });
+      for (const sponsor of linkedSponsors) {
+        await transaction.sponsor.update({ where: { id: sponsor.id }, data: { eventsSupported: sponsor.eventsSupported.filter((title) => title !== event.title) } });
+      }
+      await transaction.galleryImage.updateMany({ where: { eventId: id }, data: { eventId: null } });
+      await transaction.auditLog.create({
+        data: {
+          actorId: user.id,
+          action: "EVENT_PERMANENTLY_DELETED",
+          target: `Event:${id}`,
+          details: JSON.stringify({ eventId: id, title: event.title, confirmation: "verified", relatedDataDeleted: true }),
+        },
+      });
+      await transaction.event.delete({ where: { id } });
+    }, { isolationLevel: "Serializable" });
+  } catch (error) {
+    console.error("Permanent event deletion failed", { eventId: id, errorType: error instanceof Error ? error.name : "Unknown" });
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") redirect("/competition/events?deleteError=Eventet+findes+ikke+eller+er+allerede+slettet.");
+    redirect(eventDeleteErrorPath(id, "Eventet kunne ikke slettes på grund af en databasekonflikt. Opdatér siden og prøv igen."));
   }
 
-  const hasHistoricData = event.hallOfFame.length > 0 || event.competitions.some((competition) => competition.results.length > 0);
-  if (hasHistoricData) {
-    throw new Error("Eventet har historiske resultater eller Hall of Fame-poster. Arkivér eventet i stedet.");
+  if (ownedBlobUrls.length > 0) {
+    try {
+      await del(ownedBlobUrls);
+    } catch (error) {
+      console.warn("Eventet blev slettet, men oprydning af eventbilledet fejlede.", { eventId: id, imageCount: ownedBlobUrls.length, errorType: error instanceof Error ? error.name : "Unknown" });
+    }
   }
 
-  await prisma.event.delete({ where: { id } });
-  await writeAuditLog({
-    actorId: user.id,
-    action: "EVENT_DELETED",
-    target: `Event:${id}`,
-    details: { title: event.title },
-  });
-
-  revalidatePath("/competition/events");
-  revalidatePath("/events");
-  revalidatePath("/upcoming");
-  revalidatePath("/");
+  for (const path of ["/competition/events", "/competition", "/events", "/upcoming", "/rangliste", "/hall-of-fame", "/live-resultater", "/competition/live-center", "/competition/timing", "/dashboard", "/"]) revalidatePath(path);
   redirect("/competition/events");
+}
+
+function eventDeleteErrorPath(id: string, message: string) {
+  const query = new URLSearchParams({ tab: "settings", deleteError: message });
+  return `/competition/events/${id}?${query.toString()}#indstillinger`;
 }

@@ -156,6 +156,22 @@ enum ResultStatus {
   DISQUALIFIED
 }
 
+enum TimingSessionStatus {
+  READY
+  RUNNING
+  FINISHED
+  CANCELLED
+}
+
+enum TimingEntryStatus {
+  READY
+  RUNNING
+  FINISHED
+  DNF
+  DNS
+  DISQUALIFIED
+}
+
 enum EventTaskStatus {
   OPEN
   IN_PROGRESS
@@ -225,6 +241,8 @@ model User {
   hallOfFameEntries HallOfFame[]        @relation("HallOfFameUser")
   prizeAwards       EventPrizeWinner[]  @relation("EventPrizeWinnerUser")
   galleryUploads    GalleryImage[]       @relation("GalleryUploadedBy")
+  timingSessions    TimingSession[]      @relation("TimingSessionCreatedBy")
+  timingStops       TimingEntry[]        @relation("TimingEntryStoppedBy")
 }
 
 model Badge {
@@ -316,6 +334,7 @@ model Event {
   tasks         EventTask[]
   announcements EventAnnouncement[]
   prizes        EventPrize[]
+  timingSessions TimingSession[]
 
   @@index([disciplineId])
 }
@@ -371,6 +390,7 @@ model Competition {
   results      Result[]
   heats        Heat[]
   brackets     Bracket[]
+  timingSessions TimingSession[]
 }
 
 model EventRegistration {
@@ -417,6 +437,7 @@ model Participant {
   bracketOpponents BracketMatch[]     @relation("BracketMatchOpponent")
   winnerMatches    BracketMatch[]     @relation("BracketMatchWinner")
   prizeAwards      EventPrizeWinner[]
+  timingEntries    TimingEntry[]
 
   @@unique([competitionId, userId])
   @@index([competitionId, seed])
@@ -441,6 +462,52 @@ model Result {
   createdBy   User        @relation("ResultCreatedBy", fields: [createdById], references: [id])
 
   @@unique([competitionId, participantId])
+}
+
+model TimingSession {
+  id                   String              @id @default(cuid())
+  eventId              String
+  competitionId        String
+  status               TimingSessionStatus @default(READY)
+  activeKey            String?             @unique
+  startedAt            DateTime?
+  finishedAt           DateTime?
+  resultsTransferredAt DateTime?
+  createdById          String
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+
+  event       Event         @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  competition Competition   @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  createdBy   User          @relation("TimingSessionCreatedBy", fields: [createdById], references: [id])
+  entries     TimingEntry[]
+
+  @@index([eventId, createdAt])
+  @@index([competitionId, createdAt])
+  @@index([status])
+}
+
+model TimingEntry {
+  id              String            @id @default(cuid())
+  timingSessionId String
+  participantId   String
+  startedAt       DateTime?
+  stoppedAt       DateTime?
+  elapsedMs       Int?
+  status          TimingEntryStatus @default(READY)
+  stoppedById     String?
+  note            String?
+  manuallyAdjusted Boolean          @default(false)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  timingSession TimingSession @relation(fields: [timingSessionId], references: [id], onDelete: Cascade)
+  participant   Participant   @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  stoppedBy     User?         @relation("TimingEntryStoppedBy", fields: [stoppedById], references: [id], onDelete: SetNull)
+
+  @@unique([timingSessionId, participantId])
+  @@index([timingSessionId, status])
+  @@index([participantId])
 }
 
 model Heat {
