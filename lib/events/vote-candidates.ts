@@ -1,15 +1,15 @@
 import { isPermanentImageUrl, isOwnedBlobImage } from "@/lib/images/image-upload";
 
 export type VoteCandidateInput = {
-  ownerName: string; vehicleName: string; vehicleModel: string | null; imageUrl: string;
+  ownerName: string | null; vehicleName: string | null; vehicleModel: string | null; imageUrl: string;
   description: string | null; startNumber: string | null; participantId: string | null;
   vehicleId: string | null; ownerUserId: string | null; sortOrder: number;
 };
 
 export function readVoteCandidate(formData: FormData): VoteCandidateInput {
   const text = (key: string) => String(formData.get(key) ?? "").trim();
-  const ownerName = text("ownerName"); const vehicleName = text("vehicleName"); const imageUrl = text("imageUrl");
-  if (!ownerName || !vehicleName || !imageUrl) throw new Error("Billede, bilens navn og ejerens navn er påkrævet.");
+  const ownerName = text("ownerName") || null; const vehicleName = text("vehicleName") || null; const imageUrl = text("imageUrl");
+  if (!imageUrl) throw new Error("Et kandidatbillede er påkrævet.");
   if (!isPermanentImageUrl(imageUrl)) throw new Error("Kandidatbilledet skal være uploadet permanent.");
   return { ownerName, vehicleName, imageUrl, vehicleModel: text("vehicleModel") || null, description: text("description") || null, startNumber: text("startNumber") || null, participantId: text("participantId") || null, vehicleId: text("vehicleId") || null, ownerUserId: text("ownerUserId") || null, sortOrder: Number.parseInt(text("sortOrder"), 10) || 0 };
 }

@@ -2,6 +2,16 @@ export const appRoles = ["SUPER_ADMIN", "ADMIN", "EVENT_MANAGER", "JUDGE", "USER
 
 export type AppRole = (typeof appRoles)[number];
 
+export const roleLabels: Record<AppRole, string> = {
+  USER: "Bruger",
+  JUDGE: "Dommer",
+  EVENT_MANAGER: "Event Manager",
+  ADMIN: "Admin",
+  SUPER_ADMIN: "Super Admin",
+};
+
+export function roleLabel(role: AppRole) { return roleLabels[role]; }
+
 export const permissionKeys = [
   "MANAGE_USERS",
   "MANAGE_BADGES",

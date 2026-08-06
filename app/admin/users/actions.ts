@@ -101,20 +101,16 @@ export async function updateUserAction(userId: string, formData: FormData) {
 
   let updated: { id: string; username: string; role: string };
   try {
-    updated = await prisma.user.update({
-      where: { id: userId },
-      data: {
-        displayName: values.displayName,
-        role: values.role,
-        avatar: values.avatar || null,
-        bio: values.bio || null,
-        ...(passwordHash ? { passwordHash } : {}),
-      },
-      select: {
-        id: true,
-        username: true,
-        role: true,
-      },
+    updated = await prisma.$transaction(async (tx) => {
+      const saved = await tx.user.update({
+        where: { id: userId },
+        data: { displayName: values.displayName, role: values.role, avatar: values.avatar || null, bio: values.bio || null, ...(passwordHash ? { passwordHash } : {}) },
+        select: { id: true, username: true, role: true },
+      });
+      if (target.role === "JUDGE" && values.role !== "JUDGE") {
+        await tx.eventJudge.updateMany({ where: { userId }, data: { active: false } });
+      }
+      return saved;
     });
   } catch {
     await deleteNewBlobAfterFailedSave(values.avatar, target.avatar);

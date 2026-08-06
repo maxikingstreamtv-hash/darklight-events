@@ -575,8 +575,8 @@ model VoteCandidate {
   participantId String?
   vehicleId     String?
   ownerUserId   String?
-  ownerName     String
-  vehicleName   String
+  ownerName     String?
+  vehicleName   String?
   vehicleModel  String?
   imageUrl      String
   description   String?
