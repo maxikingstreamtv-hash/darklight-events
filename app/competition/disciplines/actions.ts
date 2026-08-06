@@ -6,6 +6,7 @@ import { writeAuditLog } from "@/lib/admin/audit";
 import { requireCurrentUser } from "@/lib/auth/session";
 import { readEventFeatures } from "@/lib/events/event-features";
 import { prisma } from "@/lib/prisma";
+import { assertValidResultConfiguration, readResultMethod } from "@/lib/events/result-methods";
 
 function assertDisciplineAdmin(role: string) {
   if (role !== "SUPER_ADMIN" && role !== "ADMIN") throw new Error("Kun Super Admin og Admin kan administrere discipliner.");
@@ -24,6 +25,8 @@ function readDiscipline(formData: FormData) {
   const category = String(formData.get("category") ?? "").trim();
   const sortOrder = Number(formData.get("sortOrder") ?? 0);
   const features = readEventFeatures(formData);
+  const resultMethod = readResultMethod(formData);
+  assertValidResultConfiguration(resultMethod, features);
   if (!name || !description || !abbreviation) throw new Error("Navn, beskrivelse og forkortelse er påkrævet.");
   if (!features.usesVehicles) features.requiresVehicleApproval = false;
   return {
@@ -34,6 +37,7 @@ function readDiscipline(formData: FormData) {
     active: formData.get("active") === "on",
     sortOrder: Number.isFinite(sortOrder) ? sortOrder : 0,
     ...features,
+    resultMethod,
   };
 }
 

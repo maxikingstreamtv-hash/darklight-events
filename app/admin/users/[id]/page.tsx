@@ -5,7 +5,7 @@ import { AdminCard, Field, StatusBadge, fieldClassName } from "@/components/admi
 import { prisma } from "@/lib/prisma";
 import { canAdminManageTarget, getAssignableRoles, requireAdminUser } from "@/lib/admin/access";
 import ImageUploadField from "@/components/images/ImageUploadField";
-import { isAppRole, type AppRole } from "@/lib/auth/types";
+import { isAppRole, roleLabel, type AppRole } from "@/lib/auth/types";
 import { deleteUserAction, grantBadgeAction, grantPermissionAction, removeBadgeAction, removePermissionAction, updateUserAction } from "../actions";
 
 type BadgeOption = {
@@ -176,7 +176,7 @@ export default async function UserDetailPage({
         <div className="grid gap-6 xl:grid-cols-[1fr_380px]">
           <AdminCard>
             <div className="mb-6 flex flex-wrap items-center gap-3">
-              <StatusBadge tone={user.role === "SUPER_ADMIN" ? "strong" : "neutral"}>{user.role}</StatusBadge>
+              <StatusBadge tone={user.role === "SUPER_ADMIN" ? "strong" : "neutral"}>{roleLabel(user.role)}</StatusBadge>
               <span className="text-sm text-zinc-500">@{user.username}</span>
             </div>
 
@@ -194,7 +194,7 @@ export default async function UserDetailPage({
                 <select name="role" defaultValue={user.role} className={fieldClassName} disabled={!canManage}>
                   {assignableRoles.map((role: AppRole) => (
                     <option key={role} value={role}>
-                      {role}
+                      {roleLabel(role)}
                     </option>
                   ))}
                 </select>

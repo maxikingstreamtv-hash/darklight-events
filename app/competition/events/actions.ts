@@ -8,6 +8,7 @@ import { writeAuditLog } from "@/lib/admin/audit";
 import { del } from "@vercel/blob";
 import { Prisma } from "@prisma/client";
 import { readEventFeatures } from "@/lib/events/event-features";
+import { assertValidResultConfiguration, readResultMethod } from "@/lib/events/result-methods";
 import { clampEventImageFocus, isPermanentEventImageUrl, isVercelBlobUrl } from "@/lib/events/event-images";
 import { syncApprovedParticipantsToCompetition } from "@/lib/events/result-sync";
 import { canPermanentlyDeleteEvent, eventDeletionConfirmation, isValidEventDeletionConfirmation, uniqueOwnedEventBlobUrls } from "@/lib/events/event-deletion";
@@ -47,6 +48,13 @@ export async function createCompetitionEventAction(formData: FormData) {
   const imageFocusY = clampEventImageFocus(Number(formData.get("imageFocusY") ?? 50));
   const disciplineId = String(formData.get("disciplineId") ?? "").trim();
   const features = readEventFeatures(formData);
+  const resultMethod = readResultMethod(formData);
+  assertValidResultConfiguration(resultMethod, features);
+  const judgePointsMin = Number(formData.get("judgePointsMin") ?? 0);
+  const judgePointsMax = Number(formData.get("judgePointsMax") ?? 10);
+  const votingOpenAt = String(formData.get("votingOpenAt") ?? "");
+  const votingCloseAt = String(formData.get("votingCloseAt") ?? "");
+  if (!Number.isInteger(judgePointsMin) || !Number.isInteger(judgePointsMax) || judgePointsMin >= judgePointsMax) throw new Error("Dommerpoint kræver et gyldigt minimum og maksimum.");
 
   if (!title || !description || !startsAtValue) {
     throw new Error("Titel, beskrivelse og dato er påkrævet.");
@@ -83,6 +91,8 @@ export async function createCompetitionEventAction(formData: FormData) {
       imageFocusY,
       disciplineId: disciplineId || null,
       ...features,
+      resultMethod,
+      judgePointsMin, judgePointsMax, votingOpenAt: votingOpenAt ? new Date(votingOpenAt) : null, votingCloseAt: votingCloseAt ? new Date(votingCloseAt) : null, allowVoteChange: formData.get("allowVoteChange") === "on",
       sortOrder: Number.isFinite(sortOrder) ? sortOrder : 0,
       createdById: user.id,
     },
@@ -124,6 +134,13 @@ export async function updateCompetitionEventAction(id: string, formData: FormDat
   const imageFocusX = clampEventImageFocus(Number(formData.get("imageFocusX") ?? 50));
   const imageFocusY = clampEventImageFocus(Number(formData.get("imageFocusY") ?? 50));
   const features = readEventFeatures(formData);
+  const resultMethod = readResultMethod(formData);
+  assertValidResultConfiguration(resultMethod, features);
+  const judgePointsMin = Number(formData.get("judgePointsMin") ?? 0);
+  const judgePointsMax = Number(formData.get("judgePointsMax") ?? 10);
+  const votingOpenAt = String(formData.get("votingOpenAt") ?? "");
+  const votingCloseAt = String(formData.get("votingCloseAt") ?? "");
+  if (!Number.isInteger(judgePointsMin) || !Number.isInteger(judgePointsMax) || judgePointsMin >= judgePointsMax) throw new Error("Dommerpoint kræver et gyldigt minimum og maksimum.");
   const disciplineId = String(formData.get("disciplineId") ?? "").trim();
 
   if (!title || !description || !startsAtValue) {
@@ -138,7 +155,7 @@ export async function updateCompetitionEventAction(id: string, formData: FormDat
     throw new Error("Datoen er ugyldig.");
   }
 
-  const previousEvent = await prisma.event.findUnique({ where: { id }, select: { bannerUrl: true, thumbnailUrl: true } });
+  const previousEvent = await prisma.event.findUnique({ where: { id }, select: { bannerUrl: true, thumbnailUrl: true, resultMethod: true } });
   if (disciplineId) {
     const discipline = await prisma.discipline.findFirst({ where: { id: disciplineId, active: true }, select: { id: true } });
     if (!discipline) throw new Error("Den valgte disciplin findes ikke eller er inaktiv.");
@@ -174,6 +191,8 @@ export async function updateCompetitionEventAction(id: string, formData: FormDat
       imageFocusY,
       disciplineId: disciplineId || null,
       ...features,
+      resultMethod,
+      judgePointsMin, judgePointsMax, votingOpenAt: votingOpenAt ? new Date(votingOpenAt) : null, votingCloseAt: votingCloseAt ? new Date(votingCloseAt) : null, allowVoteChange: formData.get("allowVoteChange") === "on",
       sortOrder: Number.isFinite(sortOrder) ? sortOrder : 0,
     },
   });
@@ -195,6 +214,9 @@ export async function updateCompetitionEventAction(id: string, formData: FormDat
     target: `Event:${event.id}`,
     details: { title: event.title, status: event.status },
   });
+  if (previousEvent?.resultMethod !== resultMethod) {
+    await writeAuditLog({ actorId: user.id, action: "EVENT_RESULT_METHOD_CHANGED", target: `Event:${event.id}`, details: { before: previousEvent?.resultMethod, after: resultMethod } });
+  }
 
   revalidatePath("/competition/events");
   revalidatePath(`/competition/events/${event.id}`);

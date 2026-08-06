@@ -53,6 +53,15 @@ export default async function AdminPage() {
           </div>
         </AdminCard>
       </div>
+
+      <div className="mt-8" id="roller">
+        <AdminCard>
+          <p className="text-xs font-black uppercase tracking-[0.28em] text-zinc-500">Rolle</p>
+          <div className="mt-3 flex flex-wrap items-center gap-3"><h2 className="text-3xl font-black">Dommer</h2><StatusBadge tone="neutral">JUDGE</StatusBadge></div>
+          <p className="mt-4 max-w-3xl text-zinc-400">Kan bedømme tildelte events og afgive egne dommerpoint. Kan ikke administrere brugere, roller eller events.</p>
+          <div className="mt-6 grid gap-5 md:grid-cols-2"><div><h3 className="font-black text-emerald-200">Må</h3><ul className="mt-3 grid gap-2 text-sm text-zinc-300"><li>Åbne Dommerpanel og se tildelte events</li><li>Se kandidater og billeder</li><li>Gemme og indsende egne point</li><li>Redigere egne point, indtil eventet låses</li></ul></div><div><h3 className="font-black text-red-200">Må ikke</h3><ul className="mt-3 grid gap-2 text-sm text-zinc-300"><li>Se andre dommeres skjulte point</li><li>Offentliggøre resultater</li><li>Styre brugere, roller eller events</li><li>Ændre publikumsstemmer eller slette medier</li></ul></div></div>
+        </AdminCard>
+      </div>
     </AdminShell>
   );
 }

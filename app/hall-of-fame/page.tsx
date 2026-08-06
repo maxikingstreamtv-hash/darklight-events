@@ -12,7 +12,7 @@ export default async function HallOfFamePage({ searchParams }: { searchParams: P
   const filters = await searchParams;
   const year = Number(filters.year);
   const events = await prisma.event.findMany({
-    where: { public: true, active: true, ...(filters.eventId ? { id: filters.eventId } : {}), ...(filters.disciplineId ? { disciplineId: filters.disciplineId } : {}), ...(Number.isInteger(year) ? { startsAt: { gte: new Date(`${year}-01-01T00:00:00Z`), lt: new Date(`${year + 1}-01-01T00:00:00Z`) } } : {}) },
+    where: { public: true, active: true, OR: [{ resultMethod: { notIn: ["JUDGE_POINTS", "JUDGE_AND_PUBLIC_VOTE", "PUBLIC_VOTE_ONLY"] } }, { resultsPublishedAt: { not: null } }], ...(filters.eventId ? { id: filters.eventId } : {}), ...(filters.disciplineId ? { disciplineId: filters.disciplineId } : {}), ...(Number.isInteger(year) ? { startsAt: { gte: new Date(`${year}-01-01T00:00:00Z`), lt: new Date(`${year + 1}-01-01T00:00:00Z`) } } : {}) },
     orderBy: { startsAt: "desc" },
     include: {
       discipline: { select: { id: true, name: true } },

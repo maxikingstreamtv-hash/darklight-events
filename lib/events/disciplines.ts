@@ -1,4 +1,5 @@
 import type { EventFeatures } from "./event-features";
+import type { EventResultMethodValue } from "./result-methods";
 
 export type DisciplinePreset = EventFeatures & {
   id: string;
@@ -8,6 +9,7 @@ export type DisciplinePreset = EventFeatures & {
   category: string | null;
   active: boolean;
   sortOrder: number;
+  resultMethod?: EventResultMethodValue;
 };
 
 export function disciplineFeatures(discipline: DisciplinePreset): EventFeatures {

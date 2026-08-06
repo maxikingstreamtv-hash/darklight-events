@@ -58,7 +58,7 @@ export default async function DisciplinesAdminPage() {
   );
 }
 
-function DisciplineForm({ action, initial, discipline }: { action: (formData: FormData) => void | Promise<void>; initial: typeof NEW_EVENT_FEATURE_DEFAULTS; discipline?: { name: string; description: string; abbreviation: string; category: string | null; active: boolean; sortOrder: number } }) {
+function DisciplineForm({ action, initial, discipline }: { action: (formData: FormData) => void | Promise<void>; initial: typeof NEW_EVENT_FEATURE_DEFAULTS; discipline?: { name: string; description: string; abbreviation: string; category: string | null; active: boolean; sortOrder: number; resultMethod: "NONE" | "TIME_ONLY" | "POINTS_ONLY" | "TIME_AND_POINTS" | "PLACEMENT_ONLY" | "TIME_TO_POINTS" | "JUDGE_POINTS" | "JUDGE_AND_PUBLIC_VOTE" | "PUBLIC_VOTE_ONLY" | "BRACKET" } }) {
   return (
     <form action={action} className="mt-5 grid min-w-0 gap-4">
       <div className="grid gap-4 md:grid-cols-2">
@@ -68,7 +68,7 @@ function DisciplineForm({ action, initial, discipline }: { action: (formData: Fo
         <Field label="Sortering"><input name="sortOrder" type="number" defaultValue={discipline?.sortOrder ?? 0} className={inputClass} /></Field>
       </div>
       <Field label="Beskrivelse"><textarea name="description" required defaultValue={discipline?.description} className={`${inputClass} min-h-24`} /></Field>
-      <EventFeatureFields initial={initial} />
+      <EventFeatureFields initial={initial} initialResultMethod={discipline?.resultMethod} />
       <label className="flex items-center gap-3"><input name="active" type="checkbox" defaultChecked={discipline?.active ?? true} /> Aktiv</label>
       <button className="w-fit rounded-full bg-white px-6 py-3 font-black text-black">{discipline ? "Gem disciplin" : "Opret disciplin"}</button>
     </form>

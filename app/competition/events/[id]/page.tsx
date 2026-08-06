@@ -65,6 +65,9 @@ import {
   updateRegistrationStatusAction,
   duplicateEventAction,
 } from "@/app/competition/eventos-actions";
+import { assignJudgeAction, publishJudgingResultsAction, removeJudgeAction, setVotingStateAction } from "@/app/competition/judging/actions";
+import { calculateCandidateTotals, calculateJudgingTotals, rankJudgingTotals } from "@/lib/events/judging";
+import VoteCandidateManager from "@/components/events/VoteCandidateManager";
 
 export const dynamic = "force-dynamic";
 
@@ -84,6 +87,8 @@ type EventDetailsSearchParams = {
   resultFilter?: string | string[];
   prizePlacement?: string | string[];
   deleteError?: string | string[];
+  candidateSaved?: string | string[];
+  candidateError?: string | string[];
 };
 
 function readParam(value?: string | string[]) {
@@ -182,6 +187,10 @@ export default async function EventDetailsPage({ params, searchParams }: { param
       },
       announcements: { orderBy: { createdAt: "desc" } },
       tasks: { orderBy: [{ priority: "desc" }, { createdAt: "desc" }] },
+      judges: { where: { active: true }, include: { user: { select: { id: true, displayName: true } } } },
+      judgeScores: true,
+      publicVotes: true,
+      voteCandidates: { orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }] },
       _count: { select: { gallery: true, hallOfFame: true, timingSessions: true, bookings: true } },
     },
   });
@@ -190,6 +199,7 @@ export default async function EventDetailsPage({ params, searchParams }: { param
     notFound();
   }
   const disciplines = await prisma.discipline.findMany({ where: { active: true }, orderBy: [{ sortOrder: "asc" }, { name: "asc" }] });
+  const availableJudges = await prisma.user.findMany({ where: { role: "JUDGE", active: true }, orderBy: { displayName: "asc" }, select: { id: true, displayName: true } });
   const eventActivity = await prisma.auditLog.findMany({
     where: { target: { in: [
       `Event:${event.id}`,
@@ -558,7 +568,7 @@ export default async function EventDetailsPage({ params, searchParams }: { param
                   <textarea name="description" defaultValue={event.description} rows={5} className="rounded-2xl border border-white/10 bg-black px-4 py-3 text-white outline-none" />
                 </label>
                 <EventImageUpload eventId={event.id} initialUrl={event.bannerUrl ?? ""} initialFocusX={event.imageFocusX} initialFocusY={event.imageFocusY} />
-                <EventFeatureFields initial={eventFeatures} disciplines={disciplines} selectedDisciplineId={event.disciplineId ?? ""} />
+                <EventFeatureFields initial={eventFeatures} disciplines={disciplines} selectedDisciplineId={event.disciplineId ?? ""} initialResultMethod={event.resultMethod} judging={{ judgePointsMin: event.judgePointsMin, judgePointsMax: event.judgePointsMax, votingOpenAt: toInputDate(event.votingOpenAt), votingCloseAt: toInputDate(event.votingCloseAt), allowVoteChange: event.allowVoteChange }} />
                 <div className="flex flex-wrap gap-5">
                   <label className="flex items-center gap-3 text-sm font-bold text-zinc-300">
                     <input name="active" type="checkbox" defaultChecked={event.active} /> Aktiv
@@ -568,6 +578,7 @@ export default async function EventDetailsPage({ params, searchParams }: { param
                   </label>
                 </div>
                 <div className="flex flex-wrap gap-3">
+                  {["PUBLIC_VOTE_ONLY", "JUDGE_AND_PUBLIC_VOTE"].includes(event.resultMethod) ? <Link href="#afstemningskandidater" className="inline-flex rounded-full bg-violet-300 px-5 py-3 font-black text-black">Administrér kandidater</Link> : null}
                   <button className="inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-full bg-white px-6 py-3 font-black text-black transition hover:bg-zinc-300" type="submit">Gem event</button>
                 </div>
               </form>
@@ -1109,6 +1120,9 @@ export default async function EventDetailsPage({ params, searchParams }: { param
                 </div>
               </div>
 
+              {["PUBLIC_VOTE_ONLY", "JUDGE_AND_PUBLIC_VOTE"].includes(event.resultMethod) ? <VoteCandidateManager eventId={event.id} candidates={event.voteCandidates} participants={event.competitions.flatMap(competition=>competition.participants.map(participant=>({id:participant.id,label:`${participant.name}${participant.number?` · ${participant.number}`:""}`})))} feedback={readParam(query.candidateError)?{type:"error",message:readParam(query.candidateError)}:readParam(query.candidateSaved)?{type:"ok",message:readParam(query.candidateSaved)}:undefined} /> : null}
+              {["JUDGE_POINTS", "JUDGE_AND_PUBLIC_VOTE", "PUBLIC_VOTE_ONLY"].includes(event.resultMethod) ? <JudgingAdminPanel event={event} availableJudges={availableJudges} /> : null}
+
               {savedState === "results" ? (
                 <div className="mb-6 rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-5 py-4 text-sm font-bold text-emerald-100">
                   Resultater gemt.
@@ -1442,6 +1456,26 @@ type EventCenterCompetition = {
     locked: boolean;
   }>;
 };
+
+function JudgingAdminPanel({ event, availableJudges }: { event: { id: string; resultMethod: "NONE" | "TIME_ONLY" | "POINTS_ONLY" | "TIME_AND_POINTS" | "PLACEMENT_ONLY" | "TIME_TO_POINTS" | "JUDGE_POINTS" | "JUDGE_AND_PUBLIC_VOTE" | "PUBLIC_VOTE_ONLY" | "BRACKET"; judges: Array<{ userId: string; user: { id: string; displayName: string } }>; judgeScores: Array<{ participantId: string; judgeId: string; points: number; status: "DRAFT" | "SUBMITTED" }>; publicVotes: Array<{ participantId: string | null; candidateId: string | null }>; voteCandidates:Array<{id:string;participantId:string|null;vehicleName:string|null;ownerName:string|null}>; competitions: Array<{ participants: Array<{ id: string; name: string }> }> }; availableJudges: Array<{ id: string; displayName: string }> }) {
+  const candidateMode=event.resultMethod!=="JUDGE_POINTS";
+  const candidateTotals=calculateCandidateTotals(event.voteCandidates,event.judgeScores,event.publicVotes,event.resultMethod);
+  const totals = candidateMode?candidateTotals.map(total=>({participantId:total.candidateId,judgePoints:total.judgePoints,judgeAverage:total.judgeAverage,submittedJudges:total.submittedJudges,publicVotes:total.publicVotes,finalPoints:total.finalPoints})):calculateJudgingTotals(event.competitions.flatMap((competition) => competition.participants.map((participant) => participant.id)), event.judgeScores, event.publicVotes, event.resultMethod);
+  const ranking = rankJudgingTotals(totals);
+  const names = new Map([...event.competitions.flatMap((competition) => competition.participants.map((participant) => [participant.id, participant.name] as const)),...event.voteCandidates.map((candidate,index)=>[candidate.id,candidate.vehicleName??`Kandidatbillede ${index+1}`] as const)]);
+  const missingLinks=event.voteCandidates.filter(candidate=>!candidate.participantId);
+  const judgeParticipants=event.competitions.flatMap(competition=>competition.participants).length;
+  const judgeStatus=(judgeId:string)=>{const scores=event.judgeScores.filter(score=>score.judgeId===judgeId);const submitted=scores.filter(score=>score.status==="SUBMITTED").length;if(!scores.length)return "Ikke startet";if(submitted>=judgeParticipants&&judgeParticipants>0)return "Afgivet";if(submitted>0)return "Mangler bedømmelse";return "Kladde";};
+  return <div className="mb-7 grid gap-5 rounded-[2rem] border border-violet-300/20 bg-violet-300/[.05] p-6">
+    <div><h3 className="text-2xl font-black">Bedømmelse og offentliggørelse</h3><p className="mt-2 text-sm text-zinc-400">Rå point og stemmetal i dette panel er kun til administration. De sendes ikke til offentlige sider før publicering.</p></div>
+    {event.resultMethod !== "PUBLIC_VOTE_ONLY" ? <div className="grid gap-3"><form action={assignJudgeAction.bind(null, event.id)} className="flex flex-wrap gap-3"><select name="userId" className="rounded-xl border border-white/10 bg-black px-4 py-2"><option value="">Tilføj dommer</option>{availableJudges.filter(judge=>!event.judges.some(item=>item.userId===judge.id)).map(judge=><option key={judge.id} value={judge.id}>{judge.displayName}</option>)}</select><button className="rounded-full bg-white px-4 py-2 font-black text-black">Tilføj dommer</button></form><div className="flex flex-wrap gap-2">{event.judges.map(judge=><form key={judge.userId} action={removeJudgeAction.bind(null,event.id,judge.userId)} className="flex items-center gap-2 rounded-full border border-white/10 px-4 py-2"><span>{judge.user.displayName} · {judgeStatus(judge.userId)}</span><button className="text-red-300">Fjern</button></form>)}</div></div>:null}
+    {event.resultMethod !== "JUDGE_POINTS" ? <div className="flex flex-wrap gap-3"><form action={setVotingStateAction.bind(null,event.id,"open")}><button className="rounded-full border border-white/15 px-4 py-2 font-bold">Åbn afstemning</button></form><form action={setVotingStateAction.bind(null,event.id,"closed")}><button className="rounded-full border border-white/15 px-4 py-2 font-bold">Luk afstemning</button></form><Link href={`/events/${event.id}/vote`} className="rounded-full border border-white/15 px-4 py-2 font-bold">Se stemmeside</Link></div>:null}
+    <div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead className="text-zinc-500"><tr><th className="p-2">Deltager</th><th>Dommerpoint</th><th>Gennemsnit</th><th>Stemmer</th><th>Samlet</th></tr></thead><tbody>{ranking.sorted.map(total=><tr key={total.participantId} className="border-t border-white/10"><td className="p-2 font-bold">{names.get(total.participantId)}</td><td>{total.judgePoints}</td><td>{total.judgeAverage.toFixed(2)}</td><td>{total.publicVotes}</td><td className="font-black">{total.finalPoints}</td></tr>)}</tbody></table></div>
+    {missingLinks.length?<p className="rounded-xl border border-red-300/30 bg-red-300/10 p-4 text-red-100">Manglende Participant-kobling: {missingLinks.map((candidate,index)=>candidate.vehicleName??`Kandidatbillede ${index+1}`).join(", ")}.</p>:null}
+    {ranking.unresolved.length?<p className="rounded-xl border border-amber-300/30 bg-amber-300/10 p-4 text-amber-100">Der er pointlighed. Vælg placering manuelt før offentliggørelse.</p>:null}
+    <form action={publishJudgingResultsAction.bind(null,event.id)} className="flex flex-wrap items-center gap-3"><label className="text-sm"><input type="checkbox" name="confirm" value="publish" /> Jeg bekræfter publicering og låsning</label><button disabled={ranking.unresolved.length>0 || totals.length===0 || missingLinks.length>0} className="rounded-full bg-emerald-300 px-5 py-2 font-black text-black disabled:opacity-40">Offentliggør resultat</button></form>
+  </div>;
+}
 
 function ResultEntryPanel({ competition, prizes, role, query, filter }: { competition: EventCenterCompetition; prizes: PrizeAdminItem[]; role: string; query: string; filter: string }) {
   const resultsByParticipant = new Map(competition.results.map((result) => [result.participantId, result]));

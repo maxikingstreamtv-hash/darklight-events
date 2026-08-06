@@ -51,6 +51,7 @@ const navGroups: NavGroup[] = [
     items: [
       { href: "/", label: "Forside", icon: Home },
       { href: "/events", label: "Events", icon: CalendarDays },
+      { href: "/afstemning", label: "Afstemninger", icon: Trophy },
       { href: "/upcoming", label: "Kommende events", icon: CalendarDays },
       { href: "/competition", label: "Konkurrencer", icon: Trophy },
       { href: "/rangliste", label: "Rangliste", icon: BarChart3 },
@@ -88,6 +89,7 @@ const navGroups: NavGroup[] = [
       { href: "/competition/admin", label: "EventOS", icon: CalendarDays, roles: ["SUPER_ADMIN", "ADMIN", "EVENT_MANAGER"] },
       { href: "/competition/events", label: "Events", icon: CalendarDays, roles: ["SUPER_ADMIN", "ADMIN", "EVENT_MANAGER"] },
       { href: "/competition/timing", label: "Tidstagning", icon: Timer, roles: ["SUPER_ADMIN", "ADMIN", "EVENT_MANAGER"] },
+      { href: "/competition/judging", label: "Dommerpanel", icon: Trophy, roles: ["SUPER_ADMIN", "ADMIN", "EVENT_MANAGER", "JUDGE"] },
       { href: "/competition/disciplines", label: "Discipliner", icon: Trophy, roles: ["SUPER_ADMIN", "ADMIN", "EVENT_MANAGER"] },
       { href: "/competition/sponsors", label: "Sponsorer", icon: Shield, roles: ["SUPER_ADMIN", "ADMIN", "EVENT_MANAGER"] },
       { href: "/galleri", label: "Galleri / Medier", icon: GalleryHorizontal, roles: ["SUPER_ADMIN", "ADMIN", "EVENT_MANAGER"] },
