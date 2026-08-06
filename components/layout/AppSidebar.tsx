@@ -51,6 +51,7 @@ const navGroups: NavGroup[] = [
     items: [
       { href: "/", label: "Forside", icon: Home },
       { href: "/events", label: "Events", icon: CalendarDays },
+      { href: "/afstemning", label: "Afstemninger", icon: Trophy },
       { href: "/upcoming", label: "Kommende events", icon: CalendarDays },
       { href: "/competition", label: "Konkurrencer", icon: Trophy },
       { href: "/rangliste", label: "Rangliste", icon: BarChart3 },

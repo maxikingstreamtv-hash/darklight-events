@@ -15,6 +15,8 @@ export function getDashboardPath(role: AppRole) {
     return "/competition";
   }
 
+  if (role === "JUDGE") return "/competition/judging";
+
   return "/dashboard";
 }
 
@@ -34,6 +36,7 @@ export function canAccessPath(subject: AccessSubject, pathname: string) {
   }
 
   if (pathname.startsWith("/competition")) {
+    if (subject.role === "JUDGE") return pathname.startsWith("/competition/judging");
     return (
       subject.role === "SUPER_ADMIN" ||
       subject.role === "ADMIN" ||

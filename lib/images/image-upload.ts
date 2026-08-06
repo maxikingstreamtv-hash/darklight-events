@@ -1,6 +1,6 @@
 export const IMAGE_MIME_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
 export type ImageMimeType = (typeof IMAGE_MIME_TYPES)[number];
-export type ImageUploadScope = "event" | "profile" | "sponsor" | "vehicle" | "gallery" | "team";
+export type ImageUploadScope = "event" | "profile" | "sponsor" | "vehicle" | "gallery" | "team" | "vote";
 
 export const IMAGE_EXTENSIONS: Record<ImageMimeType, readonly string[]> = {
   "image/jpeg": [".jpg", ".jpeg"],
@@ -15,6 +15,7 @@ export const IMAGE_SIZE_LIMITS: Record<ImageUploadScope, number> = {
   vehicle: 8 * 1024 * 1024,
   gallery: 8 * 1024 * 1024,
   team: 5 * 1024 * 1024,
+  vote: 8 * 1024 * 1024,
 };
 
 export function imageSizeLabel(scope: ImageUploadScope) {
@@ -91,7 +92,7 @@ export function isOwnedBlobImage(value: string | null | undefined) {
 }
 
 export function imageBlobPath(scope: ImageUploadScope, ownerId: string, filename: string, uniqueId: string) {
-  const folder = scope === "profile" ? "profiles" : scope === "gallery" ? "gallery" : scope === "team" ? "team" : `${scope}s`;
+  const folder = scope === "profile" ? "profiles" : scope === "gallery" ? "gallery" : scope === "team" ? "team" : scope === "vote" ? "votes" : `${scope}s`;
   const safeOwner = ownerId.replace(/[^a-zA-Z0-9_-]/g, "") || "draft";
   return `${folder}/${safeOwner}/${uniqueId}-${safeImageName(filename)}`;
 }

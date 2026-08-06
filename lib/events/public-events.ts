@@ -77,6 +77,10 @@ export async function getPublicUpcomingEvents({ query = "", take }: { query?: st
       registrationCloseAt: true,
       usesParticipantRegistration: true,
       usesPrizes: true,
+      resultMethod: true,
+      votingOpenAt: true,
+      votingCloseAt: true,
+      resultsPublishedAt: true,
       prizes: {
         where: { active: true },
         select: { id: true },

@@ -11,7 +11,7 @@ import {
 } from "@/lib/images/image-upload";
 import { isBlobStorageConfigured } from "@/lib/events/event-images";
 
-const scopes: ImageUploadScope[] = ["event", "profile", "sponsor", "vehicle", "gallery", "team"];
+const scopes: ImageUploadScope[] = ["event", "profile", "sponsor", "vehicle", "gallery", "team", "vote"];
 
 export async function POST(request: Request) {
   const actor = await getCurrentUser();

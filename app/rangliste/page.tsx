@@ -8,6 +8,7 @@ export const dynamic = "force-dynamic";
 
 export default async function PublicLeaderboardPage() {
   const results = await prisma.result.findMany({
+    where: { OR: [{ competition: { event: { resultMethod: { notIn: ["JUDGE_POINTS", "JUDGE_AND_PUBLIC_VOTE", "PUBLIC_VOTE_ONLY"] } } } }, { competition: { event: { resultsPublishedAt: { not: null } } } }] },
     orderBy: [{ createdAt: "desc" }],
     include: {
       participant: {

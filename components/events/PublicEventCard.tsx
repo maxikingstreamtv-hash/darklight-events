@@ -9,6 +9,7 @@ function formatDate(value: Date) {
 export default function PublicEventCard({ event, wide = false }: { event: PublicUpcomingEvent; wide?: boolean }) {
   const occupied = event.registrations.length;
   const prizeIndicator = getPublicPrizeIndicator(event);
+  const votingOpen = ["PUBLIC_VOTE_ONLY", "JUDGE_AND_PUBLIC_VOTE"].includes(event.resultMethod) && Boolean(event.votingOpenAt && event.votingOpenAt <= new Date() && (!event.votingCloseAt || event.votingCloseAt > new Date()) && !event.resultsPublishedAt);
   return (
     <article className={`group overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.04] transition hover:-translate-y-1 hover:border-white/30 ${wide ? "grid md:grid-cols-2" : "p-5"}`}>
       <Link href={publicEventHref(event.id)} aria-label={`Se ${event.title}`} className={`relative block overflow-hidden border-white/10 bg-black outline-none ring-white transition focus-visible:ring-2 ${wide ? "aspect-video md:aspect-auto md:min-h-96 md:border-r" : "aspect-video rounded-[1.5rem] border"}`}>
@@ -31,6 +32,7 @@ export default function PublicEventCard({ event, wide = false }: { event: Public
           {event.usesParticipantRegistration ? (
             <p>{occupied} af {event.maxParticipants ?? "ubegrænset"} pladser optaget</p>
           ) : null}
+          {votingOpen ? <Link href={`/events/${event.id}/vote`} className="inline-flex w-fit rounded-full bg-violet-300 px-7 py-3 font-black text-black transition hover:bg-violet-200">Stem nu</Link> : null}
         </div>
         <div className="mt-7 flex flex-wrap gap-3">
           <Link href={publicEventHref(event.id)} className="inline-flex w-fit rounded-full bg-white px-7 py-3 font-black text-black transition hover:bg-zinc-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">

@@ -16,6 +16,7 @@ const roleLabels = {
   SUPER_ADMIN: "Super Admin",
   ADMIN: "Admin",
   EVENT_MANAGER: "Event Manager",
+  JUDGE: "Dommer",
   USER: "Bruger",
 };
 

@@ -40,6 +40,10 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
       usesParticipantRegistration: true,
       usesVehicles: true,
       usesPrizes: true,
+      resultMethod: true,
+      votingOpenAt: true,
+      votingCloseAt: true,
+      resultsPublishedAt: true,
       registrations: {
         orderBy: [{ createdAt: "asc" }],
         select: {
@@ -149,6 +153,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
                     Se alle {event.prizes.length} præmier
                   </Link>
                 ) : null}
+                {["PUBLIC_VOTE_ONLY", "JUDGE_AND_PUBLIC_VOTE"].includes(event.resultMethod) && event.votingOpenAt && event.votingOpenAt <= new Date() && (!event.votingCloseAt || event.votingCloseAt > new Date()) && !event.resultsPublishedAt ? <Link href={`/events/${event.id}/vote`} className="inline-flex rounded-full bg-violet-300 px-6 py-3 font-black text-black">Stem nu</Link> : null}
               </div>
             </div>
             <div className="group relative aspect-[21/9] min-h-64 overflow-hidden rounded-[2.5rem] border border-white/10 bg-black shadow-[0_24px_80px_rgba(0,0,0,0.4)]">

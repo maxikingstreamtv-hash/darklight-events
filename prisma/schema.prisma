@@ -10,7 +10,26 @@ enum UserRole {
   SUPER_ADMIN
   ADMIN
   EVENT_MANAGER
+  JUDGE
   USER
+}
+
+enum EventResultMethod {
+  NONE
+  TIME_ONLY
+  POINTS_ONLY
+  TIME_AND_POINTS
+  PLACEMENT_ONLY
+  TIME_TO_POINTS
+  JUDGE_POINTS
+  JUDGE_AND_PUBLIC_VOTE
+  PUBLIC_VOTE_ONLY
+  BRACKET
+}
+
+enum JudgeScoreStatus {
+  DRAFT
+  SUBMITTED
 }
 
 enum ProfileStatus {
@@ -225,25 +244,31 @@ model User {
   updatedAt     DateTime      @updatedAt
   lastLoginAt   DateTime?
 
-  badges            UserBadge[]
-  permissions       UserPermission[]
-  events            Event[]             @relation("CreatedEvents")
-  bookings          Booking[]
-  results           Result[]            @relation("ResultCreatedBy")
-  auditLogs         AuditLog[]          @relation("AuditActor")
-  vehicles          Vehicle[]           @relation("VehicleOwner")
-  createdVehicles   Vehicle[]           @relation("VehicleCreatedBy")
-  inspections       VehicleInspection[] @relation("VehicleInspectionInspector")
-  registrations     EventRegistration[]
-  assignedTasks     EventTask[]         @relation("EventTaskAssignee")
-  createdTasks      EventTask[]         @relation("EventTaskCreator")
-  announcements     EventAnnouncement[] @relation("EventAnnouncementAuthor")
-  hallOfFameEntries HallOfFame[]        @relation("HallOfFameUser")
-  prizeAwards       EventPrizeWinner[]  @relation("EventPrizeWinnerUser")
-  galleryUploads    GalleryImage[]       @relation("GalleryUploadedBy")
-  galleryAlbums     GalleryAlbum[]       @relation("GalleryAlbumCreatedBy")
-  timingSessions    TimingSession[]      @relation("TimingSessionCreatedBy")
-  timingStops       TimingEntry[]        @relation("TimingEntryStoppedBy")
+  badges                UserBadge[]
+  permissions           UserPermission[]
+  events                Event[]             @relation("CreatedEvents")
+  bookings              Booking[]
+  results               Result[]            @relation("ResultCreatedBy")
+  auditLogs             AuditLog[]          @relation("AuditActor")
+  vehicles              Vehicle[]           @relation("VehicleOwner")
+  createdVehicles       Vehicle[]           @relation("VehicleCreatedBy")
+  inspections           VehicleInspection[] @relation("VehicleInspectionInspector")
+  registrations         EventRegistration[]
+  assignedTasks         EventTask[]         @relation("EventTaskAssignee")
+  createdTasks          EventTask[]         @relation("EventTaskCreator")
+  announcements         EventAnnouncement[] @relation("EventAnnouncementAuthor")
+  hallOfFameEntries     HallOfFame[]        @relation("HallOfFameUser")
+  prizeAwards           EventPrizeWinner[]  @relation("EventPrizeWinnerUser")
+  galleryUploads        GalleryImage[]      @relation("GalleryUploadedBy")
+  galleryAlbums         GalleryAlbum[]      @relation("GalleryAlbumCreatedBy")
+  timingSessions        TimingSession[]     @relation("TimingSessionCreatedBy")
+  timingStops           TimingEntry[]       @relation("TimingEntryStoppedBy")
+  judgeAssignments      EventJudge[]        @relation("EventJudgeUser")
+  assignedJudges        EventJudge[]        @relation("EventJudgeAssignedBy")
+  judgeScores           JudgeScore[]        @relation("JudgeScoreJudge")
+  publicVotes           PublicVote[]
+  voteCandidates        VoteCandidate[]     @relation("VoteCandidateOwner")
+  createdVoteCandidates VoteCandidate[]     @relation("VoteCandidateCreatedBy")
 }
 
 model Badge {
@@ -294,72 +319,85 @@ model UserPermission {
 }
 
 model Event {
-  id                  String      @id @default(cuid())
-  title               String
-  slug                String      @unique
-  description         String
-  bannerUrl           String?
-  imageAlt            String?
-  thumbnailUrl        String?
-  imageFocusX         Int         @default(50)
-  imageFocusY         Int         @default(50)
-  location            String?
-  startsAt            DateTime
-  endsAt              DateTime?
-  registrationOpenAt  DateTime?
-  registrationCloseAt DateTime?
-  maxParticipants     Int?
-  usesParticipantRegistration Boolean @default(true)
-  usesVehicles        Boolean     @default(true)
-  requiresVehicleApproval Boolean @default(true)
-  usesHeats           Boolean     @default(true)
-  usesBracket         Boolean     @default(true)
-  usesResults         Boolean     @default(true)
-  usesPrizes          Boolean     @default(true)
-  status              EventStatus @default(DRAFT)
-  sortOrder           Int         @default(0)
-  active              Boolean     @default(true)
-  public              Boolean     @default(true)
-  createdById         String
-  disciplineId        String?
-  createdAt           DateTime    @default(now())
-  updatedAt           DateTime    @updatedAt
+  id                          String            @id @default(cuid())
+  title                       String
+  slug                        String            @unique
+  description                 String
+  bannerUrl                   String?
+  imageAlt                    String?
+  thumbnailUrl                String?
+  imageFocusX                 Int               @default(50)
+  imageFocusY                 Int               @default(50)
+  location                    String?
+  startsAt                    DateTime
+  endsAt                      DateTime?
+  registrationOpenAt          DateTime?
+  registrationCloseAt         DateTime?
+  maxParticipants             Int?
+  usesParticipantRegistration Boolean           @default(true)
+  usesVehicles                Boolean           @default(true)
+  requiresVehicleApproval     Boolean           @default(true)
+  usesHeats                   Boolean           @default(true)
+  usesBracket                 Boolean           @default(true)
+  usesResults                 Boolean           @default(true)
+  usesPrizes                  Boolean           @default(true)
+  resultMethod                EventResultMethod @default(TIME_AND_POINTS)
+  judgePointsMin              Int               @default(0)
+  judgePointsMax              Int               @default(10)
+  votingOpenAt                DateTime?
+  votingCloseAt               DateTime?
+  allowVoteChange             Boolean           @default(true)
+  judgingLockedAt             DateTime?
+  resultsPublishedAt          DateTime?
+  status                      EventStatus       @default(DRAFT)
+  sortOrder                   Int               @default(0)
+  active                      Boolean           @default(true)
+  public                      Boolean           @default(true)
+  createdById                 String
+  disciplineId                String?
+  createdAt                   DateTime          @default(now())
+  updatedAt                   DateTime          @updatedAt
 
-  createdBy     User                @relation("CreatedEvents", fields: [createdById], references: [id])
-  discipline    Discipline?         @relation(fields: [disciplineId], references: [id], onDelete: SetNull)
-  bookings      Booking[]
-  registrations EventRegistration[]
-  competitions  Competition[]
-  gallery       GalleryImage[]
-  galleryAlbums GalleryAlbum[]
-  hallOfFame    HallOfFame[]
-  tasks         EventTask[]
-  announcements EventAnnouncement[]
-  prizes        EventPrize[]
+  createdBy      User                @relation("CreatedEvents", fields: [createdById], references: [id])
+  discipline     Discipline?         @relation(fields: [disciplineId], references: [id], onDelete: SetNull)
+  bookings       Booking[]
+  registrations  EventRegistration[]
+  competitions   Competition[]
+  gallery        GalleryImage[]
+  galleryAlbums  GalleryAlbum[]
+  hallOfFame     HallOfFame[]
+  tasks          EventTask[]
+  announcements  EventAnnouncement[]
+  prizes         EventPrize[]
   timingSessions TimingSession[]
+  judges         EventJudge[]
+  judgeScores    JudgeScore[]
+  publicVotes    PublicVote[]
+  voteCandidates VoteCandidate[]
 
   @@index([disciplineId])
 }
 
 model Discipline {
-  id                              String   @id @default(cuid())
-  name                            String
-  slug                            String   @unique
-  description                     String
-  abbreviation                    String
-  category                        String?
-  active                          Boolean  @default(true)
-  sortOrder                       Int      @default(0)
-  usesParticipantRegistration     Boolean  @default(true)
-  usesVehicles                    Boolean  @default(false)
-  requiresVehicleApproval         Boolean  @default(false)
-  usesHeats                       Boolean  @default(false)
-  usesBracket                     Boolean  @default(false)
-  usesResults                     Boolean  @default(true)
-  usesPrizes                      Boolean  @default(true)
-  createdAt                       DateTime @default(now())
-  updatedAt                       DateTime @updatedAt
-  events                          Event[]
+  id                          String            @id @default(cuid())
+  name                        String
+  slug                        String            @unique
+  description                 String
+  abbreviation                String
+  category                    String?
+  active                      Boolean           @default(true)
+  sortOrder                   Int               @default(0)
+  usesParticipantRegistration Boolean           @default(true)
+  usesVehicles                Boolean           @default(false)
+  requiresVehicleApproval     Boolean           @default(false)
+  usesHeats                   Boolean           @default(false)
+  usesBracket                 Boolean           @default(false)
+  usesResults                 Boolean           @default(true)
+  usesPrizes                  Boolean           @default(true)
+  resultMethod                EventResultMethod @default(TIME_AND_POINTS)
+  createdAt                   DateTime          @default(now())
+  updatedAt                   DateTime          @updatedAt
+  events                      Event[]
 
   @@index([active, sortOrder])
 }
@@ -387,12 +425,14 @@ model Competition {
   description String?
   createdAt   DateTime        @default(now())
 
-  event        Event         @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  participants Participant[]
-  results      Result[]
-  heats        Heat[]
-  brackets     Bracket[]
+  event          Event           @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  participants   Participant[]
+  results        Result[]
+  heats          Heat[]
+  brackets       Bracket[]
   timingSessions TimingSession[]
+  judgeScores    JudgeScore[]
+  publicVotes    PublicVote[]
 }
 
 model EventRegistration {
@@ -440,6 +480,9 @@ model Participant {
   winnerMatches    BracketMatch[]     @relation("BracketMatchWinner")
   prizeAwards      EventPrizeWinner[]
   timingEntries    TimingEntry[]
+  judgeScores      JudgeScore[]
+  publicVotes      PublicVote[]
+  voteCandidates   VoteCandidate[]
 
   @@unique([competitionId, userId])
   @@index([competitionId, seed])
@@ -466,6 +509,98 @@ model Result {
   @@unique([competitionId, participantId])
 }
 
+model EventJudge {
+  id           String   @id @default(cuid())
+  eventId      String
+  userId       String
+  active       Boolean  @default(true)
+  assignedById String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  event      Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user       User  @relation("EventJudgeUser", fields: [userId], references: [id], onDelete: Cascade)
+  assignedBy User  @relation("EventJudgeAssignedBy", fields: [assignedById], references: [id])
+
+  @@unique([eventId, userId])
+  @@index([userId, active])
+}
+
+model JudgeScore {
+  id            String           @id @default(cuid())
+  eventId       String
+  competitionId String?
+  participantId String
+  judgeId       String
+  points        Int
+  note          String?
+  status        JudgeScoreStatus @default(DRAFT)
+  submittedAt   DateTime?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  event       Event        @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  competition Competition? @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  participant Participant  @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  judge       User         @relation("JudgeScoreJudge", fields: [judgeId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, participantId, judgeId])
+  @@index([eventId, status])
+}
+
+model PublicVote {
+  id            String   @id @default(cuid())
+  eventId       String
+  competitionId String?
+  participantId String?
+  candidateId   String?
+  userId        String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  event       Event          @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  competition Competition?   @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  participant Participant?   @relation(fields: [participantId], references: [id], onDelete: SetNull)
+  candidate   VoteCandidate? @relation(fields: [candidateId], references: [id], onDelete: SetNull)
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+  @@index([eventId, participantId])
+  @@index([candidateId])
+}
+
+model VoteCandidate {
+  id            String   @id @default(cuid())
+  eventId       String
+  participantId String?
+  vehicleId     String?
+  ownerUserId   String?
+  ownerName     String
+  vehicleName   String
+  vehicleModel  String?
+  imageUrl      String
+  description   String?
+  startNumber   String?
+  active        Boolean  @default(true)
+  public        Boolean  @default(true)
+  sortOrder     Int      @default(0)
+  createdById   String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  event       Event        @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  participant Participant? @relation(fields: [participantId], references: [id], onDelete: SetNull)
+  vehicle     Vehicle?     @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
+  owner       User?        @relation("VoteCandidateOwner", fields: [ownerUserId], references: [id], onDelete: SetNull)
+  createdBy   User         @relation("VoteCandidateCreatedBy", fields: [createdById], references: [id])
+  votes       PublicVote[]
+
+  @@index([eventId, active, public, sortOrder])
+  @@index([participantId])
+  @@index([vehicleId])
+  @@index([ownerUserId])
+}
+
 model TimingSession {
   id                   String              @id @default(cuid())
   eventId              String
@@ -490,18 +625,18 @@ model TimingSession {
 }
 
 model TimingEntry {
-  id              String            @id @default(cuid())
-  timingSessionId String
-  participantId   String
-  startedAt       DateTime?
-  stoppedAt       DateTime?
-  elapsedMs       Int?
-  status          TimingEntryStatus @default(READY)
-  stoppedById     String?
-  note            String?
-  manuallyAdjusted Boolean          @default(false)
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
+  id               String            @id @default(cuid())
+  timingSessionId  String
+  participantId    String
+  startedAt        DateTime?
+  stoppedAt        DateTime?
+  elapsedMs        Int?
+  status           TimingEntryStatus @default(READY)
+  stoppedById      String?
+  note             String?
+  manuallyAdjusted Boolean           @default(false)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
 
   timingSession TimingSession @relation(fields: [timingSessionId], references: [id], onDelete: Cascade)
   participant   Participant   @relation(fields: [participantId], references: [id], onDelete: Cascade)
@@ -698,9 +833,9 @@ model GalleryImage {
   updatedAt    DateTime         @updatedAt
   uploadKey    String?          @unique
 
-  event      Event? @relation(fields: [eventId], references: [id], onDelete: SetNull)
+  event        Event?        @relation(fields: [eventId], references: [id], onDelete: SetNull)
   galleryAlbum GalleryAlbum? @relation(fields: [albumId], references: [id], onDelete: SetNull)
-  uploadedBy User?  @relation("GalleryUploadedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  uploadedBy   User?         @relation("GalleryUploadedBy", fields: [createdById], references: [id], onDelete: SetNull)
 
   @@index([active, public, sortOrder])
   @@index([eventId])
@@ -907,6 +1042,7 @@ model Vehicle {
   createdBy          User                @relation("VehicleCreatedBy", fields: [createdById], references: [id])
   inspections        VehicleInspection[]
   eventRegistrations EventRegistration[]
+  voteCandidates     VoteCandidate[]
 }
 
 model VehicleInspection {

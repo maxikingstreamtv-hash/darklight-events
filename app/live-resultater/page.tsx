@@ -6,6 +6,7 @@ export const dynamic = "force-dynamic";
 
 async function getPayload() {
   const competitions = await prisma.competition.findMany({
+    where: { OR: [{ event: { resultMethod: { notIn: ["JUDGE_POINTS", "JUDGE_AND_PUBLIC_VOTE", "PUBLIC_VOTE_ONLY"] } } }, { event: { resultsPublishedAt: { not: null } } }] },
     include: {
       event: { select: { id: true, title: true, startsAt: true, status: true } },
       results: {
