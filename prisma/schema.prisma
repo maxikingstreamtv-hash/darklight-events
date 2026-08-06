@@ -241,6 +241,7 @@ model User {
   hallOfFameEntries HallOfFame[]        @relation("HallOfFameUser")
   prizeAwards       EventPrizeWinner[]  @relation("EventPrizeWinnerUser")
   galleryUploads    GalleryImage[]       @relation("GalleryUploadedBy")
+  galleryAlbums     GalleryAlbum[]       @relation("GalleryAlbumCreatedBy")
   timingSessions    TimingSession[]      @relation("TimingSessionCreatedBy")
   timingStops       TimingEntry[]        @relation("TimingEntryStoppedBy")
 }
@@ -330,6 +331,7 @@ model Event {
   registrations EventRegistration[]
   competitions  Competition[]
   gallery       GalleryImage[]
+  galleryAlbums GalleryAlbum[]
   hallOfFame    HallOfFame[]
   tasks         EventTask[]
   announcements EventAnnouncement[]
@@ -655,8 +657,30 @@ model HallOfFame {
   @@index([active, category, year])
 }
 
+model GalleryAlbum {
+  id            String   @id @default(cuid())
+  title         String
+  description   String?
+  eventId       String?
+  coverImageUrl String?
+  active        Boolean  @default(true)
+  public        Boolean  @default(true)
+  sortOrder     Int      @default(0)
+  createdById   String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  event     Event?         @relation(fields: [eventId], references: [id], onDelete: SetNull)
+  createdBy User           @relation("GalleryAlbumCreatedBy", fields: [createdById], references: [id])
+  items     GalleryImage[]
+
+  @@index([active, public, sortOrder])
+  @@index([eventId])
+}
+
 model GalleryImage {
   id           String           @id @default(cuid())
+  albumId      String?
   eventId      String?
   title        String
   imageUrl     String?
@@ -672,12 +696,15 @@ model GalleryImage {
   createdById  String?
   createdAt    DateTime         @default(now())
   updatedAt    DateTime         @updatedAt
+  uploadKey    String?          @unique
 
   event      Event? @relation(fields: [eventId], references: [id], onDelete: SetNull)
+  galleryAlbum GalleryAlbum? @relation(fields: [albumId], references: [id], onDelete: SetNull)
   uploadedBy User?  @relation("GalleryUploadedBy", fields: [createdById], references: [id], onDelete: SetNull)
 
   @@index([active, public, sortOrder])
   @@index([eventId])
+  @@index([albumId, active, public, sortOrder])
 }
 
 model TeamMember {
