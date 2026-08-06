@@ -7,6 +7,7 @@ import { requireCurrentUser } from "@/lib/auth/session";
 import { writeAuditLog } from "@/lib/admin/audit";
 import { canManageVoteCandidates, ownedCandidateBlobUrls, readVoteCandidate } from "@/lib/events/vote-candidates";
 import { deleteNewBlobAfterFailedSave } from "@/lib/images/blob-cleanup";
+import { ensureVoteCandidateParticipant } from "@/lib/events/candidate-participants";
 
 function feedback(eventId:string,type:"ok"|"error",message:string):never{redirect(`/competition/events/${eventId}?tab=results&candidate${type==="ok"?"Saved":"Error"}=${encodeURIComponent(message)}#afstemningskandidater`)}
 async function actorFor(eventId:string){const actor=await requireCurrentUser();if(!canManageVoteCandidates(actor.role))feedback(eventId,"error","Du har ikke adgang til at administrere afstemningskandidater.");if(!await prisma.event.findUnique({where:{id:eventId},select:{id:true}}))feedback(eventId,"error","Eventet findes ikke længere.");return actor;}
@@ -20,9 +21,13 @@ export async function saveVoteCandidateAction(eventId:string,candidateId:string,
     if(values.participantId&&!await prisma.participant.findFirst({where:{id:values.participantId,competition:{eventId}},select:{id:true}}))throw new Error("Den valgte deltager hører ikke til eventet.");
     if(previous&&previous.eventId!==eventId)throw new Error("Kandidaten hører ikke til eventet.");
     const visibility={active:formData.get("active")==="on",public:formData.get("public")==="on"};
-    const candidate=previous
-      ? await prisma.voteCandidate.update({where:{id:candidateId},data:{...values,...visibility}})
-      : await prisma.voteCandidate.create({data:{id:candidateId,eventId,createdById:actor.id,...values,...visibility}});
+    const candidate=await prisma.$transaction(async transaction=>{
+      const saved=previous
+        ? await transaction.voteCandidate.update({where:{id:candidateId},data:{...values,...visibility}})
+        : await transaction.voteCandidate.create({data:{id:candidateId,eventId,createdById:actor.id,...values,...visibility}});
+      if(!saved.participantId)await ensureVoteCandidateParticipant(transaction,eventId,saved.id);
+      return transaction.voteCandidate.findUniqueOrThrow({where:{id:saved.id}});
+    });
     await writeAuditLog({actorId:actor.id,action:previous?"VOTE_CANDIDATE_UPDATED":"VOTE_CANDIDATE_CREATED",target:`VoteCandidate:${candidate.id}`,details:{eventId,participantId:candidate.participantId}});
     refresh(eventId);
     const obsolete=ownedCandidateBlobUrls([previous?.imageUrl&&previous.imageUrl!==candidate.imageUrl?previous.imageUrl:null]);

@@ -71,6 +71,7 @@ export default function EventFeatureFields({ initial, disciplines = [], selected
           <Toggle name="usesPrizes" label="Præmier" checked={features.usesPrizes} onChange={(checked) => setFeature("usesPrizes", checked)} />
         </div>
         {!features.usesVehicles ? <p className="mt-3 text-xs text-zinc-500">Eksisterende køretøjsdata bevares, men bruges ikke af eventets workflow eller validering.</p> : null}
+        {!features.usesParticipantRegistration ? <p className="mt-3 text-xs text-zinc-500">Dette event bruger ikke offentlig tilmelding. Kandidater eller deltagere tilføjes manuelt i Event Command Center.</p> : null}
       </fieldset>
     </div>
   );

@@ -15,6 +15,9 @@ import { resultHistoryChanged, resultHistorySnapshot } from "@/lib/events/result
 import { assertPrizePartLimit, canDeletePrize, prizeIdentity } from "@/lib/events/prize-rules";
 import { normalizePrizeCurrencyForType } from "@/lib/events/prize-currency";
 import { isResultEligibleStatus, syncApprovedParticipantsToCompetition } from "@/lib/events/result-sync";
+import { ensureAllVoteCandidateParticipants, usesVoteCandidatesAsResultSource } from "@/lib/events/candidate-participants";
+import { Prisma } from "@prisma/client";
+import { canManageManualParticipants, hasParticipantHistory, participantHistorySelection } from "@/lib/events/manual-participants";
 
 type StaffRole = "SUPER_ADMIN" | "ADMIN" | "EVENT_MANAGER";
 
@@ -299,6 +302,8 @@ export async function cancelEventRegistrationAction(eventId: string) {
   });
 
   await syncApprovedParticipantsToCompetition(eventId);
+  const resultSource=await prisma.event.findUnique({where:{id:eventId},select:{resultMethod:true}});
+  if(resultSource&&usesVoteCandidatesAsResultSource(resultSource.resultMethod))await prisma.$transaction(transaction=>ensureAllVoteCandidateParticipants(transaction,eventId));
   revalidateEventOS();
 }
 
@@ -587,6 +592,73 @@ export async function addManualParticipantAction(competitionId: string, formData
   revalidateEventOS();
 }
 
+async function requireManualParticipantEventAccess(actor:{id:string;role:StaffRole},eventId:string){
+  const event=await prisma.event.findUnique({where:{id:eventId},select:{id:true,createdById:true}});
+  if(!event)throw new Error("Eventet findes ikke.");
+  if(!canManageManualParticipants(actor,event))throw new Error("Du har ikke adgang til at administrere manuelle deltagere på dette event.");
+  return event;
+}
+
+export async function addExistingUserParticipantAction(eventId:string,formData:FormData){
+  const actor=await requireCurrentUser();
+  assertStaff(actor.role);
+  await requireManualParticipantEventAccess({id:actor.id,role:actor.role as StaffRole},eventId);
+  const userId=String(formData.get("userId")??"").trim();
+  const competitionId=String(formData.get("competitionId")??"").trim();
+  const candidateId=String(formData.get("candidateId")??"").trim();
+  const number=String(formData.get("number")??"").trim();
+  const vehicle=String(formData.get("vehicle")??"").trim();
+  const status=formData.get("status")==="CHECKED_IN"?"CHECKED_IN" as const:"APPROVED" as const;
+  if(!userId||!competitionId)throw new Error("Vælg bruger og konkurrence.");
+  const selectedUser=await prisma.user.findFirst({where:{id:userId,active:true,profileStatus:"ACTIVE",deletedAt:null},select:{id:true,displayName:true}});
+  if(!selectedUser)throw new Error("Brugeren findes ikke eller er inaktiv.");
+  try{
+    const participant=await prisma.$transaction(async transaction=>{
+      const competition=await transaction.competition.findFirst({where:{id:competitionId,eventId},select:{id:true}});
+      if(!competition)throw new Error("Konkurrencen hører ikke til eventet.");
+      const candidate=candidateId?await transaction.voteCandidate.findFirst({where:{id:candidateId,eventId},select:{id:true,participantId:true}}):null;
+      if(candidateId&&!candidate)throw new Error("Afstemningsbilledet hører ikke til eventet.");
+      const existing=await transaction.participant.findUnique({where:{competitionId_userId:{competitionId,userId}},select:{id:true}});
+      if(candidate?.participantId){
+        const current=await transaction.participant.findUniqueOrThrow({where:{id:candidate.participantId},select:{id:true,competitionId:true,userId:true,_count:{select:participantHistorySelection}}});
+        if(current.competitionId!==competitionId)throw new Error("Afstemningsbilledets deltager ligger i en anden konkurrence. Flytningen kræver særskilt administrativ behandling.");
+        if(existing&&existing.id!==current.id){
+          if(hasParticipantHistory(current._count))throw new Error("Afstemningsbilledets nuværende deltager har historik og kan ikke flettes automatisk med brugerens eksisterende deltager.");
+          await transaction.voteCandidate.update({where:{id:candidate.id},data:{participantId:existing.id,ownerUserId:userId}});
+          await transaction.participant.delete({where:{id:current.id}});
+          return transaction.participant.update({where:{id:existing.id},data:{name:selectedUser.displayName,number:number||undefined,vehicle:vehicle||undefined,status,checkedInAt:status==="CHECKED_IN"?new Date():null}});
+        }
+        if(current.userId&&current.userId!==userId&&current._count.results>0&&!(actor.role==="SUPER_ADMIN"&&formData.get("confirmHistorical")==="on"))throw new Error("Kandidaten har allerede publicerede eller gemte resultater. Kun Super Admin kan ændre brugeren med eksplicit bekræftelse.");
+        const updated=await transaction.participant.update({where:{id:current.id},data:{userId,name:selectedUser.displayName,number:number||null,vehicle:vehicle||null,status,checkedInAt:status==="CHECKED_IN"?new Date():null}});
+        await transaction.voteCandidate.update({where:{id:candidate.id},data:{participantId:updated.id,ownerUserId:userId}});
+        return updated;
+      }
+      if(existing)throw new Error("Brugeren er allerede tilføjet til denne konkurrence.");
+      const created=await transaction.participant.create({data:{competitionId,userId,name:selectedUser.displayName,number:number||null,vehicle:vehicle||null,status,checkedInAt:status==="CHECKED_IN"?new Date():null}});
+      if(candidate)await transaction.voteCandidate.update({where:{id:candidate.id},data:{participantId:created.id,ownerUserId:userId}});
+      return created;
+    });
+    await writeAuditLog({actorId:actor.id,action:"MANUAL_EVENT_USER_ADDED",target:`Participant:${participant.id}`,details:{eventId,userId,competitionId,candidateId:candidateId||null,registrationCreated:false}});
+    revalidateEventOS(eventId);revalidatePath(`/competition/events/${eventId}`);revalidatePath(`/profile`);revalidatePath("/rangliste");revalidatePath("/hall-of-fame");
+  }catch(error){
+    if(error instanceof Prisma.PrismaClientKnownRequestError&&error.code==="P2002")throw new Error("Brugeren er allerede tilføjet til denne konkurrence.");
+    throw error;
+  }
+}
+
+export async function updateManualUserParticipantAction(participantId:string,formData:FormData){
+  const actor=await requireCurrentUser();assertStaff(actor.role);
+  const participant=await prisma.participant.findUnique({where:{id:participantId},select:{id:true,registrationId:true,competitionId:true,competition:{select:{eventId:true,event:{select:{createdById:true}}}},_count:{select:participantHistorySelection}}});
+  if(!participant||participant.registrationId)throw new Error("Den manuelle deltager findes ikke.");
+  if(!canManageManualParticipants(actor,participant.competition.event))throw new Error("Du har ikke adgang til eventet.");
+  const nextCompetitionId=String(formData.get("competitionId")??participant.competitionId);
+  if(nextCompetitionId!==participant.competitionId&&hasParticipantHistory(participant._count))throw new Error("Deltageren har historik og kan ikke flyttes til en anden konkurrence.");
+  const target=await prisma.competition.findFirst({where:{id:nextCompetitionId,eventId:participant.competition.eventId},select:{id:true}});if(!target)throw new Error("Konkurrencen er ugyldig.");
+  const status=formData.get("status")==="CHECKED_IN"?"CHECKED_IN" as const:"APPROVED" as const;
+  await prisma.participant.update({where:{id:participant.id},data:{competitionId:nextCompetitionId,status,number:String(formData.get("number")??"").trim()||null,vehicle:String(formData.get("vehicle")??"").trim()||null,checkedInAt:status==="CHECKED_IN"?new Date():null}});
+  await writeAuditLog({actorId:actor.id,action:"MANUAL_EVENT_USER_UPDATED",target:`Participant:${participant.id}`,details:{eventId:participant.competition.eventId,competitionId:nextCompetitionId,status}});revalidateEventOS(participant.competition.eventId);
+}
+
 export async function removeParticipantAction(id: string) {
   const user = await requireCurrentUser();
   assertStaff(user.role);
@@ -594,8 +666,8 @@ export async function removeParticipantAction(id: string) {
   const participant = await prisma.participant.findUnique({
     where: { id },
     include: {
-      results: { select: { id: true } },
-      competition: { include: { event: { select: { id: true, title: true } } } },
+      competition: { include: { event: { select: { id: true, title: true, createdById:true } } } },
+      _count:{select:participantHistorySelection},
     },
   });
 
@@ -603,9 +675,9 @@ export async function removeParticipantAction(id: string) {
     throw new Error("Deltageren findes ikke.");
   }
 
-  if (participant.results.length > 0) {
-    throw new Error("Deltageren har resultater og kan ikke fjernes. Arkivér/ret resultatet først.");
-  }
+  if(!canManageManualParticipants(user,participant.competition.event))throw new Error("Du har ikke adgang til eventet.");
+  if(participant.registrationId)throw new Error("Offentligt tilmeldte deltagere skal håndteres gennem tilmeldingen.");
+  if (hasParticipantHistory(participant._count)) throw new Error("Deltageren har resultater, dommerpoint, stemmer, tidtagning, heats, bracket eller præmier og kan ikke slettes. Frakobl eller ret relationen administrativt.");
 
   await prisma.participant.delete({ where: { id } });
   await writeAuditLog({
@@ -1375,10 +1447,11 @@ export async function completeEventAction(eventId: string, formData: FormData) {
   const event = await prisma.event.findUnique({
     where: { id: eventId },
     include: {
+      voteCandidates:{where:{active:true,public:true},select:{participantId:true}},
       competitions: {
         include: {
           participants: { select: { id: true } },
-          results: { select: { id: true } },
+          results: { select: { id: true, participantId: true } },
         },
       },
     },
@@ -1392,8 +1465,13 @@ export async function completeEventAction(eventId: string, formData: FormData) {
     throw new Error("Eventet har ingen konkurrencer og kan ikke afsluttes endnu.");
   }
 
+  const candidateParticipantIds=new Set(event.voteCandidates.flatMap(candidate=>candidate.participantId?[candidate.participantId]:[]));
   const missingResults = event.usesResults ? event.competitions.filter(
-    (competition) => competition.participants.length > 0 && competition.results.length !== competition.participants.length,
+    (competition) => {
+      const expected=usesVoteCandidatesAsResultSource(event.resultMethod)?competition.participants.filter(participant=>candidateParticipantIds.has(participant.id)).length:competition.participants.length;
+      const completed=usesVoteCandidatesAsResultSource(event.resultMethod)?competition.results.filter(result=>candidateParticipantIds.has(result.participantId)).length:competition.results.length;
+      return expected>0&&completed!==expected;
+    },
   ) : [];
   if (missingResults.length > 0) {
     throw new Error("Der mangler resultater på en eller flere konkurrencer.");
@@ -1409,7 +1487,7 @@ export async function completeEventAction(eventId: string, formData: FormData) {
       where: { id: eventId },
       data: {
         status: "COMPLETED",
-        registrationCloseAt: event.registrationCloseAt ?? new Date(),
+        registrationCloseAt: event.usesParticipantRegistration ? event.registrationCloseAt ?? new Date() : event.registrationCloseAt,
       },
     });
   });

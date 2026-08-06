@@ -1,4 +1,5 @@
 export type EventFeatures = {
+  resultMethod?: string;
   usesParticipantRegistration: boolean;
   usesVehicles: boolean;
   requiresVehicleApproval: boolean;
