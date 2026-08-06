@@ -1,5 +1,6 @@
 ﻿import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
+import { normalizePostgresConnectionString } from "@/lib/db/connection-string";
 
 const connectionString = process.env.DATABASE_URL;
 
@@ -7,7 +8,7 @@ if (!connectionString) {
   throw new Error("DATABASE_URL mangler. Prisma kræver en PostgreSQL connection string.");
 }
 
-const adapter = new PrismaPg(connectionString);
+const adapter = new PrismaPg(normalizePostgresConnectionString(connectionString));
 
 const globalForPrisma = globalThis as unknown as {
   prisma?: PrismaClient;
