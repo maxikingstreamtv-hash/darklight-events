@@ -11,19 +11,23 @@ export function shouldCreateDefaultCompetition(usesResults: boolean, existingCom
 export function getResultProgress(competitions: Array<{
   participants: Array<{ id: string; status: string }>;
   results: Array<{ participantId: string }>;
-}>) {
+}>, options?: { resultMethod?: string; usesParticipantRegistration?: boolean; candidateCount?: number; candidateParticipantIds?: string[] }) {
+  const candidatesAreSource = ["PUBLIC_VOTE_ONLY", "JUDGE_AND_PUBLIC_VOTE", "JUDGE_POINTS"].includes(options?.resultMethod ?? "");
   const eligibleIds = new Set(competitions.flatMap((competition) =>
     competition.participants.filter((participant) => isResultEligibleStatus(participant.status)).map((participant) => participant.id),
   ));
+  const resultEligibleIds = candidatesAreSource ? new Set(options?.candidateParticipantIds ?? []) : eligibleIds;
   const completedIds = new Set(competitions.flatMap((competition) =>
-    competition.results.filter((result) => eligibleIds.has(result.participantId)).map((result) => result.participantId),
+    competition.results.filter((result) => resultEligibleIds.has(result.participantId)).map((result) => result.participantId),
   ));
+  const readyParticipants = candidatesAreSource ? options?.candidateCount ?? 0 : eligibleIds.size;
   return {
-    readyParticipants: eligibleIds.size,
+    readyParticipants,
     completedResults: completedIds.size,
-    missingResults: Math.max(eligibleIds.size - completedIds.size, 0),
-    hasParticipants: eligibleIds.size > 0,
-    complete: eligibleIds.size > 0 && completedIds.size === eligibleIds.size,
+    missingResults: Math.max(readyParticipants - completedIds.size, 0),
+    hasParticipants: readyParticipants > 0,
+    complete: readyParticipants > 0 && completedIds.size === readyParticipants,
+    source: candidatesAreSource ? "candidates" as const : "participants" as const,
   };
 }
 
@@ -58,9 +62,12 @@ export async function ensureDefaultCompetitionForEvent(eventId: string) {
 
 export async function syncApprovedParticipantsToCompetition(eventId: string) {
   const { prisma } = await import("@/lib/prisma");
+  const eventFeatures = await prisma.event.findUnique({ where: { id: eventId }, select: { usesParticipantRegistration: true } });
+  if (!eventFeatures) throw new Error("Eventet findes ikke.");
   const ensured = await ensureDefaultCompetitionForEvent(eventId);
   if (!ensured.competition) return { competitionId: null, createdCompetition: false, synced: 0, removed: 0, preservedWithResults: 0 };
   const competitionId = ensured.competition.id;
+  if (!eventFeatures.usesParticipantRegistration) return { competitionId, createdCompetition: ensured.created, synced: 0, removed: 0, preservedWithResults: 0 };
 
   const result = await prisma.$transaction(async (transaction) => {
     const registrations = await transaction.eventRegistration.findMany({

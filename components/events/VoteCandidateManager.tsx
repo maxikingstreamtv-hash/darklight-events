@@ -8,7 +8,7 @@ type Option={id:string;label:string};
 type Candidate={id:string;imageUrl:string;participantId:string|null;active:boolean;public:boolean;sortOrder:number};
 const field="w-full rounded-xl border border-white/10 bg-black px-4 py-3 text-white";
 
-export default function VoteCandidateManager({eventId,candidates,participants,feedback}:{eventId:string;candidates:Candidate[];participants:Option[];feedback?:{type:"ok"|"error";message:string}}){
+export default function VoteCandidateManager({eventId,candidates,participants=[],feedback}:{eventId:string;candidates:Candidate[];participants?:Option[];feedback?:{type:"ok"|"error";message:string}}){
   const [draftId]=useState(()=>crypto.randomUUID());
   return <section id="afstemningskandidater" className="mb-7 scroll-mt-8 rounded-[2rem] border border-white/10 bg-black p-6">
     <h3 className="text-2xl font-black">Stemmekandidater</h3><p className="mt-2 text-sm text-zinc-400">Tilføj de billeder, som brugerne kan stemme på.</p>
@@ -18,6 +18,6 @@ export default function VoteCandidateManager({eventId,candidates,participants,fe
   </section>;
 }
 
-function CandidateForm({eventId,candidateId,candidate,participants}:{eventId:string;candidateId:string;candidate?:Candidate;participants:Option[]}){
-  return <form action={saveVoteCandidateAction.bind(null,eventId,candidateId)} className="mt-5 grid gap-4"><ImageUploadField name="imageUrl" scope="vote" ownerId={`${eventId}-${candidateId}`} initialUrl={candidate?.imageUrl} label="Billede" chooseLabel="Tilføj billede" helpText="Billedet vises på den offentlige stemmeside." variant="cover"/><select name="participantId" defaultValue={candidate?.participantId??""} className={field}><option value="">Ingen resultatkobling</option>{participants.map(x=><option key={x.id} value={x.id}>{x.label}</option>)}</select><input name="sortOrder" type="number" defaultValue={candidate?.sortOrder??0} aria-label="Sortering" className={field}/><div className="flex flex-wrap gap-4"><label><input name="active" type="checkbox" defaultChecked={candidate?.active??true}/> Aktiv</label><label><input name="public" type="checkbox" defaultChecked={candidate?.public??true}/> Offentlig</label></div><button className="w-fit rounded-full bg-white px-5 py-3 font-black text-black">{candidate?"Gem ændringer":"Tilføj billede"}</button></form>;
+function CandidateForm({eventId,candidateId,candidate}:{eventId:string;candidateId:string;candidate?:Candidate;participants?:Option[]}){
+  return <form action={saveVoteCandidateAction.bind(null,eventId,candidateId)} className="mt-5 grid gap-4"><ImageUploadField name="imageUrl" scope="vote" ownerId={`${eventId}-${candidateId}`} initialUrl={candidate?.imageUrl} label="Billede" chooseLabel="Tilføj billede" helpText="Billedet vises på den offentlige stemmeside. Resultatgrundlaget oprettes automatisk." variant="cover"/><input type="hidden" name="participantId" value={candidate?.participantId??""}/><input name="sortOrder" type="number" defaultValue={candidate?.sortOrder??0} aria-label="Sortering" className={field}/><div className="flex flex-wrap gap-4"><label><input name="active" type="checkbox" defaultChecked={candidate?.active??true}/> Aktiv</label><label><input name="public" type="checkbox" defaultChecked={candidate?.public??true}/> Offentlig</label></div><button className="w-fit rounded-full bg-white px-5 py-3 font-black text-black">{candidate?"Gem ændringer":"Tilføj billede"}</button></form>;
 }

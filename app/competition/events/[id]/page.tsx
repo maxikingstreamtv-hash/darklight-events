@@ -28,6 +28,7 @@ import {
 } from "@/app/competition/events/actions";
 import {
   addManualParticipantAction,
+  addExistingUserParticipantAction,
   addHeatEntryAction,
   approveAllPendingRegistrationsAction,
   bulkUpdateEventVehiclesAction,
@@ -59,6 +60,7 @@ import {
   unlockCompetitionResultsAction,
   unlockHeatsAction,
   updateParticipantNoteAction,
+  updateManualUserParticipantAction,
   updateEventPrizeAction,
   updateEventVehicleNoteAction,
   updateEventVehicleStatusAction,
@@ -89,6 +91,7 @@ type EventDetailsSearchParams = {
   deleteError?: string | string[];
   candidateSaved?: string | string[];
   candidateError?: string | string[];
+  userQ?: string | string[];
 };
 
 function readParam(value?: string | string[]) {
@@ -124,6 +127,7 @@ export default async function EventDetailsPage({ params, searchParams }: { param
   const participantMissingVehicle = readParam(query.missingVehicle) === "1";
   const resultQuery = readParam(query.resultQ);
   const resultFilter = readParam(query.resultFilter) || "ALL";
+  const userQuery = readParam(query.userQ).trim();
   const requestedPrizePlacementValue = Number(readParam(query.prizePlacement));
   const requestedPrizePlacement = Number.isInteger(requestedPrizePlacementValue) && requestedPrizePlacementValue > 0 ? requestedPrizePlacementValue : null;
   const event = await prisma.event.findUnique({
@@ -200,6 +204,9 @@ export default async function EventDetailsPage({ params, searchParams }: { param
   }
   const disciplines = await prisma.discipline.findMany({ where: { active: true }, orderBy: [{ sortOrder: "asc" }, { name: "asc" }] });
   const availableJudges = await prisma.user.findMany({ where: { role: "JUDGE", active: true }, orderBy: { displayName: "asc" }, select: { id: true, displayName: true } });
+  const linkedParticipantUsers=await prisma.user.findMany({where:{id:{in:event.competitions.flatMap(competition=>competition.participants.flatMap(participant=>participant.userId?[participant.userId]:[]))}},select:{id:true,displayName:true,darklightId:true,avatar:true,role:true}});
+  const linkedParticipantUsersById=new Map(linkedParticipantUsers.map(profile=>[profile.id,profile]));
+  const matchingUsers=userQuery.length>=2?await prisma.user.findMany({where:{active:true,profileStatus:"ACTIVE",deletedAt:null,OR:[{displayName:{contains:userQuery,mode:"insensitive"}},{username:{contains:userQuery,mode:"insensitive"}},{darklightId:{contains:userQuery,mode:"insensitive"}}]},orderBy:{displayName:"asc"},take:20,select:{id:true,displayName:true,username:true,darklightId:true,avatar:true,role:true}}):[];
   const eventActivity = await prisma.auditLog.findMany({
     where: { target: { in: [
       `Event:${event.id}`,
@@ -215,6 +222,7 @@ export default async function EventDetailsPage({ params, searchParams }: { param
   });
 
   const eventFeatures = {
+    resultMethod: event.resultMethod,
     usesParticipantRegistration: event.usesParticipantRegistration,
     usesVehicles: event.usesVehicles,
     requiresVehicleApproval: event.requiresVehicleApproval,
@@ -254,8 +262,8 @@ export default async function EventDetailsPage({ params, searchParams }: { param
     missingVehicle: participantMissingVehicle,
   });
   const visibleManualParticipants = event.competitions
-    .flatMap((competition) => competition.participants.map((participant) => ({ ...participant, competitionTitle: competition.title })))
-    .filter((participant) => !participant.userId)
+    .flatMap((competition) => competition.participants.map((participant) => ({ ...participant, competitionTitle: competition.title,linkedUser:participant.userId?linkedParticipantUsersById.get(participant.userId)??null:null })))
+    .filter((participant) => !participant.registrationId)
     .filter(() => participantStatus === "ALL" || participantStatus === "MANUAL")
     .filter((participant) => !participantQuery || [participant.name, participant.number, participant.vehicle].filter(Boolean).some((value) => String(value).toLocaleLowerCase("da-DK").includes(participantQuery.toLocaleLowerCase("da-DK"))))
     .sort((a, b) => participantSort === "name" ? a.name.localeCompare(b.name, "da") : b.createdAt.getTime() - a.createdAt.getTime());
@@ -306,7 +314,9 @@ export default async function EventDetailsPage({ params, searchParams }: { param
   const requiresVehicles = event.usesVehicles;
   const requiresHeats = event.usesHeats;
   const requiresBracket = event.usesBracket;
-  const requiresJudging = competitionTypes.has("CAR_SHOW");
+  const requiresJudging = competitionTypes.has("CAR_SHOW") || ["JUDGE_POINTS","JUDGE_AND_PUBLIC_VOTE"].includes(event.resultMethod);
+  const usesPublicVoting = ["PUBLIC_VOTE_ONLY","JUDGE_AND_PUBLIC_VOTE"].includes(event.resultMethod);
+  const requiresResultPublication = ["PUBLIC_VOTE_ONLY","JUDGE_AND_PUBLIC_VOTE","JUDGE_POINTS"].includes(event.resultMethod);
   const heatCompetitions = event.competitions;
   const bracketCompetitions = event.competitions;
   const registrationPeriodState = getRegistrationPeriodState(event);
@@ -315,15 +325,16 @@ export default async function EventDetailsPage({ params, searchParams }: { param
     !event.description ? "beskrivelse" : null,
     !event.startsAt ? "dato" : null,
     !event.location ? "lokation" : null,
-    !event.maxParticipants ? "kapacitet" : null,
+    event.usesParticipantRegistration && !event.maxParticipants ? "kapacitet" : null,
     !isRegistrationPeriodConfigured(registrationPeriodState) ? "tilmeldingsperiode" : null,
   ].filter(Boolean);
   const heatsGenerated = !requiresHeats || (heatCompetitions.length > 0 && heatCompetitions.every((competition) => competition.heats.length > 0));
   const bracketsGenerated = !requiresBracket || (bracketCompetitions.length > 0 && bracketCompetitions.every((competition) => competition.brackets.length > 0));
-  const resultProgress = getResultProgress(event.competitions);
+  const activeCandidateCount = event.voteCandidates.filter(candidate=>candidate.active&&candidate.public).length;
+  const resultProgress = getResultProgress(event.competitions,{resultMethod:event.resultMethod,usesParticipantRegistration:event.usesParticipantRegistration,candidateCount:activeCandidateCount,candidateParticipantIds:event.voteCandidates.filter(candidate=>candidate.active&&candidate.public&&candidate.participantId).map(candidate=>candidate.participantId!)});
   const totalResultParticipants = resultProgress.readyParticipants;
   const totalResults = resultProgress.completedResults;
-  const resultsEntered = !event.usesResults || resultProgress.complete;
+  const resultsEntered = !event.usesResults || (requiresResultPublication ? Boolean(event.resultsPublishedAt) : resultProgress.complete);
   const missingResults = event.usesResults ? resultProgress.missingResults : 0;
   const allResultsLocked = totalResults > 0 && event.competitions.flatMap((competition) => competition.results).every((result) => result.locked);
   const assignedPrizeCount = event.prizes.filter((prize) => prize.active && prize.winners.length > 0).length;
@@ -331,19 +342,24 @@ export default async function EventDetailsPage({ params, searchParams }: { param
   const eventCompleted = event.status === "COMPLETED" || event.status === "ARCHIVED";
   const resultReady = resultProgress.hasParticipants;
   const prizeWinnerOptions = event.competitions.flatMap((competition) => competition.participants.filter((participant) => participant.status === "APPROVED" || participant.status === "CHECKED_IN").map((participant) => ({ ...participant, competitionTitle: competition.title })));
-  const resultSetupMessage = event.competitions.length === 0
+  const resultSetupMessage = resultProgress.source === "candidates"
+    ? activeCandidateCount === 0 ? "Der er endnu ingen afstemningsbilleder." : "Kandidater klar."
+    : event.competitions.length === 0
     ? "Resultatgrundlaget klargøres automatisk."
     : totalResultParticipants === 0
-      ? "Der er endnu ingen godkendte deltagere, som kan få registreret resultater."
-      : "Køreliste kan oprettes først, men du kan også gemme resultater direkte på godkendte deltagere.";
+      ? event.usesParticipantRegistration ? "Der er endnu ingen godkendte deltagere, som kan få registreret resultater." : "Der er endnu ingen manuelt tilføjede deltagere."
+      : "Køreliste kan oprettes først, men du kan også gemme resultater direkte på deltagere.";
   const workflowSteps = [
     { label: "Eventoplysninger", done: eventDetailMissing.length === 0, href: "details", detail: eventDetailMissing.length ? `Mangler: ${eventDetailMissing.join(", ")}` : "Basisdata er klar", action: "Udfyld eventoplysninger" },
     { label: "Præmier", done: activePrizes.length > 0, href: "prizes", detail: activePrizes.length ? `${activePrizes.length} aktive præmier` : "Præmier mangler", action: "Tilføj præmier", relevant: event.usesPrizes },
     { label: "Tilmeldinger", done: approvedRegistrations > 0 && pendingRegistrations === 0, href: "participants", detail: pendingRegistrations ? `${pendingRegistrations} afventer` : `${approvedRegistrations} godkendte`, action: pendingRegistrations ? "Gennemgå tilmeldinger" : "Åbn deltagere", relevant: event.usesParticipantRegistration },
+    { label: "Afstemningsbilleder", done: activeCandidateCount > 0, href: "results", detail: activeCandidateCount ? `${activeCandidateCount} kandidater klar` : "Der er endnu ingen afstemningsbilleder", action: "Tilføj afstemningsbilleder", relevant: ["PUBLIC_VOTE_ONLY","JUDGE_AND_PUBLIC_VOTE","JUDGE_POINTS"].includes(event.resultMethod) },
+    { label: "Dommere", done: event.judges.length > 0, href: "results", detail: event.judges.length ? `${event.judges.length} dommere tildelt` : "Dommere mangler", action: "Tilføj dommere", relevant: ["JUDGE_POINTS","JUDGE_AND_PUBLIC_VOTE"].includes(event.resultMethod) },
+    { label: "Åbn afstemning", done: Boolean(event.votingOpenAt), href: "results", detail: event.votingOpenAt ? "Afstemningen har været åbnet" : "Afstemningen er ikke åbnet", action: "Åbn afstemning", relevant: usesPublicVoting },
     { label: "Køretøjer", done: !event.requiresVehicleApproval || (missingVehicleAssignments === 0 && pendingVehicles === 0 && approvedVehicles > 0), href: "vehicles", detail: missingVehicleAssignments ? `${missingVehicleAssignments} mangler køretøj` : pendingVehicles ? `${pendingVehicles} kræver syn` : `${approvedVehicles} godkendte`, action: "Godkend køretøjer", relevant: event.usesVehicles && event.requiresVehicleApproval },
     { label: "Køreliste", done: heatsGenerated, href: "heats", detail: !requiresHeats ? "Ikke påkrævet" : heatsGenerated ? "Køreliste klar" : "Køreliste mangler", action: "Generér køreliste", relevant: requiresHeats },
     { label: "Bracket", done: bracketsGenerated, href: "bracket", detail: !requiresBracket ? "Ikke påkrævet" : bracketsGenerated ? "Bracket klar" : "Bracket mangler", action: "Generér bracket", relevant: requiresBracket },
-    { label: requiresJudging ? "Bedømmelse" : "Resultater", done: resultsEntered, href: "results", detail: resultsEntered ? "Resultater gemt" : resultSetupMessage, action: requiresJudging ? "Indtast bedømmelse" : "Indtast resultater", relevant: event.usesResults },
+    { label: requiresResultPublication ? "Offentliggør resultat" : requiresJudging ? "Bedømmelse" : "Resultater", done: resultsEntered, href: "results", detail: resultsEntered ? "Resultater gemt" : resultSetupMessage, action: requiresResultPublication ? "Offentliggør resultat" : requiresJudging ? "Indtast bedømmelse" : "Indtast resultater", relevant: event.usesResults },
     { label: "Afsluttet", done: eventCompleted, href: "settings", detail: eventCompleted ? event.status : "Afventer færdiggørelse", action: "Afslut event" },
   ].filter((step) => step.relevant !== false);
   const completionBlockers = workflowSteps.filter((step) => step.label !== "Afsluttet" && !step.done);
@@ -851,12 +867,19 @@ export default async function EventDetailsPage({ params, searchParams }: { param
                   </article>
                   );
                 })}
-                {visibleManualParticipants.map((participant) => <article key={participant.id} className="grid gap-4 rounded-2xl border border-white/10 bg-black p-5 lg:grid-cols-[1fr_auto] lg:items-center">
-                  <div><div className="flex flex-wrap gap-3"><h3 className="text-xl font-black">{participant.name}</h3><StatusBadge status="MANUAL" /></div><p className="mt-2 text-sm text-zinc-500">{participant.competitionTitle} · {participant.number ?? "Intet nummer"} · {participant.vehicle ?? "Intet køretøj"}</p></div>
-                  <form action={removeParticipantAction.bind(null, participant.id)}><SmallButton danger>Fjern manuel deltager</SmallButton></form>
+                {visibleManualParticipants.map((participant) => <article key={participant.id} className="grid gap-4 rounded-2xl border border-white/10 bg-black p-5 lg:grid-cols-[72px_1fr_2fr] lg:items-center">
+                  <div className="h-16 w-16 overflow-hidden rounded-full"><EventImage src={participant.linkedUser?.avatar??null} alt={participant.linkedUser?.displayName??participant.name} variant="card"/></div><div><div className="flex flex-wrap gap-3"><h3 className="text-xl font-black">{participant.linkedUser?.displayName??participant.name}</h3><StatusBadge status="MANUAL" /></div><p className="mt-2 text-sm text-zinc-500">{participant.linkedUser?.darklightId??"Ingen bruger tilknyttet"} · {participant.competitionTitle} · {participant.number ?? "Intet nummer"} · {participant.vehicle ?? "Intet køretøj"}</p><p className="mt-1 text-xs text-zinc-600">Manuelt tilføjet · ingen EventRegistration</p></div>
+                  <div className="grid gap-2"><form action={updateManualUserParticipantAction.bind(null,participant.id)} className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4"><select name="competitionId" defaultValue={participant.competitionId} className="rounded-xl border border-white/10 bg-black px-3 py-2 text-white">{event.competitions.map(competition=><option key={competition.id} value={competition.id}>{competition.title}</option>)}</select><select name="status" defaultValue={participant.status} className="rounded-xl border border-white/10 bg-black px-3 py-2 text-white"><option value="APPROVED">Godkendt</option><option value="CHECKED_IN">Tjekket ind</option></select><input name="number" defaultValue={participant.number??""} placeholder="Startnummer" className="rounded-xl border border-white/10 bg-black px-3 py-2 text-white"/><input name="vehicle" defaultValue={participant.vehicle??""} placeholder="Køretøj" className="rounded-xl border border-white/10 bg-black px-3 py-2 text-white"/><button className="rounded-full border border-white/15 px-4 py-2 font-bold">Gem</button></form><form action={removeParticipantAction.bind(null, participant.id)}><SmallButton danger>Fjern manuel deltager</SmallButton></form></div>
                 </article>)}
                 {visibleRegistrations.length === 0 && visibleManualParticipants.length === 0 ? <EmptyState text={event.registrations.length ? "Ingen deltagere matcher filtrene." : "Ingen tilmeldinger endnu. Del public eventlinket eller tilføj en deltager manuelt."} /> : null}
               </div>
+              {event.competitions.length > 0 ? <div className="mt-8 rounded-[2rem] border border-violet-300/20 bg-violet-300/[.04] p-6">
+                <h3 className="text-xl font-black">Tilføj bruger manuelt</h3>
+                <p className="mt-2 text-sm text-zinc-400">Søg blandt eksisterende profiler. Der oprettes en Participant uden offentlig EventRegistration.</p>
+                <form method="get" className="mt-4 flex flex-wrap gap-3"><input type="hidden" name="tab" value="participants"/><input name="userQ" defaultValue={userQuery} minLength={2} placeholder="Karakternavn, brugernavn eller DarkLight ID" className="min-w-64 flex-1 rounded-2xl border border-white/10 bg-black px-4 py-3 text-white"/><button className="rounded-full bg-white px-5 py-3 font-black text-black">Søg bruger</button></form>
+                {userQuery.length>0&&userQuery.length<2?<p className="mt-3 text-sm text-amber-200">Skriv mindst to tegn.</p>:null}
+                <div className="mt-4 grid gap-3">{matchingUsers.map(profile=><article key={profile.id} className="grid gap-4 rounded-2xl border border-white/10 bg-black p-4 lg:grid-cols-[64px_1fr_2fr] lg:items-center"><div className="h-16 w-16 overflow-hidden rounded-full"><EventImage src={profile.avatar} alt={profile.displayName} variant="card"/></div><div><p className="font-black">{profile.displayName}</p><p className="text-xs text-zinc-500">{profile.darklightId??"Intet DarkLight ID"} · {profile.role}</p></div><form action={addExistingUserParticipantAction.bind(null,event.id)} className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3"><input type="hidden" name="userId" value={profile.id}/><select name="competitionId" required className="rounded-xl border border-white/10 bg-black px-3 py-2 text-white">{event.competitions.map(competition=><option key={competition.id} value={competition.id}>{competition.title}</option>)}</select><select name="status" className="rounded-xl border border-white/10 bg-black px-3 py-2 text-white"><option value="APPROVED">Godkendt</option><option value="CHECKED_IN">Tjekket ind</option></select><input name="number" placeholder="Startnummer" className="rounded-xl border border-white/10 bg-black px-3 py-2 text-white"/><input name="vehicle" placeholder="Køretøj" className="rounded-xl border border-white/10 bg-black px-3 py-2 text-white"/><select name="candidateId" className="rounded-xl border border-white/10 bg-black px-3 py-2 text-white"><option value="">Ingen afstemningskobling</option>{event.voteCandidates.map((candidate,index)=><option key={candidate.id} value={candidate.id}>Afstemningsbillede {index+1}</option>)}</select><button className="rounded-full bg-violet-200 px-4 py-2 font-black text-black">Tilføj bruger manuelt</button></form></article>)}{userQuery.length>=2&&matchingUsers.length===0?<p className="text-sm text-zinc-500">Ingen aktive brugere matcher søgningen.</p>:null}</div>
+              </div>:null}
               {event.competitions.length > 0 ? <div className="mt-8 rounded-[2rem] border border-white/10 bg-black p-6">
                 <h3 className="text-xl font-black">Tilføj deltager manuelt</h3>
                 {event.competitions.map((competition) => <form key={competition.id} action={addManualParticipantAction.bind(null, competition.id)} className="mt-4 grid gap-3 md:grid-cols-5">
@@ -1120,7 +1143,8 @@ export default async function EventDetailsPage({ params, searchParams }: { param
                 </div>
               </div>
 
-              {["PUBLIC_VOTE_ONLY", "JUDGE_AND_PUBLIC_VOTE"].includes(event.resultMethod) ? <VoteCandidateManager eventId={event.id} candidates={event.voteCandidates} participants={event.competitions.flatMap(competition=>competition.participants.map(participant=>({id:participant.id,label:`${participant.name}${participant.number?` · ${participant.number}`:""}`})))} feedback={readParam(query.candidateError)?{type:"error",message:readParam(query.candidateError)}:readParam(query.candidateSaved)?{type:"ok",message:readParam(query.candidateSaved)}:undefined} /> : null}
+              {["PUBLIC_VOTE_ONLY", "JUDGE_AND_PUBLIC_VOTE", "JUDGE_POINTS"].includes(event.resultMethod) ? <VoteCandidateManager eventId={event.id} candidates={event.voteCandidates} participants={[]} feedback={readParam(query.candidateError)?{type:"error",message:readParam(query.candidateError)}:readParam(query.candidateSaved)?{type:"ok",message:readParam(query.candidateSaved)}:undefined} /> : null}
+              {["PUBLIC_VOTE_ONLY", "JUDGE_AND_PUBLIC_VOTE", "JUDGE_POINTS"].includes(event.resultMethod)&&event.voteCandidates.length>0?<div className="mb-7 rounded-[2rem] border border-white/10 bg-black p-6"><h3 className="text-xl font-black">Kobl afstemningsbillede til bruger</h3><p className="mt-2 text-sm text-zinc-400">Koblingen er valgfri og opretter aldrig en EventRegistration.</p><form method="get" className="mt-4 flex gap-3"><input type="hidden" name="tab" value="results"/><input name="userQ" defaultValue={userQuery} minLength={2} placeholder="Søg bruger" className="min-w-64 flex-1 rounded-xl border border-white/10 bg-black px-4 py-3 text-white"/><button className="rounded-full border border-white/15 px-5 py-2 font-bold">Søg</button></form>{matchingUsers.length>0?<form action={addExistingUserParticipantAction.bind(null,event.id)} className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4"><select name="userId" required className="rounded-xl border border-white/10 bg-black px-3 py-2 text-white"><option value="">Vælg bruger</option>{matchingUsers.map(profile=><option key={profile.id} value={profile.id}>{profile.displayName} · {profile.darklightId??profile.username}</option>)}</select><select name="candidateId" required className="rounded-xl border border-white/10 bg-black px-3 py-2 text-white"><option value="">Vælg billede</option>{event.voteCandidates.map((candidate,index)=><option key={candidate.id} value={candidate.id}>Afstemningsbillede {index+1}</option>)}</select><select name="competitionId" required className="rounded-xl border border-white/10 bg-black px-3 py-2 text-white">{event.competitions.map(competition=><option key={competition.id} value={competition.id}>{competition.title}</option>)}</select><label className="flex items-center gap-2 text-xs text-zinc-400"><input name="confirmHistorical" type="checkbox"/> Bekræft historisk ændring (kun Super Admin)</label><button className="rounded-full bg-white px-5 py-2 font-black text-black">Kobl til bruger</button></form>:null}</div>:null}
               {["JUDGE_POINTS", "JUDGE_AND_PUBLIC_VOTE", "PUBLIC_VOTE_ONLY"].includes(event.resultMethod) ? <JudgingAdminPanel event={event} availableJudges={availableJudges} /> : null}
 
               {savedState === "results" ? (
@@ -1137,7 +1161,7 @@ export default async function EventDetailsPage({ params, searchParams }: { param
               </form>
 
               <div className="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                <MiniStat label="Godkendte eventdeltagere" value={approvedRegistrations} />
+                <MiniStat label={event.usesParticipantRegistration?"Godkendte eventdeltagere":resultProgress.source==="candidates"?"Afstemningsbilleder":"Manuelle deltagere"} value={event.usesParticipantRegistration?approvedRegistrations:totalResultParticipants} />
                 <MiniStat label="Klar til resultater" value={totalResultParticipants} />
                 <MiniStat label="Med resultat" value={totalResults} />
                 <MiniStat label="Mangler resultat" value={missingResults} />
@@ -1463,7 +1487,6 @@ function JudgingAdminPanel({ event, availableJudges }: { event: { id: string; re
   const totals = candidateMode?candidateTotals.map(total=>({participantId:total.candidateId,judgePoints:total.judgePoints,judgeAverage:total.judgeAverage,submittedJudges:total.submittedJudges,publicVotes:total.publicVotes,finalPoints:total.finalPoints})):calculateJudgingTotals(event.competitions.flatMap((competition) => competition.participants.map((participant) => participant.id)), event.judgeScores, event.publicVotes, event.resultMethod);
   const ranking = rankJudgingTotals(totals);
   const names = new Map([...event.competitions.flatMap((competition) => competition.participants.map((participant) => [participant.id, participant.name] as const)),...event.voteCandidates.map((candidate,index)=>[candidate.id,candidate.vehicleName??`Kandidatbillede ${index+1}`] as const)]);
-  const missingLinks=event.voteCandidates.filter(candidate=>!candidate.participantId);
   const judgeParticipants=event.competitions.flatMap(competition=>competition.participants).length;
   const judgeStatus=(judgeId:string)=>{const scores=event.judgeScores.filter(score=>score.judgeId===judgeId);const submitted=scores.filter(score=>score.status==="SUBMITTED").length;if(!scores.length)return "Ikke startet";if(submitted>=judgeParticipants&&judgeParticipants>0)return "Afgivet";if(submitted>0)return "Mangler bedømmelse";return "Kladde";};
   return <div className="mb-7 grid gap-5 rounded-[2rem] border border-violet-300/20 bg-violet-300/[.05] p-6">
@@ -1471,9 +1494,8 @@ function JudgingAdminPanel({ event, availableJudges }: { event: { id: string; re
     {event.resultMethod !== "PUBLIC_VOTE_ONLY" ? <div className="grid gap-3"><form action={assignJudgeAction.bind(null, event.id)} className="flex flex-wrap gap-3"><select name="userId" className="rounded-xl border border-white/10 bg-black px-4 py-2"><option value="">Tilføj dommer</option>{availableJudges.filter(judge=>!event.judges.some(item=>item.userId===judge.id)).map(judge=><option key={judge.id} value={judge.id}>{judge.displayName}</option>)}</select><button className="rounded-full bg-white px-4 py-2 font-black text-black">Tilføj dommer</button></form><div className="flex flex-wrap gap-2">{event.judges.map(judge=><form key={judge.userId} action={removeJudgeAction.bind(null,event.id,judge.userId)} className="flex items-center gap-2 rounded-full border border-white/10 px-4 py-2"><span>{judge.user.displayName} · {judgeStatus(judge.userId)}</span><button className="text-red-300">Fjern</button></form>)}</div></div>:null}
     {event.resultMethod !== "JUDGE_POINTS" ? <div className="flex flex-wrap gap-3"><form action={setVotingStateAction.bind(null,event.id,"open")}><button className="rounded-full border border-white/15 px-4 py-2 font-bold">Åbn afstemning</button></form><form action={setVotingStateAction.bind(null,event.id,"closed")}><button className="rounded-full border border-white/15 px-4 py-2 font-bold">Luk afstemning</button></form><Link href={`/events/${event.id}/vote`} className="rounded-full border border-white/15 px-4 py-2 font-bold">Se stemmeside</Link></div>:null}
     <div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead className="text-zinc-500"><tr><th className="p-2">Deltager</th><th>Dommerpoint</th><th>Gennemsnit</th><th>Stemmer</th><th>Samlet</th></tr></thead><tbody>{ranking.sorted.map(total=><tr key={total.participantId} className="border-t border-white/10"><td className="p-2 font-bold">{names.get(total.participantId)}</td><td>{total.judgePoints}</td><td>{total.judgeAverage.toFixed(2)}</td><td>{total.publicVotes}</td><td className="font-black">{total.finalPoints}</td></tr>)}</tbody></table></div>
-    {missingLinks.length?<p className="rounded-xl border border-red-300/30 bg-red-300/10 p-4 text-red-100">Manglende Participant-kobling: {missingLinks.map((candidate,index)=>candidate.vehicleName??`Kandidatbillede ${index+1}`).join(", ")}.</p>:null}
     {ranking.unresolved.length?<p className="rounded-xl border border-amber-300/30 bg-amber-300/10 p-4 text-amber-100">Der er pointlighed. Vælg placering manuelt før offentliggørelse.</p>:null}
-    <form action={publishJudgingResultsAction.bind(null,event.id)} className="flex flex-wrap items-center gap-3"><label className="text-sm"><input type="checkbox" name="confirm" value="publish" /> Jeg bekræfter publicering og låsning</label><button disabled={ranking.unresolved.length>0 || totals.length===0 || missingLinks.length>0} className="rounded-full bg-emerald-300 px-5 py-2 font-black text-black disabled:opacity-40">Offentliggør resultat</button></form>
+    <form action={publishJudgingResultsAction.bind(null,event.id)} className="flex flex-wrap items-center gap-3"><label className="text-sm"><input type="checkbox" name="confirm" value="publish" /> Jeg bekræfter publicering og låsning</label><button disabled={ranking.unresolved.length>0 || totals.length===0} className="rounded-full bg-emerald-300 px-5 py-2 font-black text-black disabled:opacity-40">Offentliggør resultat</button></form>
   </div>;
 }
 

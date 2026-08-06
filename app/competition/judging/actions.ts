@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { requireCurrentUser } from "@/lib/auth/session";
 import { writeAuditLog } from "@/lib/admin/audit";
 import { calculateCandidateTotals, calculateJudgingTotals, rankJudgingTotals, votingIsOpen } from "@/lib/events/judging";
+import { ensureAllVoteCandidateParticipants, usesVoteCandidatesAsResultSource } from "@/lib/events/candidate-participants";
 
 function canManage(role: string) {
   return role === "SUPER_ADMIN" || role === "ADMIN" || role === "EVENT_MANAGER";
@@ -72,6 +73,11 @@ export async function withdrawVoteAction(eventId:string){const user=await requir
 export async function setVotingStateAction(eventId: string, state: "open" | "closed") {
   const actor = await requireCurrentUser();
   await requireManagedEvent(eventId, actor.role);
+  if(state==="open"){
+    const event=await prisma.event.findUnique({where:{id:eventId},select:{resultMethod:true,voteCandidates:{where:{active:true,public:true},take:1,select:{id:true}}}});
+    if(!event||!["PUBLIC_VOTE_ONLY","JUDGE_AND_PUBLIC_VOTE"].includes(event.resultMethod))throw new Error("Eventet bruger ikke publikumsafstemning.");
+    if(!event.voteCandidates.length)throw new Error("Tilføj mindst ét aktivt og offentligt afstemningsbillede før afstemningen åbnes.");
+  }
   await prisma.event.update({ where: { id: eventId }, data: state === "open" ? { votingOpenAt: new Date(), votingCloseAt: null, resultsPublishedAt: null } : { votingCloseAt: new Date() } });
   await writeAuditLog({ actorId: actor.id, action: state === "open" ? "PUBLIC_VOTING_OPENED" : "PUBLIC_VOTING_CLOSED", target: `Event:${eventId}` });
   revalidatePath(`/competition/events/${eventId}`);
@@ -82,11 +88,11 @@ export async function publishJudgingResultsAction(eventId: string, formData: For
   const actor = await requireCurrentUser();
   await requireManagedEvent(eventId, actor.role);
   if (formData.get("confirm") !== "publish") throw new Error("Bekræft offentliggørelsen.");
+  await prisma.$transaction(transaction=>ensureAllVoteCandidateParticipants(transaction,eventId));
   const event = await prisma.event.findUnique({ where: { id: eventId }, include: { competitions: { include: { participants: { where: { status: { in: ["APPROVED", "CHECKED_IN"] } } } } }, judgeScores: true, publicVotes: true, voteCandidates: { where: { active: true, public: true } } } });
   if (!event || !["JUDGE_POINTS", "JUDGE_AND_PUBLIC_VOTE", "PUBLIC_VOTE_ONLY"].includes(event.resultMethod)) throw new Error("Eventet kan ikke offentliggøre denne resultattype.");
-  const useCandidates = event.resultMethod !== "JUDGE_POINTS";
+  const useCandidates = usesVoteCandidatesAsResultSource(event.resultMethod) && event.voteCandidates.length > 0;
   const candidateTotals = calculateCandidateTotals(event.voteCandidates, event.judgeScores, event.publicVotes, event.resultMethod);
-  if (useCandidates && candidateTotals.some((total) => !total.participantId)) throw new Error("Alle synlige afstemningskandidater skal kobles til en Participant før offentliggørelse.");
   const totals = useCandidates ? candidateTotals.map((total) => ({ participantId: total.participantId!, judgePoints: total.judgePoints, judgeAverage: total.judgeAverage, submittedJudges: total.submittedJudges, publicVotes: total.publicVotes, finalPoints: total.finalPoints })) : calculateJudgingTotals(event.competitions.flatMap((competition) => competition.participants.map((participant) => participant.id)), event.judgeScores, event.publicVotes, event.resultMethod);
   const ranked = rankJudgingTotals(totals);
   if (ranked.unresolved.length) throw new Error("Der er pointlighed. Vælg placering manuelt før offentliggørelse.");

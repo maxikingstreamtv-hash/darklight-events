@@ -269,6 +269,8 @@ function loadDashboardEvents() {
           brackets: { select: { id: true, locked: true, status: true } },
         },
       },
+      voteCandidates: { where: { active: true, public: true }, select: { id: true, participantId: true } },
+      judges: { where: { active: true }, select: { id: true } },
     },
   });
 }
@@ -304,8 +306,9 @@ function getWorkflowSteps(event: DashboardEvent): WorkflowStep[] {
   const missingDetails = getMissingDetails(event);
   const heatsReady = !needsHeats || (hasCompetitions && event.competitions.every((competition) => competition.heats.length > 0));
   const bracketsReady = !needsBracket || (hasCompetitions && event.competitions.every((competition) => competition.brackets.length > 0));
-  const resultProgress = getResultProgress(event.competitions);
-  const resultsReady = !needsResults || resultProgress.complete;
+  const resultProgress = getResultProgress(event.competitions,{resultMethod:event.resultMethod,usesParticipantRegistration:event.usesParticipantRegistration,candidateCount:event.voteCandidates.length,candidateParticipantIds:event.voteCandidates.flatMap(candidate=>candidate.participantId?[candidate.participantId]:[])});
+  const requiresPublication=["PUBLIC_VOTE_ONLY","JUDGE_AND_PUBLIC_VOTE","JUDGE_POINTS"].includes(event.resultMethod);
+  const resultsReady = !needsResults || (requiresPublication ? Boolean(event.resultsPublishedAt) : resultProgress.complete);
 
   return [
     {
@@ -328,6 +331,27 @@ function getWorkflowSteps(event: DashboardEvent): WorkflowStep[] {
       done: pendingRegistrations === 0 && approvedRegistrations > 0,
       relevant: event.usesParticipantRegistration,
       detail: pendingRegistrations ? `${pendingRegistrations} afventer` : `${approvedRegistrations} godkendte`,
+    },
+    {
+      label: "Afstemningsbilleder",
+      tab: "results",
+      done: event.voteCandidates.length > 0,
+      relevant: ["PUBLIC_VOTE_ONLY","JUDGE_AND_PUBLIC_VOTE","JUDGE_POINTS"].includes(event.resultMethod),
+      detail: event.voteCandidates.length ? `${event.voteCandidates.length} kandidater klar` : "Mangler",
+    },
+    {
+      label: "Dommere",
+      tab: "results",
+      done: event.judges.length > 0,
+      relevant: ["JUDGE_POINTS","JUDGE_AND_PUBLIC_VOTE"].includes(event.resultMethod),
+      detail: event.judges.length ? `${event.judges.length} tildelt` : "Mangler",
+    },
+    {
+      label: "Åbn afstemning",
+      tab: "results",
+      done: Boolean(event.votingOpenAt),
+      relevant: ["PUBLIC_VOTE_ONLY","JUDGE_AND_PUBLIC_VOTE"].includes(event.resultMethod),
+      detail: event.votingOpenAt ? "Åbnet" : "Ikke åbnet",
     },
     {
       label: "Køretøjer",
@@ -472,7 +496,7 @@ function getMissingDetails(event: DashboardEvent) {
   const missing: string[] = [];
   if (!event.description?.trim()) missing.push("beskrivelse");
   if (!event.location?.trim()) missing.push("lokation");
-  if (!event.maxParticipants) missing.push("kapacitet");
+  if (event.usesParticipantRegistration && !event.maxParticipants) missing.push("kapacitet");
   const registrationPeriod = getRegistrationPeriodState(event);
   if (!isRegistrationPeriodConfigured(registrationPeriod)) missing.push("tilmeldingsperiode");
   return missing;

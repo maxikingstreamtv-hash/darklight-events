@@ -53,3 +53,16 @@ test("a new triathlon-compatible event defaults to no vehicle workflow", () => {
   assert.equal(NEW_EVENT_FEATURE_DEFAULTS.usesHeats, false);
   assert.equal(NEW_EVENT_FEATURE_DEFAULTS.usesBracket, false);
 });
+test("an absent participant-registration checkbox stays false even with results and prizes",()=>{
+  const formData=new FormData();
+  formData.set("usesResults","on");
+  formData.set("usesPrizes","on");
+  const features=readEventFeatures(formData);
+  assert.equal(features.usesParticipantRegistration,false);
+  assert.equal(features.usesResults,true);
+  assert.equal(features.usesPrizes,true);
+});
+test("workflow without participant registration has no registration steps",()=>{
+  const steps=getConfiguredWorkflow({...full,usesParticipantRegistration:false},facts);
+  assert.equal(steps.some(step=>step.key==="registration"||step.key==="participants"),false);
+});

@@ -27,6 +27,12 @@ test("disabled modules hide their tabs", () => {
 test("direct link to a disabled tab falls back to overview", () => {
   assert.equal(resolveCommandCenterTab("vehicles", { ...full, usesVehicles: false }), "overview");
 });
+test("manual result events keep the participant tab without public registration",()=>{
+  assert.equal(getCommandCenterTabs({...full,usesParticipantRegistration:false,resultMethod:"POINTS_ONLY"}).some(tab=>tab.key==="participants"),true);
+});
+test("candidate result events omit the registration participant tab",()=>{
+  assert.equal(getCommandCenterTabs({...full,usesParticipantRegistration:false,resultMethod:"PUBLIC_VOTE_ONLY"}).some(tab=>tab.key==="participants"),false);
+});
 test("ordinary users and judge-equivalent users gain no write access", () => {
   assert.equal(canManageEventCommandCenter("USER"), false);
   assert.equal(canUseDangerousEventActions("EVENT_MANAGER"), false);

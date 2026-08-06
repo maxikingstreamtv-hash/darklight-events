@@ -24,7 +24,7 @@ export type CommandCenterTab = {
 const tabs: Array<CommandCenterTab & { enabled?: (features: EventFeatures) => boolean }> = [
   { key: "overview", label: "Overblik", hash: "#oversigt" },
   { key: "details", label: "Eventoplysninger", hash: "#eventoplysninger" },
-  { key: "participants", label: "Deltagere", hash: "#deltagere", enabled: (event) => event.usesParticipantRegistration },
+  { key: "participants", label: "Deltagere", hash: "#deltagere", enabled: (event) => event.usesParticipantRegistration || (event.usesResults && !["PUBLIC_VOTE_ONLY", "JUDGE_AND_PUBLIC_VOTE", "JUDGE_POINTS"].includes(event.resultMethod ?? "")) },
   { key: "vehicles", label: "Køretøjer", hash: "#køretøjer", enabled: (event) => event.usesVehicles },
   { key: "heats", label: "Køreliste", hash: "#køreliste", enabled: (event) => event.usesHeats },
   { key: "bracket", label: "Bracket", hash: "#bracket", enabled: (event) => event.usesBracket },

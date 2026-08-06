@@ -2,8 +2,8 @@ import { GALLERY_BATCH_LIMIT } from "./config";
 import { normalizeExternalVideoUrl } from "./media";
 import { validateImageFileMetadata } from "@/lib/images/image-upload";
 
-export function validateGalleryBatch(files: Pick<File, "name" | "type" | "size">[], existingCount = 0) {
-  const room = Math.max(0, GALLERY_BATCH_LIMIT - existingCount);
+export function validateGalleryBatch(files: Pick<File, "name" | "type" | "size">[], queuedFileCount = 0) {
+  const room = Math.max(0, GALLERY_BATCH_LIMIT - queuedFileCount);
   return files.slice(0, room).map((file) => { try { validateImageFileMetadata(file, "gallery"); return { file, error: null }; } catch (error) { return { file, error: error instanceof Error ? error.message : "Ugyldig fil." }; } });
 }
 
